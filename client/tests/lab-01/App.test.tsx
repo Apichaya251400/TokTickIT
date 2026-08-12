@@ -34,7 +34,7 @@ describe("App", () => {
 
   it("shows an Offline error message when the API is unavailable", async () => {
     vi.spyOn(api, "checkSystem").mockRejectedValue(
-      new Error("Unable to connect to TokTickIT API")
+      new Error("Unable to connect to the server. Please check your connection and try again.")
     );
 
     render(<App />);
@@ -43,7 +43,7 @@ describe("App", () => {
 
     expect(await screen.findByText(/Offline/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/Unable to connect to TokTickIT API/i)
+      screen.getByText(/Unable to connect to the server/i)
     ).toBeInTheDocument();
   });
 });
