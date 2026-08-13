@@ -25,15 +25,5 @@ export async function checkSystem(): Promise<SystemStatus> {
     throw new Error("Unable to connect to the server. Please check your connection and try again.");
   }
 
-  let categories: Category[] = [];
-  try {
-    const catRes = await fetch(`${API_URL}/api/categories`);
-    if (catRes.ok) {
-      categories = await catRes.json();
-    }
-  } catch {
-    // /api/categories is implemented in Issue 4
-  }
-
-  return { online: true, categories };
+  return { online: true, categories: [] };
 }

@@ -37,25 +37,14 @@ export default function App() {
           <p className="fw-bold mb-2">
             System Status: <span className="text-success">Online</span>
           </p>
-          {categories.length > 0 && (
-            <div>
-              <p className="fw-semibold mb-2">Supported Request Categories:</p>
-              <ol className="list-group list-group-numbered">
-                {categories.map((cat) => (
-                  <li key={cat.id} className="list-group-item">
-                    {cat.name}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
+          {/* Categories rendering will be completed in Issue 4 */}
         </div>
       )}
 
       {state === "error" && (
         <div className="mt-3">
           <p className="fw-bold text-danger mb-1">System Status: Offline</p>
-          <p className="text-muted">{errorMessage || "Unable to connect to TokTickIT API"}</p>
+          <p className="text-muted">{errorMessage || "Unable to connect to the server. Please check your connection and try again."}</p>
         </div>
       )}
     </div>
