@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { checkSystem, Category } from "./api.js";
 
-// UI states you must handle for Issue 4: idle, loading, success, error.
 type UiState = "idle" | "loading" | "success" | "error";
 
 export default function App() {
@@ -53,7 +52,7 @@ export default function App() {
       {state === "error" && (
         <div className="mt-3">
           <p className="fw-bold text-danger mb-1">System Status: Offline</p>
-          <p className="text-muted">{errorMessage}</p>
+          <p className="text-muted">{errorMessage || "Unable to connect to the server. Please check your connection and try again."}</p>
         </div>
       )}
     </div>
