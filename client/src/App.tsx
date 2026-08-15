@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { checkSystem, Category } from "./api.js";
 
-// UI states you must handle for Issue 4: idle, loading, success, error.
 type UiState = "idle" | "loading" | "success" | "error";
 
 export default function App() {
@@ -17,7 +16,7 @@ export default function App() {
       setCategories(res.categories);
       setState("success");
     } catch (err: any) {
-      setErrorMessage(err?.message || "Unable to connect to TokTickIT API");
+      setErrorMessage(err?.message || "Unable to connect to the server. Please check your connection and try again.");
       setState("error");
     }
   }
@@ -37,7 +36,16 @@ export default function App() {
           <p className="fw-bold mb-2">
             System Status: <span className="text-success">Online</span>
           </p>
-          {/* Categories rendering will be completed in Issue 4 */}
+          <div>
+            <p className="fw-semibold mb-2">Supported Request Categories:</p>
+            <ol className="list-group list-group-numbered">
+              {categories.map((cat) => (
+                <li key={cat.id} className="list-group-item">
+                  {cat.name}
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       )}
 

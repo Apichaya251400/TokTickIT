@@ -10,10 +10,15 @@ describe("App", () => {
     expect(screen.getByText(/TokTickIT/i)).toBeInTheDocument();
   });
 
-  it("shows Online on success", async () => {
+  it("shows Online and the seeded categories on success", async () => {
     vi.spyOn(api, "checkSystem").mockResolvedValue({
       online: true,
-      categories: [],
+      categories: [
+        { id: 1, name: "Account and Access" },
+        { id: 2, name: "Hardware" },
+        { id: 3, name: "Software" },
+        { id: 4, name: "Network" },
+      ],
     });
 
     render(<App />);
@@ -21,6 +26,10 @@ describe("App", () => {
     await userEvent.click(button);
 
     expect(await screen.findByText(/Online/i)).toBeInTheDocument();
+    expect(screen.getByText("Account and Access")).toBeInTheDocument();
+    expect(screen.getByText("Hardware")).toBeInTheDocument();
+    expect(screen.getByText("Software")).toBeInTheDocument();
+    expect(screen.getByText("Network")).toBeInTheDocument();
   });
 
   it("shows an Offline error message when the API is unavailable", async () => {
@@ -37,6 +46,4 @@ describe("App", () => {
       screen.getByText(/Unable to connect to the server/i)
     ).toBeInTheDocument();
   });
-
-  it.todo("shows Online and the seeded categories on success");
 });
