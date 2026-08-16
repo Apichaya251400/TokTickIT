@@ -19,7 +19,7 @@ describe("UI-02: Loading State and Category List Rendering", () => {
     fireEvent.click(screen.getByRole("button", { name: /Check System/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/System Status: Online/i)).toBeInTheDocument();
+      expect(screen.getByText("Online")).toBeInTheDocument();
     });
 
     expect(screen.getByText("Account and Access")).toBeInTheDocument();
