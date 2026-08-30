@@ -74,7 +74,7 @@ Testing spans **all six required testing levels**:
 | **VIS-02** | Visual | AC-19, UI-Spec 3.1 | Active-page navigation visual indication check | Active tab shows `#0B7A46` highlight & `aria-current="page"` | `client/tests/lab-02/CreateTicket.test.tsx` |
 | **RESP-01** | Responsive | AC-18 | Responsive layout check desktop >=992px vs mobile <768px | Desktop table vs mobile vertical card stack | `client/tests/lab-02/MyTickets.test.tsx` |
 | **RESP-02** | Responsive | AC-18, UI-Spec 3.1 | Responsive mobile navigation check <768px | Collapsible mobile nav menu, 0 horizontal scroll | `client/tests/lab-02/MyTickets.test.tsx` |
-| **E2E-01** | E2E | AC-01..20 | Complete flow: Select Requester -> Create Ticket -> Filter -> Detail -> Soft Remove | Full flow completed successfully | `e2e/lab-02/requester-ticket-flow.spec.ts` |
+| **E2E-01** | E2E | AC-01, AC-02, AC-03, AC-05, AC-06, AC-08, AC-17, AC-18 | Complete flow: Select Requester -> Create Ticket -> Filter -> Detail -> Soft Remove | Full flow completed successfully | `e2e/lab-02/requester-ticket-flow.spec.ts` |
 
 ---
 
@@ -98,7 +98,7 @@ Testing spans **all six required testing levels**:
 | **AC-14** (Safe Error State Presentation) | `UI-13` |
 | **AC-15** (Data Retention After Error) | `UI-03`, `UI-16` |
 | **AC-16** (Non-Owner Attachment 404 Protection) | `API-25` |
-| **AC-17** (Soft Removal Reason Validation) | `API-20`, `API-21`, `API-22`, `API-23`, `UI-05` |
+| **AC-17** (Soft Removal Reason Validation) | `API-20`, `API-21`, `API-22`, `API-23`, `UI-05`, `E2E-01` |
 | **AC-18** (Responsive Viewport Rules) | `UI-09`, `RESP-01`, `RESP-02`, `E2E-01` |
 | **AC-19** (Accessibility & Keyboard Focus) | `UI-10`, `VIS-01`, `VIS-02` |
 | **AC-20** (Busy State & Duplicate Prevention) | `API-13`, `UI-02` |

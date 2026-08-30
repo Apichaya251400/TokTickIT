@@ -103,13 +103,15 @@ When field-level validation fails, `"details"` contains field error objects:
 ### 4.1 Reference Data (Public)
 
 #### `GET /api/requesters/active`
-- **Description**: Returns active Development Requesters for selector dropdown. Inactive requesters are excluded.
+- **Description**: Returns active Development Requesters for selector dropdown. Inactive requesters (e.g. Eve Adams) are excluded. Required seed data contains at least 4 active Development Requesters (Alice Smith, Bob Jones, Charlie Brown, Diana Prince) and 1 inactive Development Requester (Eve Adams).
 - **Header**: Optional.
 - **Response `200 OK`**:
   ```json
   [
     { "id": 1, "name": "Alice Smith", "email": "alice@example.com" },
-    { "id": 2, "name": "Bob Jones", "email": "bob@example.com" }
+    { "id": 2, "name": "Bob Jones", "email": "bob@example.com" },
+    { "id": 3, "name": "Charlie Brown", "email": "charlie@example.com" },
+    { "id": 4, "name": "Diana Prince", "email": "diana@example.com" }
   ]
   ```
 
@@ -328,6 +330,12 @@ When field-level validation fails, `"details"` contains field error objects:
 - **Description**: Soft-removes an attachment by setting `removedAt` and `removalReason`.
 - **Header**: `X-Requester-Id: <id>` (Required positive integer)
 - **Path Parameter**: `:id` is a String UUID.
+- **Request Body**:
+  ```json
+  {
+    "removalReason": "Uploaded incorrect file version for this ticket"
+  }
+  ```
 - **Evaluation Order**:
   1. Validate `X-Requester-Id` header context (`400` / `403`).
   2. Resolve attachment within requester's ownership scope. If attachment does not exist OR belongs to another requester -> `404 Not Found`.
@@ -339,7 +347,7 @@ When field-level validation fails, `"details"` contains field error objects:
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d4e5",
     "fileName": "error-screenshot.png",
     "removedAt": "2026-08-25T09:10:00.000Z",
-    "removalReason": "Uploaded wrong screenshot file.",
+    "removalReason": "Uploaded incorrect file version for this ticket",
     "isRemoved": true
   }
   ```
