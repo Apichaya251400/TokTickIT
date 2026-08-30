@@ -65,6 +65,7 @@ The IT department requires an accessible and responsive ticketing experience acr
 - **BR-24**: Switching Development Requester reloads requester-specific ticket data.
 - **BR-25**: If no Requester is selected, protected UI routes redirect to the Requester Selection screen.
 - **BR-26**: Empty states are displayed when a requester has no tickets; no-results states are displayed when search/filters match zero tickets.
+- **BR-27**: Lab 2 does not implement real password or login authentication. The Development Requester Selection mechanism is strictly a temporary testing mechanism used to simulate requester context (`X-Requester-Id` header) for Lab 2 workflows. It is intended to be replaced by real authentication and session-based requester identification in Lab 3.
 
 ## 6. UI Specification Summary
 The application shall use the Zen Green Theme:

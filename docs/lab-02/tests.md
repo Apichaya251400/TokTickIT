@@ -17,64 +17,69 @@ Testing spans **all six required testing levels**:
 
 ## 2. Planned Test Inventory
 
-| Test ID | Level | Requirement / AC | Target Scenario / Test Description | Expected Result | Target Test File |
-|---|---|---|---|---|---|
-| **UNIT-01** | Unit | BR-01 | Ticket Number format generator `TKT-YYYY-XXXXXX` | Returns string matching `^TKT-\d{4}-\d{6}$` | `server/tests/unit/ticketNumber.test.ts` |
-| **UNIT-02** | Unit | BR-10, BR-11 | String trimming helper for summary and description | Trims whitespace, returns false if length invalid | `server/tests/unit/validation.test.ts` |
-| **UNIT-03** | Unit | BR-06, BR-16 | File size and filename path traversal sanitizer helper | Rejects >5,000,000 bytes; sanitizes `../secret.txt` to `secret.txt` | `server/tests/unit/validation.test.ts` |
-| **API-01** | API | BR-09, BR-23 | Missing `X-Requester-Id` header on protected route | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-02** | API | BR-09 | Invalid/non-numeric/<=0 `X-Requester-Id` header | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-03** | API | BR-09 | Unknown or inactive `X-Requester-Id` header | HTTP `403 Forbidden` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-04** | API | BR-10, AC-09 | Summary boundary test: 9 characters | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-05** | API | BR-10, AC-01 | Summary boundary test: 10 characters | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-06** | API | BR-10, AC-01 | Summary boundary test: 120 characters | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-07** | API | BR-10, AC-09 | Summary boundary test: 121 characters | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-08** | API | BR-11, AC-09 | Description boundary test: 19 characters | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-09** | API | BR-11, AC-01 | Description boundary test: 20 characters | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-10** | API | BR-11, AC-01 | Description boundary test: 2,000 characters | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-11** | API | BR-11, AC-09 | Description boundary test: 2,001 characters | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-12** | API | BR-12, AC-01 | Requested Priority: `URGENT` | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-13** | API | BR-14, AC-20 | Duplicate submission during processing | HTTP `409 Conflict` | `server/tests/lab-02/create-ticket.api.test.ts` |
-| **API-14** | API | BR-04, BR-05, AC-03 | Request ticket owned by another requester | HTTP `404 Not Found` | `server/tests/lab-02/ticket-detail.api.test.ts` |
-| **API-15** | API | BR-06, AC-04 | File size boundary test: 4,999,999 bytes | HTTP `201 Created` | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-16** | API | BR-06, AC-04 | File size boundary test: 5,000,000 bytes | HTTP `201 Created` | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-17** | API | BR-06, AC-04 | File size boundary test: 5,000,001 bytes | HTTP `413 Payload Too Large` | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-18** | API | BR-06, AC-04 | Unsupported file extension (e.g. `.exe`) | HTTP `415 Unsupported Media Type` | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-19** | API | BR-07, AC-07 | Upload 6th active attachment to ticket with 5 active | HTTP `409 Conflict` | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-20** | API | BR-08, AC-17 | Soft remove attachment with 4-character reason | HTTP `400 Bad Request` | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-21** | API | BR-08, AC-17 | Soft remove attachment with 5-character reason | HTTP `200 OK` (sets `removedAt`) | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-22** | API | BR-08, AC-17 | Soft remove attachment with 200-character reason | HTTP `200 OK` (sets `removedAt`) | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-23** | API | BR-08, AC-17 | Soft remove attachment with 201-character reason | HTTP `400 Bad Request` | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-24** | API | BR-08, AC-05 | Download soft-removed attachment (ownership checked first) | HTTP `409 Conflict` | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-25** | API | BR-04, BR-05, AC-16 | Request attachment owned by another requester | HTTP `404 Not Found` | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-26** | API | BR-19, AC-06 | Search tickets by keyword in `ticketNumber`/summary/description | Returns matching owned tickets | `server/tests/lab-02/my-tickets.api.test.ts` |
-| **API-27** | API | BR-20, AC-06 | Combined filters: Category + Related System + Priority + Status | Returns matching filtered tickets | `server/tests/lab-02/my-tickets.api.test.ts` |
-| **API-28** | API | BR-21, AC-11 | Sort by `requestedPriority` severity with secondary `id DESC` | URGENT -> HIGH -> MEDIUM -> LOW | `server/tests/lab-02/my-tickets.api.test.ts` |
-| **API-29** | API | BR-22, AC-10 | Pagination page reset on filter change & page beyond last | Returns 200 with empty array beyond last | `server/tests/lab-02/my-tickets.api.test.ts` |
-| **API-30** | API | BR-16 | Filename sanitization / path traversal protection (`../secret.txt`) | Filename sanitized to basename | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-31** | API | BR-18 | Attachment upload fails after Ticket creation | Ticket saved, failure reported | `server/tests/lab-02/attachments.api.test.ts` |
-| **API-32** | API | BR-07, BR-08 | Soft-removed attachment does not count toward 5-active limit | HTTP `201 Created` (5 active + 1 removed) | `server/tests/lab-02/attachments.api.test.ts` |
-| **UI-01** | UI | BR-10, AC-09 | Submit form with 9-character summary | Field error message displayed below input | `client/tests/lab-02/CreateTicket.test.tsx` |
-| **UI-02** | UI | BR-14, AC-20 | Submit button enters busy state and disables on click | Prevents duplicate click submit | `client/tests/lab-02/CreateTicket.test.tsx` |
-| **UI-03** | UI | BR-15, AC-15 | Ticket creation fails on server | Form data & file selections preserved | `client/tests/lab-02/CreateTicket.test.tsx` |
-| **UI-04** | UI | BR-05, AC-03 | Open ticket detail for non-owned ticket ID | Displays "Ticket not found." | `client/tests/lab-02/RequesterTicketDetail.test.tsx` |
-| **UI-05** | UI | BR-08, AC-17 | Open soft removal modal and enter 4-char reason | Submit button disabled/error shown | `client/tests/lab-02/AttachmentSection.test.tsx` |
-| **UI-06** | UI | BR-08, AC-05 | Render soft-removed attachment in Ticket Detail | Download & preview buttons disabled | `client/tests/lab-02/AttachmentSection.test.tsx` |
-| **UI-07** | UI | BR-26, AC-12 | Requester with zero tickets loads My Tickets | Empty state container displayed | `client/tests/lab-02/MyTickets.test.tsx` |
-| **UI-08** | UI | BR-26, AC-13 | Filter query returns zero matching tickets | No-results state container displayed | `client/tests/lab-02/MyTickets.test.tsx` |
-| **UI-09** | UI | AC-18 | Mobile viewport layout check (<768px) | Tables convert to cards, 0 horizontal scroll | `client/tests/lab-02/MyTickets.test.tsx` |
-| **UI-10** | UI | AC-19 | Keyboard navigation focus ring check | Focus ring `#0B7A46` visible | `client/tests/lab-02/CreateTicket.test.tsx` |
-| **UI-11** | UI | BR-25, AC-02 | No Requester selected on protected screen | Redirects to Requester Selection | `client/tests/lab-02/MyTickets.test.tsx` |
-| **UI-12** | UI | BR-24, AC-08 | Changing Requester context in header | Reloads new requester's data | `client/tests/lab-02/MyTickets.test.tsx` |
-| **UI-13** | UI | AC-14 | API 500 failure state rendering | Displays safe error without DB traces | `client/tests/lab-02/CreateTicket.test.tsx` |
-| **UI-14** | UI | BR-23 | Client API module reads LocalStorage | Attaches `X-Requester-Id` header | `client/tests/lab-02/CreateTicket.test.tsx` |
-| **UI-15** | UI | BR-06, AC-04 | Select invalid attachment file (e.g. `.exe` or >5 MB) | Dropzone displays field error message | `client/tests/lab-02/CreateTicket.test.tsx` |
-| **UI-16** | UI | BR-18, AC-15 | Attachment upload fails after ticket creation | Upload warning banner shown, form/file retained | `client/tests/lab-02/CreateTicket.test.tsx` |
-| **VIS-01** | Visual | Section 7 | Visual style check for Zen Green tokens & read-only field shading | Read-only background `#F0F4F2`, focus `#0B7A46` | `client/tests/lab-02/CreateTicket.test.tsx` |
-| **VIS-02** | Visual | AC-19, UI-Spec 3.1 | Active-page navigation visual indication check | Active tab shows `#0B7A46` highlight & `aria-current="page"` | `client/tests/lab-02/CreateTicket.test.tsx` |
-| **RESP-01** | Responsive | AC-18 | Responsive layout check desktop >=992px vs mobile <768px | Desktop table vs mobile vertical card stack | `client/tests/lab-02/MyTickets.test.tsx` |
-| **RESP-02** | Responsive | AC-18, UI-Spec 3.1 | Responsive mobile navigation check <768px | Collapsible mobile nav menu, 0 horizontal scroll | `client/tests/lab-02/MyTickets.test.tsx` |
-| **E2E-01** | E2E | AC-01, AC-02, AC-03, AC-05, AC-06, AC-08, AC-17, AC-18 | Complete flow: Select Requester -> Create Ticket -> Filter -> Detail -> Soft Remove | Full flow completed successfully | `e2e/lab-02/requester-ticket-flow.spec.ts` |
+*Final Status Legend*:
+- **PASS**: Verified passing with automated test output on the repository codebase.
+- **PLANNED**: Specified test scenario ready for Test-Driven Development (TDD) implementation in its dedicated feature issue.
+
+| Test ID | Level | Requirement / AC | Target Scenario / Test Description | Expected Result | Target Test File | Final Status |
+|---|---|---|---|---|---|---|
+| **UNIT-01** | Unit | BR-01 | Ticket Number format generator `TKT-YYYY-XXXXXX` | Returns string matching `^TKT-\d{4}-\d{6}$` | `server/tests/unit/ticketNumber.test.ts` | PLANNED |
+| **UNIT-02** | Unit | BR-10, BR-11 | String trimming helper for summary and description | Trims whitespace, returns false if length invalid | `server/tests/unit/validation.test.ts` | PLANNED |
+| **UNIT-03** | Unit | BR-06, BR-16 | File size and filename path traversal sanitizer helper | Rejects >5,000,000 bytes; sanitizes `../secret.txt` to `secret.txt` | `server/tests/unit/validation.test.ts` | PLANNED |
+| **API-01** | API | BR-09, BR-23 | Missing `X-Requester-Id` header on protected route | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-02** | API | BR-09 | Invalid/non-numeric/<=0 `X-Requester-Id` header | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-03** | API | BR-09, FR-01, FR-09 | Active Development Requesters endpoint | HTTP `200 OK` (returns 4 active, excludes Eve Adams) | `server/tests/lab-02/reference-data.test.ts` | PASS |
+| **API-04** | API | BR-10, AC-09 | Summary boundary test: 9 characters | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-05** | API | BR-10, AC-01 | Summary boundary test: 10 characters | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-06** | API | BR-10, AC-01 | Summary boundary test: 120 characters | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-07** | API | BR-10, AC-09 | Summary boundary test: 121 characters | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-08** | API | BR-11, AC-09 | Description boundary test: 19 characters | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-09** | API | BR-11, AC-01 | Description boundary test: 20 characters | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-10** | API | BR-11, AC-01 | Description boundary test: 2,000 characters | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-11** | API | BR-11, AC-09 | Description boundary test: 2,001 characters | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-12** | API | BR-12, AC-01 | Requested Priority: `URGENT` | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-13** | API | BR-14, AC-20 | Duplicate submission during processing | HTTP `409 Conflict` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-14** | API | BR-04, BR-05, AC-03 | Request ticket owned by another requester | HTTP `404 Not Found` | `server/tests/lab-02/ticket-detail.api.test.ts` | PLANNED |
+| **API-15** | API | BR-06, AC-04 | File size boundary test: 4,999,999 bytes | HTTP `201 Created` | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-16** | API | BR-06, AC-04 | File size boundary test: 5,000,000 bytes | HTTP `201 Created` | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-17** | API | BR-06, AC-04 | File size boundary test: 5,000,001 bytes | HTTP `413 Payload Too Large` | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-18** | API | BR-06, AC-04 | Unsupported file extension (e.g. `.exe`) | HTTP `415 Unsupported Media Type` | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-19** | API | BR-07, AC-07 | Upload 6th active attachment to ticket with 5 active | HTTP `409 Conflict` | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-20** | API | BR-08, AC-17 | Soft remove attachment with 4-character reason | HTTP `400 Bad Request` | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-21** | API | BR-08, AC-17 | Soft remove attachment with 5-character reason | HTTP `200 OK` (sets `removedAt`) | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-22** | API | BR-08, AC-17 | Soft remove attachment with 200-character reason | HTTP `200 OK` (sets `removedAt`) | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-23** | API | BR-08, AC-17 | Soft remove attachment with 201-character reason | HTTP `400 Bad Request` | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-24** | API | BR-08, AC-05 | Download soft-removed attachment (ownership checked first) | HTTP `409 Conflict` | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-25** | API | BR-04, BR-05, AC-16 | Request attachment owned by another requester | HTTP `404 Not Found` | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-26** | API | BR-19, AC-06 | Search tickets by keyword in `ticketNumber`/summary/description | Returns matching owned tickets | `server/tests/lab-02/my-tickets.api.test.ts` | PLANNED |
+| **API-27** | API | BR-20, AC-06 | Combined filters: Category + Related System + Priority + Status | Returns matching filtered tickets | `server/tests/lab-02/my-tickets.api.test.ts` | PLANNED |
+| **API-28** | API | BR-21, AC-11 | Sort by `requestedPriority` severity with secondary `id DESC` | URGENT -> HIGH -> MEDIUM -> LOW | `server/tests/lab-02/my-tickets.api.test.ts` | PLANNED |
+| **API-29** | API | BR-22, AC-10 | Pagination page reset on filter change & page beyond last | Returns 200 with empty array beyond last | `server/tests/lab-02/my-tickets.api.test.ts` | PLANNED |
+| **API-30** | API | BR-16 | Filename sanitization / path traversal protection (`../secret.txt`) | Filename sanitized to basename | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-31** | API | BR-18 | Attachment upload fails after Ticket creation | Ticket saved, failure reported | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-32** | API | BR-07, BR-08 | Soft-removed attachment does not count toward 5-active limit | HTTP `201 Created` (5 active + 1 removed) | `server/tests/lab-02/attachments.api.test.ts` | PLANNED |
+| **API-33** | API | FR-09 | Active Related Systems endpoint | HTTP `200 OK` (returns 7 seeded related systems) | `server/tests/lab-02/reference-data.test.ts` | PASS |
+| **UI-01** | UI | BR-10, AC-09 | Submit form with 9-character summary | Field error message displayed below input | `client/tests/lab-02/CreateTicket.test.tsx` | PLANNED |
+| **UI-02** | UI | BR-14, AC-20 | Submit button enters busy state and disables on click | Prevents duplicate click submit | `client/tests/lab-02/CreateTicket.test.tsx` | PLANNED |
+| **UI-03** | UI | BR-15, AC-15 | Ticket creation fails on server | Form data & file selections preserved | `client/tests/lab-02/CreateTicket.test.tsx` | PLANNED |
+| **UI-04** | UI | BR-05, AC-03 | Open ticket detail for non-owned ticket ID | Displays "Ticket not found." | `client/tests/lab-02/RequesterTicketDetail.test.tsx` | PLANNED |
+| **UI-05** | UI | BR-08, AC-17 | Open soft removal modal and enter 4-char reason | Submit button disabled/error shown | `client/tests/lab-02/AttachmentSection.test.tsx` | PLANNED |
+| **UI-06** | UI | BR-08, AC-05 | Render soft-removed attachment in Ticket Detail | Download & preview buttons disabled | `client/tests/lab-02/AttachmentSection.test.tsx` | PLANNED |
+| **UI-07** | UI | BR-26, AC-12 | Requester with zero tickets loads My Tickets | Empty state container displayed | `client/tests/lab-02/MyTickets.test.tsx` | PLANNED |
+| **UI-08** | UI | BR-26, AC-13 | Filter query returns zero matching tickets | No-results state container displayed | `client/tests/lab-02/MyTickets.test.tsx` | PLANNED |
+| **UI-09** | UI | AC-18 | Mobile viewport layout check (<768px) | Tables convert to cards, 0 horizontal scroll | `client/tests/lab-02/MyTickets.test.tsx` | PLANNED |
+| **UI-10** | UI | AC-19 | Keyboard navigation focus ring check | Focus ring `#0B7A46` visible | `client/tests/lab-02/CreateTicket.test.tsx` | PLANNED |
+| **UI-11** | UI | BR-25, AC-02 | No Requester selected on protected screen | Redirects to Requester Selection | `client/tests/lab-02/MyTickets.test.tsx` | PLANNED |
+| **UI-12** | UI | BR-24, AC-08 | Changing Requester context in header | Reloads new requester's data | `client/tests/lab-02/MyTickets.test.tsx` | PLANNED |
+| **UI-13** | UI | AC-14 | API 500 failure state rendering | Displays safe error without DB traces | `client/tests/lab-02/CreateTicket.test.tsx` | PLANNED |
+| **UI-14** | UI | BR-23 | Client API module reads LocalStorage | Attaches `X-Requester-Id` header | `client/tests/lab-02/CreateTicket.test.tsx` | PLANNED |
+| **UI-15** | UI | BR-06, AC-04 | Select invalid attachment file (e.g. `.exe` or >5 MB) | Dropzone displays field error message | `client/tests/lab-02/CreateTicket.test.tsx` | PLANNED |
+| **UI-16** | UI | BR-18, AC-15 | Attachment upload fails after ticket creation | Upload warning banner shown, form/file retained | `client/tests/lab-02/CreateTicket.test.tsx` | PLANNED |
+| **VIS-01** | Visual | Section 7 | Visual style check for Zen Green tokens & read-only field shading | Read-only background `#F0F4F2`, focus `#0B7A46` | `client/tests/lab-02/CreateTicket.test.tsx` | PLANNED |
+| **VIS-02** | Visual | AC-19, UI-Spec 3.1 | Active-page navigation visual indication check | Active tab shows `#0B7A46` highlight & `aria-current="page"` | `client/tests/lab-02/CreateTicket.test.tsx` | PLANNED |
+| **RESP-01** | Responsive | AC-18 | Responsive layout check desktop >=992px vs mobile <768px | Desktop table vs mobile vertical card stack | `client/tests/lab-02/MyTickets.test.tsx` | PLANNED |
+| **RESP-02** | Responsive | AC-18, UI-Spec 3.1 | Responsive mobile navigation check <768px | Collapsible mobile nav menu, 0 horizontal scroll | `client/tests/lab-02/MyTickets.test.tsx` | PLANNED |
+| **E2E-01** | E2E | AC-01, AC-02, AC-03, AC-05, AC-06, AC-08, AC-17, AC-18 | Complete flow: Select Requester -> Create Ticket -> Filter -> Detail -> Soft Remove | Expected: Full flow completes successfully | `e2e/lab-02/requester-ticket-flow.spec.ts` | PLANNED |
 
 ---
 
@@ -115,7 +120,7 @@ Execute during manual visual testing and Playwright screenshot verification:
 - [ ] **Validation Placement**: Required red asterisk `*` on labels; error text appears directly below invalid input.
 - [ ] **Button Hierarchy**: Primary `#006B3C`, Secondary outlined neutral, Destructive `#B42318`, Disabled muted, Busy shows spinner.
 - [ ] **Layout & Overflow**: Zero horizontal page scroll on mobile (<768px); labels and badge text do not clip or wrap awkwardly.
-- [ ] **Responsive Views**: Desktop (>=992px) multi-column table; Mobile (<768px) stacked card list with collapsible mobile nav menu.
+- [ ] **Responsive Views**: Desktop (>=992px) multi-column table; Mobile (<768px) stacked card layout with collapsible mobile nav menu.
 - [ ] **Attachment Controls**: Active attachments show download/remove buttons; soft-removed attachments show disabled controls with reason & date.
 - [ ] **Missing / Feedback States**: Loading skeletons, empty list state, no-results filter state, and safe error banners render correctly.
 
@@ -133,3 +138,34 @@ cd client && npm test
 # E2E Playwright Tests
 npx playwright test e2e/lab-02/
 ```
+
+---
+
+## 6. Final Results
+
+### 6.1 Executed & Passing Verification Suite
+Current automated test suites executed against the `lab2-staging` backend code demonstrate 100% passing results across 5 tests:
+- `tests/lab-01/API-01.health.test.ts`: Health check endpoint returns `200 OK` (PASS).
+- `tests/lab-01/API-02.categories.test.ts`: Categories endpoint returns `200 OK` with 4 active categories (PASS).
+- `server/tests/lab-02/reference-data.test.ts`: Reference data endpoint suite (`API-03`, `API-33`) verifying active Development Requesters (4 active, Eve Adams excluded), 7 Related Systems, and Categories in `id ASC` order (PASS).
+
+### 6.2 Planned Test Inventory Status
+- **Total Planned Test Cases**: 57 test scenarios across 6 testing levels.
+- **Executed & Passing**: 5 tests (`API-01` health, `API-02` categories, `API-03` active requesters, `API-33` related systems, categories order).
+- **Planned for Feature Issue TDD**: 52 tests specified with explicit target file paths and Acceptance Criteria traceability mappings, ready for TDD implementation in feature branches.
+
+---
+
+## 7. Known Limitations & Deferred Tests
+
+The following capabilities are intentionally outside the Lab 2 Requester MVP scope and are deferred to subsequent sprint labs per the approved engineering contract:
+
+1. **Real Authentication & Role-Based Access (Deferred to Lab 3)**:
+   - Passwords, password hashing (Argon2id), session management, JWT tokens, login/logout screens, and authenticated identities are deferred to Lab 3.
+   - Lab 2 strictly uses the temporary Development Requester Selection mechanism (`X-Requester-Id` header testing context) as defined in `BR-27`.
+2. **IT Staff Workflows & Ticket Lifecycle (Deferred to Lab 4)**:
+   - IT Staff dashboard, queue management, claiming/reassigning tickets, setting IT Priority, and status transitions beyond initial `NEW` status (Resolving, Closing, Reopening, Cancelling) are deferred to Lab 4.
+3. **Collaboration & Activity Tracking (Deferred to Later Labs)**:
+   - Public Comments, Internal Notes, and Actions Taken audit trails are excluded from Lab 2 MVP scope.
+4. **Advanced Infrastructure & Security Capabilities**:
+   - Virus scanning on attachment uploads, rate limiting, signed download URLs, and database encryption at rest are excluded from Lab 2 scope.
