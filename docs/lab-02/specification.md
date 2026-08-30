@@ -173,6 +173,7 @@ Full API specification in `docs/lab-02/api-spec.md`.
 - Attachment size limit is strictly 5,000,000 bytes (`MAX_FILE_SIZE_BYTES = 5_000_000`).
 - Public domain field for official ticket identifier is `ticketNumber`.
 - Ticket and Attachment primary keys are String UUIDs.
+- Duplicate submission protection is defined as a behavioral contract (HTTP 409 Conflict for repeated in-flight requests during active processing); specific backend locking algorithms or infrastructure mechanisms are intentionally unprescribed for Lab 2.
 - Detailed API wire contract in `docs/lab-02/api-spec.md`.
 - Detailed UI specification in `docs/lab-02/ui-spec.md`.
 - Detailed test suite and traceability matrix in `docs/lab-02/tests.md`.

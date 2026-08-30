@@ -29,7 +29,7 @@ Testing spans **all six required testing levels**:
 | **API-01** | API | BR-09, BR-23 | Missing `X-Requester-Id` header on protected route | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
 | **API-02** | API | BR-09 | Invalid/non-numeric/<=0 `X-Requester-Id` header | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
 | **API-03** | API | BR-09, FR-01, FR-09 | Active Development Requesters endpoint | HTTP `200 OK` (returns 4 active, excludes Eve Adams) | `server/tests/lab-02/reference-data.test.ts` | PASS |
-| **API-04** | API | BR-10, AC-09 | Summary boundary test: 9 characters | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
+| **API-04** | API | BR-10, AC-09 | Summary boundary & whitespace validation (9 chars or whitespace-only) | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
 | **API-05** | API | BR-10, AC-01 | Summary boundary test: 10 characters | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
 | **API-06** | API | BR-10, AC-01 | Summary boundary test: 120 characters | HTTP `201 Created` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
 | **API-07** | API | BR-10, AC-09 | Summary boundary test: 121 characters | HTTP `400 Bad Request` | `server/tests/lab-02/create-ticket.api.test.ts` | PLANNED |
@@ -144,15 +144,17 @@ npx playwright test e2e/lab-02/
 ## 6. Final Results
 
 ### 6.1 Executed & Passing Verification Suite
-Current automated test suites executed against the `lab2-staging` backend code demonstrate 100% passing results across 5 tests:
-- `tests/lab-01/API-01.health.test.ts`: Health check endpoint returns `200 OK` (PASS).
-- `tests/lab-01/API-02.categories.test.ts`: Categories endpoint returns `200 OK` with 4 active categories (PASS).
-- `server/tests/lab-02/reference-data.test.ts`: Reference data endpoint suite (`API-03`, `API-33`) verifying active Development Requesters (4 active, Eve Adams excluded), 7 Related Systems, and Categories in `id ASC` order (PASS).
+Automated test execution against the `lab2-staging` backend code demonstrates 5 passing automated verification checks:
+- **Lab 1 Health Check** (`server/tests/lab-01/API-01.health.test.ts`): Verifies `GET /api/health` returns `200 OK` (PASS).
+- **Lab 1 Categories List** (`server/tests/lab-01/API-02.categories.test.ts`): Verifies `GET /api/categories` returns `200 OK` with 4 active categories (PASS).
+- **Lab 2 Active Requesters (`API-03`)** (`server/tests/lab-02/reference-data.test.ts`): Verifies `GET /api/requesters/active` returns 4 active Development Requesters and excludes inactive Eve Adams (PASS).
+- **Lab 2 Related Systems (`API-33`)** (`server/tests/lab-02/reference-data.test.ts`): Verifies `GET /api/related-systems` returns 7 seeded related systems (PASS).
+- **Lab 2 Categories Regression Check** (`server/tests/lab-02/reference-data.test.ts`): Verifies `GET /api/categories` preserves categories in `id ASC` order (PASS).
 
 ### 6.2 Planned Test Inventory Status
-- **Total Planned Test Cases**: 57 test scenarios across 6 testing levels.
-- **Executed & Passing**: 5 tests (`API-01` health, `API-02` categories, `API-03` active requesters, `API-33` related systems, categories order).
-- **Planned for Feature Issue TDD**: 52 tests specified with explicit target file paths and Acceptance Criteria traceability mappings, ready for TDD implementation in feature branches.
+- **Total Lab 2 Inventory Scenarios**: 57 test scenarios across 6 testing levels.
+- **Executed & Verified (`PASS`)**: 2 inventory test scenarios (`API-03` active requesters, `API-33` related systems).
+- **Specified for Feature TDD (`PLANNED`)**: 55 inventory test scenarios specified with target test file paths and Acceptance Criteria traceability mappings, ready for TDD implementation in feature branches.
 
 ---
 

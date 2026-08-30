@@ -2,13 +2,15 @@
 
 ## 1. Purpose & Scope
 
-This document defines the visual design tokens, component states, accessibility standards, responsive rules, screen state behaviors (initial, loading, validation, submitting, success, failure, retry, empty, no-results), and visual inspection criteria for the TokTickIT Requester MVP in Lab 2.
+This document defines the visual design tokens, typography, spacing scale, component states, accessibility standards, responsive rules, screen state behaviors (initial, loading, validation, submitting, success, failure, retry, empty, no-results), and visual inspection criteria for the TokTickIT Requester MVP in Lab 2.
 
 Lab 2 does not implement real authentication. The selected Development Requester is a temporary testing context and must be clearly labeled as a testing mechanism.
 
 ---
 
-## 2. Zen Green Color Tokens & Typography
+## 2. Zen Green Color Tokens, Typography & Spacing
+
+### 2.1 Color Tokens
 
 | Token / Element | Color Value / Style | Usage / Description |
 |---|---|---|
@@ -24,6 +26,22 @@ Lab 2 does not implement real authentication. The selected Development Requester
 | **Error State** | `#B42318` | Dark red text and field borders; message appears directly below the invalid input. |
 | **Warning State** | `#F59E0B` | Amber callout container or badge for non-blocking warnings (e.g. upload retry). |
 | **Success State** | `#006B3C` | Green confirmation callout with readable text and non-color icon indicators. |
+
+### 2.2 Typography Hierarchy
+- **Font Family**: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif.
+- **Page Title**: `24px` / `font-weight: 700` (`#006B3C`).
+- **Section Heading (H2)**: `18px` / `font-weight: 600` (`#24272A`).
+- **Form Label**: `14px` / `font-weight: 500` (`#24272A`).
+- **Body Text**: `14px` / `font-weight: 400` / line-height `1.5` (`#24272A`).
+- **Helper Text & Character Counters**: `12px` / `font-weight: 400` (`#5F6863`).
+- **Validation Error Text**: `12px` / `font-weight: 500` (`#B42318`).
+
+### 2.3 Spacing Scale
+- `xs` (`4px`): Micro element gap.
+- `sm` (`8px`): Label-to-input gap, inline icon spacing.
+- `md` (`16px`): Form field vertical margin, card padding.
+- `lg` (`24px`): Section spacing, container padding.
+- `xl` (`32px`): Page section margin.
 
 ---
 
