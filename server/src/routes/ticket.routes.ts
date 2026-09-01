@@ -2,7 +2,7 @@ import { Router, Response } from "express";
 import { getPrisma } from "../prisma.js";
 import { requesterContextMiddleware, AuthenticatedRequesterRequest } from "../middleware/requesterContext.js";
 import { validateSummary, validateDescription } from "../utils/validation.js";
-import { generateTicketNumber } from "../utils/ticketNumber.js";
+import { generateTicketNumber, getNextTicketSequence } from "../utils/ticketNumber.js";
 import { RequestedPriority } from "@prisma/client";
 
 export const ticketRouter = Router();
@@ -115,9 +115,9 @@ ticketRouter.post(
         return;
       }
 
-      // Generate ticket number TKT-YYYY-XXXXXX
-      const ticketCount = await prisma.ticket.count();
-      const ticketNumber = generateTicketNumber(ticketCount + 1);
+      // Generate ticket number TKT-YYYY-XXXXXX using database-safe sequence (BR-01)
+      const ticketSeq = await getNextTicketSequence(prisma);
+      const ticketNumber = generateTicketNumber(ticketSeq);
 
       // Create ticket in database
       const ticket = await prisma.ticket.create({

@@ -219,5 +219,34 @@ describe("Issue #23: Requester Context Middleware & Ticket Creation API", () => 
       expect(resDiffA.status).toBe(201);
       expect(resDiffB.status).toBe(201);
     });
+
+    it("BR-01: Generates database-safe unique ticket numbers for concurrent creation requests", async () => {
+      // Fire 5 concurrent requests with distinct payloads from different requesters
+      const requests = Array.from({ length: 5 }, (_, i) =>
+        request(app)
+          .post("/api/tickets")
+          .set("X-Requester-Id", String((i % 4) + 1))
+          .send({
+            categoryId: 1,
+            relatedSystemId: 1,
+            requestedPriority: "LOW",
+            summary: `Concurrent ticket request summary ${i + 1}`,
+            description: `This is a unique test description for concurrent ticket request ${i + 1}.`,
+          })
+      );
+
+      const responses = await Promise.all(requests);
+      const statuses = responses.map((r) => r.status);
+      expect(statuses.every((s) => s === 201)).toBe(true);
+
+      const ticketNumbers = responses.map((r) => r.body.ticketNumber);
+      const uniqueTicketNumbers = new Set(ticketNumbers);
+
+      // Asserts that every concurrent ticket received a unique ticket number
+      expect(uniqueTicketNumbers.size).toBe(5);
+      ticketNumbers.forEach((num) => {
+        expect(num).toMatch(/^TKT-\d{4}-\d{6}$/);
+      });
+    });
   });
 });
