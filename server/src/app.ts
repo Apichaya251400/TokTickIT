@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import { getPrisma } from "./prisma.js";
+import { ticketRouter } from "./routes/ticket.routes.js";
 
 // The Express app is exported separately from app.listen() (see index.ts) so
 // Supertest can import `app` without opening a port. Do not merge these files.
@@ -88,5 +89,10 @@ app.get("/api/related-systems", async (_req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch related systems" });
   }
 });
+
+// ---------------------------------------------------------------------------
+// Ticket Management Endpoints (Lab 2 Issue #23)
+// ---------------------------------------------------------------------------
+app.use("/api", ticketRouter);
 
 export default app;
