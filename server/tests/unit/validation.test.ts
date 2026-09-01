@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateSummary, validateDescription } from "../../src/utils/validation.js";
+import { validateSummary, validateDescription, validateFileSize, sanitizeFileName } from "../../src/utils/validation.js";
 
 describe("UNIT-02: Summary & Description String Trimming and Validation Helper", () => {
   describe("validateSummary", () => {
@@ -37,6 +37,29 @@ describe("UNIT-02: Summary & Description String Trimming and Validation Helper",
     it("rejects strings over 2,000 characters", () => {
       const longDescription = "a".repeat(2001);
       expect(validateDescription(longDescription)).toBeNull();
+    });
+  });
+});
+
+describe("UNIT-03: File Size Boundary & Filename Path Traversal Sanitizer Helper", () => {
+  describe("validateFileSize", () => {
+    it("accepts file sizes up to 5,000,000 bytes inclusive", () => {
+      expect(validateFileSize(4999999)).toBe(true);
+      expect(validateFileSize(5000000)).toBe(true);
+    });
+
+    it("rejects file sizes exceeding 5,000,000 bytes", () => {
+      expect(validateFileSize(5000001)).toBe(false);
+      expect(validateFileSize(10000000)).toBe(false);
+    });
+  });
+
+  describe("sanitizeFileName", () => {
+    it("sanitizes path traversal sequences and returns safe basename", () => {
+      expect(sanitizeFileName("../secret.txt")).toBe("secret.txt");
+      expect(sanitizeFileName("..\\secret.txt")).toBe("secret.txt");
+      expect(sanitizeFileName("../../../etc/passwd")).toBe("passwd");
+      expect(sanitizeFileName("normal-image.png")).toBe("normal-image.png");
     });
   });
 });
