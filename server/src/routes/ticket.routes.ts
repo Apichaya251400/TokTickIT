@@ -158,3 +158,122 @@ ticketRouter.post(
     }
   }
 );
+
+const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+// GET /api/tickets/:id - Retrieve owned ticket details with attachments (Issue #25)
+ticketRouter.get(
+  "/tickets/:id",
+  requesterContextMiddleware,
+  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+
+    if (!UUID_REGEX.test(ticketId)) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_TICKET_ID",
+          message: "Ticket ID must be a valid UUID.",
+        },
+      });
+      return;
+    }
+
+    const requesterId = req.requesterId!;
+
+    try {
+      const prisma = getPrisma();
+      const ticket = await prisma.ticket.findFirst({
+        where: {
+          id: ticketId,
+          requesterId, // Enforces ownership strictly at the database query level
+        },
+        include: {
+          requester: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          relatedSystem: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          attachments: {
+            orderBy: {
+              uploadedAt: "asc",
+            },
+            select: {
+              id: true,
+              fileName: true,
+              fileSize: true,
+              mimeType: true,
+              uploadedAt: true,
+              removedAt: true,
+              removalReason: true,
+            },
+          },
+        },
+      });
+
+      if (!ticket) {
+        res.status(404).json({
+          error: {
+            code: "TICKET_NOT_FOUND",
+            message: "Ticket not found.",
+          },
+        });
+        return;
+      }
+
+      res.status(200).json({
+        id: ticket.id,
+        ticketNumber: ticket.ticketNumber,
+        requester: {
+          id: ticket.requester.id,
+          name: ticket.requester.name,
+          email: ticket.requester.email,
+        },
+        category: {
+          id: ticket.category.id,
+          name: ticket.category.name,
+        },
+        relatedSystem: {
+          id: ticket.relatedSystem.id,
+          name: ticket.relatedSystem.name,
+        },
+        requestedPriority: ticket.requestedPriority,
+        currentStatus: ticket.currentStatus,
+        summary: ticket.summary,
+        description: ticket.description,
+        createdAt: ticket.createdAt,
+        updatedAt: ticket.updatedAt,
+        attachments: ticket.attachments.map((att) => ({
+          id: att.id,
+          fileName: att.fileName,
+          fileSize: att.fileSize,
+          mimeType: att.mimeType,
+          uploadedAt: att.uploadedAt,
+          removedAt: att.removedAt,
+          removalReason: att.removalReason,
+          isRemoved: att.removedAt !== null,
+        })),
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve ticket details.",
+        },
+      });
+    }
+  }
+);
