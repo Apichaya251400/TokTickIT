@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
+import fs from "fs";
 import app from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
 
@@ -358,6 +359,112 @@ describe("Issue #26: Attachment Upload, Download, Soft Removal & Lifecycle Rules
       expect(detailRes.status).toBe(200);
       expect(detailRes.body.id).toBe(createdTicketId);
       expect(detailRes.body.summary).toBe("Failure Retention Test Ticket");
+    });
+  });
+
+  describe("Peer Review Regression Tests: Field Name & Storage Edge Cases", () => {
+    it("Peer Review 1: Rejects multipart attachment upload using field name other than 'file' with HTTP 400 Bad Request", async () => {
+      const buffer = Buffer.from("valid file content");
+      const res = await request(app)
+        .post(`/api/tickets/${aliceTicketId}/attachments`)
+        .set(aliceHeader)
+        .attach("document", buffer, "valid-file.png"); // Using field name 'document' instead of 'file'
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION_ERROR");
+      expect(res.body.error.message).toBe("Form field name must be 'file'.");
+    });
+
+    it("Peer Review 2: Returns HTTP 500 Internal Server Error when attachment DB record exists but physical file is missing from disk", async () => {
+      // Create a fresh dedicated ticket to ensure clean active attachment slot
+      const ticketRes = await request(app)
+        .post("/api/tickets")
+        .set(aliceHeader)
+        .send({
+          categoryId: 1,
+          relatedSystemId: 1,
+          requestedPriority: "LOW",
+          summary: "Storage Test Dedicated Ticket",
+          description: "Dedicated ticket for missing physical file storage test.",
+        });
+      expect(ticketRes.status).toBe(201);
+      const storageTicketId = ticketRes.body.id;
+
+      // 1. Upload a valid attachment
+      const uploadRes = await request(app)
+        .post(`/api/tickets/${storageTicketId}/attachments`)
+        .set(aliceHeader)
+        .attach("file", Buffer.from("temp physical file content"), "storage-test.pdf");
+      expect(uploadRes.status).toBe(201);
+      const attachmentId = uploadRes.body.id;
+
+      // 2. Remove the physical file directly from disk while preserving the database Attachment record
+      const prisma = getPrisma();
+      const dbAttachment = await prisma.attachment.findUnique({ where: { id: attachmentId } });
+      expect(dbAttachment).not.toBeNull();
+      if (dbAttachment && fs.existsSync(dbAttachment.filePath)) {
+        await fs.promises.unlink(dbAttachment.filePath);
+      }
+
+      // 3. Attempt download - must return 500 Internal Server Error (not 200 or zero-filled Buffer)
+      const res = await request(app)
+        .get(`/api/attachments/${attachmentId}/download`)
+        .set(aliceHeader);
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve attachment file.",
+        },
+      });
+    });
+
+    it("Final Hardening 1: Rejects multipart upload when file field is completely missing with HTTP 400 Bad Request", async () => {
+      const res = await request(app)
+        .post(`/api/tickets/${aliceTicketId}/attachments`)
+        .set(aliceHeader)
+        .field("dummyField", "no file part included");
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION_ERROR");
+      expect(res.body.error.message).toBe("No attachment file provided in request.");
+    });
+
+    it("Final Hardening 2: Successfully downloads active attachment with exact binary payload and headers", async () => {
+      // 1. Create a dedicated ticket to isolate download positive path
+      const ticketRes = await request(app)
+        .post("/api/tickets")
+        .set(aliceHeader)
+        .send({
+          categoryId: 1,
+          relatedSystemId: 1,
+          requestedPriority: "LOW",
+          summary: "Positive Download Ticket",
+          description: "Dedicated ticket for positive path attachment download test.",
+        });
+      expect(ticketRes.status).toBe(201);
+      const activeTicketId = ticketRes.body.id;
+
+      // 2. Upload small deterministic file payload
+      const filePayload = Buffer.from("active attachment download regression");
+      const uploadRes = await request(app)
+        .post(`/api/tickets/${activeTicketId}/attachments`)
+        .set(aliceHeader)
+        .attach("file", filePayload, "active-regression.pdf");
+
+      expect(uploadRes.status).toBe(201);
+      const attachmentId = uploadRes.body.id;
+
+      // 3. Download active attachment
+      const downloadRes = await request(app)
+        .get(`/api/attachments/${attachmentId}/download`)
+        .set(aliceHeader);
+
+      expect(downloadRes.status).toBe(200);
+      expect(downloadRes.header["content-type"]).toContain("application/pdf");
+      expect(downloadRes.header["content-disposition"]).toContain('filename="active-regression.pdf"');
+      expect(downloadRes.body.toString("utf8")).toBe("active attachment download regression");
     });
   });
 });

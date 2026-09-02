@@ -427,6 +427,16 @@ ticketRouter.post(
       return;
     }
 
+    if (file.fieldname !== "file") {
+      res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Form field name must be 'file'.",
+        },
+      });
+      return;
+    }
+
     // File size validation (max 5,000,000 bytes inclusive)
     if (!validateFileSize(file.size)) {
       res.status(413).json({
@@ -578,15 +588,21 @@ ticketRouter.get(
       return;
     }
 
+    // Check if physical file exists on disk
+    if (!fs.existsSync(attachment.filePath)) {
+      res.status(500).json({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve attachment file.",
+        },
+      });
+      return;
+    }
+
     res.setHeader("Content-Type", attachment.mimeType);
     res.setHeader("Content-Disposition", `attachment; filename="${attachment.fileName}"`);
-
-    if (fs.existsSync(attachment.filePath)) {
-      const stream = fs.createReadStream(attachment.filePath);
-      stream.pipe(res);
-    } else {
-      res.status(200).send(Buffer.alloc(attachment.fileSize));
-    }
+    const stream = fs.createReadStream(attachment.filePath);
+    stream.pipe(res);
   }
 );
 
