@@ -27,3 +27,29 @@ export function validateDescription(description: unknown): string | null {
   }
   return trimmed;
 }
+
+/**
+ * Validates attachment file size limit (max 5,000,000 bytes inclusive).
+ * Returns true if valid, false if non-number, <= 0, or > 5,000,000 bytes.
+ */
+export function validateFileSize(fileSize: unknown): boolean {
+  if (typeof fileSize !== "number" || Number.isNaN(fileSize)) {
+    return false;
+  }
+  return fileSize > 0 && fileSize <= 5_000_000;
+}
+
+/**
+ * Sanitizes filename to prevent path traversal sequences (e.g. ../secret.txt -> secret.txt).
+ * Uses path.basename to strip directory components.
+ */
+export function sanitizeFileName(fileName: string): string {
+  if (!fileName || typeof fileName !== "string") {
+    return "unnamed_file";
+  }
+  // Normalize Windows backslashes to forward slashes before extracting basename
+  const normalized = fileName.replace(/\\/g, "/");
+  const parts = normalized.split("/");
+  const base = parts[parts.length - 1];
+  return base || "unnamed_file";
+}
