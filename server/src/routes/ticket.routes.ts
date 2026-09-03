@@ -260,6 +260,245 @@ ticketRouter.post(
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
+const ALLOWED_SORT_BY = new Set(["createdAt", "updatedAt", "ticketNumber", "requestedPriority"]);
+const ALLOWED_SORT_ORDER = new Set(["asc", "desc"]);
+const ALLOWED_PAGE_SIZES = new Set([10, 20, 50]);
+const ALLOWED_STATUSES = new Set(["NEW"]);
+
+// GET /api/tickets - Retrieve paginated list of owned tickets (Issue #27)
+ticketRouter.get(
+  "/tickets",
+  requesterContextMiddleware,
+  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+    const {
+      search,
+      categoryId,
+      relatedSystemId,
+      requestedPriority,
+      currentStatus,
+      sortBy: sortByRaw,
+      sortOrder: sortOrderRaw,
+      page: pageRaw,
+      pageSize: pageSizeRaw,
+    } = req.query;
+
+    // 1. Validate page (default 1, must be integer >= 1)
+    let page = 1;
+    if (pageRaw !== undefined) {
+      const parsedPage = Number(pageRaw);
+      if (!Number.isInteger(parsedPage) || parsedPage < 1 || String(pageRaw).trim() === "") {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid query parameter value.",
+          },
+        });
+        return;
+      }
+      page = parsedPage;
+    }
+
+    // 2. Validate pageSize (default 10, must be 10, 20, 50)
+    let pageSize = 10;
+    if (pageSizeRaw !== undefined) {
+      const parsedPageSize = Number(pageSizeRaw);
+      if (!Number.isInteger(parsedPageSize) || !ALLOWED_PAGE_SIZES.has(parsedPageSize) || String(pageSizeRaw).trim() === "") {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid query parameter value.",
+          },
+        });
+        return;
+      }
+      pageSize = parsedPageSize;
+    }
+
+    // 3. Validate sortBy (default createdAt)
+    let sortBy = "createdAt";
+    if (sortByRaw !== undefined) {
+      const strSortBy = String(sortByRaw);
+      if (!ALLOWED_SORT_BY.has(strSortBy)) {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid query parameter value.",
+          },
+        });
+        return;
+      }
+      sortBy = strSortBy;
+    }
+
+    // 4. Validate sortOrder (default desc)
+    let sortOrder: "asc" | "desc" = "desc";
+    if (sortOrderRaw !== undefined) {
+      const strSortOrder = String(sortOrderRaw);
+      if (!ALLOWED_SORT_ORDER.has(strSortOrder)) {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid query parameter value.",
+          },
+        });
+        return;
+      }
+      sortOrder = strSortOrder as "asc" | "desc";
+    }
+
+    // 5. Validate categoryId (optional int > 0)
+    let parsedCatId: number | undefined;
+    if (categoryId !== undefined) {
+      const numCatId = Number(categoryId);
+      if (!Number.isInteger(numCatId) || numCatId <= 0 || String(categoryId).trim() === "") {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid query parameter value.",
+          },
+        });
+        return;
+      }
+      parsedCatId = numCatId;
+    }
+
+    // 6. Validate relatedSystemId (optional int > 0)
+    let parsedSysId: number | undefined;
+    if (relatedSystemId !== undefined) {
+      const numSysId = Number(relatedSystemId);
+      if (!Number.isInteger(numSysId) || numSysId <= 0 || String(relatedSystemId).trim() === "") {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid query parameter value.",
+          },
+        });
+        return;
+      }
+      parsedSysId = numSysId;
+    }
+
+    // 7. Validate requestedPriority (optional enum)
+    let strPriority: string | undefined;
+    if (requestedPriority !== undefined) {
+      const p = String(requestedPriority);
+      if (!ALLOWED_PRIORITIES.has(p)) {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid query parameter value.",
+          },
+        });
+        return;
+      }
+      strPriority = p;
+    }
+
+    // 8. Validate currentStatus (optional enum)
+    let strStatus: string | undefined;
+    if (currentStatus !== undefined) {
+      const s = String(currentStatus);
+      if (!ALLOWED_STATUSES.has(s)) {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid query parameter value.",
+          },
+        });
+        return;
+      }
+      strStatus = s;
+    }
+
+    const requesterId = req.requesterId!;
+    const prisma = getPrisma();
+
+    // Construct Prisma query where clause
+    const where: any = {
+      requesterId, // Scope strictly to requester context in DB query
+    };
+
+    if (search !== undefined && typeof search === "string") {
+      const cleanSearch = search.trim();
+      if (cleanSearch.length > 0) {
+        where.OR = [
+          { ticketNumber: { contains: cleanSearch, mode: "insensitive" } },
+          { summary: { contains: cleanSearch, mode: "insensitive" } },
+          { description: { contains: cleanSearch, mode: "insensitive" } },
+        ];
+      }
+    }
+
+    if (parsedCatId !== undefined) where.categoryId = parsedCatId;
+    if (parsedSysId !== undefined) where.relatedSystemId = parsedSysId;
+    if (strPriority !== undefined) where.requestedPriority = strPriority;
+    if (strStatus !== undefined) where.currentStatus = strStatus;
+
+    // Construct Prisma orderBy array
+    const orderBy: any[] = [];
+    if (sortBy === "requestedPriority") {
+      orderBy.push({ requestedPriority: sortOrder });
+    } else if (sortBy === "ticketNumber") {
+      orderBy.push({ ticketNumber: sortOrder });
+    } else if (sortBy === "updatedAt") {
+      orderBy.push({ updatedAt: sortOrder });
+    } else {
+      orderBy.push({ createdAt: sortOrder });
+    }
+
+    // Secondary sort strictly id DESC for deterministic pagination
+    orderBy.push({ id: "desc" });
+
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
+
+    try {
+      const [tickets, totalItems] = await Promise.all([
+        prisma.ticket.findMany({
+          where,
+          orderBy,
+          skip,
+          take,
+          include: {
+            category: { select: { name: true } },
+            relatedSystem: { select: { name: true } },
+          },
+        }),
+        prisma.ticket.count({ where }),
+      ]);
+
+      const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / pageSize);
+
+      res.status(200).json({
+        data: tickets.map((t) => ({
+          id: t.id,
+          ticketNumber: t.ticketNumber,
+          summary: t.summary,
+          categoryName: t.category.name,
+          relatedSystemName: t.relatedSystem.name,
+          requestedPriority: t.requestedPriority,
+          currentStatus: t.currentStatus,
+          createdAt: t.createdAt,
+          updatedAt: t.updatedAt,
+        })),
+        pagination: {
+          page,
+          pageSize,
+          totalItems,
+          totalPages,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve tickets.",
+        },
+      });
+    }
+  }
+);
+
 // GET /api/tickets/:id - Retrieve owned ticket details with attachments (Issue #25)
 ticketRouter.get(
   "/tickets/:id",
