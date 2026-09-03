@@ -10,8 +10,11 @@ import {
   getSelectedRequesterId,
   setSelectedRequesterId,
   fetchMyTickets,
+  fetchTicketById,
   createTicket,
   uploadAttachment,
+  downloadAttachment,
+  softRemoveAttachment,
 } from "./api.js";
 
 type UiState = "idle" | "loading" | "success" | "error";
@@ -21,6 +24,18 @@ export interface AttachmentItem {
   id: string;
   file: File;
   status: "pending" | "uploading" | "succeeded" | "failed";
+}
+
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return "N/A";
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? "N/A" : d.toLocaleDateString();
+}
+
+function formatDateTime(dateStr?: string): string {
+  if (!dateStr) return "N/A";
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? "N/A" : d.toLocaleString();
 }
 
 export default function App() {
@@ -37,21 +52,51 @@ export default function App() {
   const [currentRequester, setCurrentRequester] = useState<Requester | null>(null);
   const [isSelecting, setIsSelecting] = useState<boolean>(true);
 
-  // 3. Navigation Tab state (Top level of App component)
+  // 3. Navigation Tab & Ticket Detail Selection State
   const [activeTab, setActiveTab] = useState<NavigationTab>("my-tickets");
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
-  // 4. Requester ticket data state & request tracker ref (Top level of App component)
+  // 4. My Tickets Query & Data State (Issue #29)
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filterCategoryId, setFilterCategoryId] = useState<string>("");
+  const [filterRelatedSystemId, setFilterRelatedSystemId] = useState<string>("");
+  const [filterRequestedPriority, setFilterRequestedPriority] = useState<string>("");
+  const [filterCurrentStatus, setFilterCurrentStatus] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortOrder, setSortOrder] = useState<string>("desc");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
   const [tickets, setTickets] = useState<any[]>([]);
+  const [pagination, setPagination] = useState<{
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  }>({ page: 1, pageSize: 10, totalItems: 0, totalPages: 0 });
   const [ticketsLoading, setTicketsLoading] = useState<boolean>(false);
+  const [ticketsError, setTicketsError] = useState<string | null>(null);
   const latestTicketRequestIdRef = useRef<number>(0);
 
-  // 5. Create Ticket Reference Data State
+  // 5. Ticket Detail & Attachment Management State (Issue #29)
+  const [detailTicket, setDetailTicket] = useState<any | null>(null);
+  const [detailLoading, setDetailLoading] = useState<boolean>(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const latestDetailRequestIdRef = useRef<number>(0);
+
+  // Soft Removal Modal State
+  const [removalTargetAttachment, setRemovalTargetAttachment] = useState<any | null>(null);
+  const [removalReason, setRemovalReason] = useState<string>("");
+  const [removalReasonError, setRemovalReasonError] = useState<string | null>(null);
+  const [isSubmittingRemoval, setIsSubmittingRemoval] = useState<boolean>(false);
+
+  // 6. Create Ticket Reference Data State
   const [formCategories, setFormCategories] = useState<Category[]>([]);
   const [formRelatedSystems, setFormRelatedSystems] = useState<RelatedSystem[]>([]);
   const [refDataLoading, setRefDataLoading] = useState<boolean>(false);
   const [refDataError, setRefDataError] = useState<string | null>(null);
 
-  // 6. Create Ticket Form State
+  // 7. Create Ticket Form State
   const [categoryId, setCategoryId] = useState<string>("");
   const [relatedSystemId, setRelatedSystemId] = useState<string>("");
   const [requestedPriority, setRequestedPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "URGENT">("MEDIUM");
@@ -59,10 +104,10 @@ export default function App() {
   const [description, setDescription] = useState<string>("");
   const [attachmentItems, setAttachmentItems] = useState<AttachmentItem[]>([]);
 
-  // 7. Retained Created Ticket State for Attachment Retry (BR-18 Duplicate Ticket Protection)
+  // 8. Retained Created Ticket State for Attachment Retry (BR-18 Duplicate Ticket Protection)
   const [retainedCreatedTicket, setRetainedCreatedTicket] = useState<{ id: string; ticketNumber: string } | null>(null);
 
-  // 8. Create Ticket Validation & Feedback State
+  // 9. Create Ticket Validation & Feedback State
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
@@ -80,12 +125,39 @@ export default function App() {
     loadRequestersAndRestoreContext();
   }, []);
 
-  // Fetch reference data when switching to Create Ticket tab
+  // Fetch reference data when switching to Create Ticket tab or My Tickets filters
   useEffect(() => {
-    if (activeTab === "create-ticket" && formCategories.length === 0) {
+    if ((activeTab === "create-ticket" || activeTab === "my-tickets") && formCategories.length === 0) {
       loadReferenceData();
     }
   }, [activeTab]);
+
+  // Load My Tickets when parameters change or tab switches
+  useEffect(() => {
+    if (activeTab === "my-tickets" && !isSelecting && !selectedTicketId) {
+      loadMyTickets();
+    }
+  }, [
+    activeTab,
+    isSelecting,
+    selectedTicketId,
+    searchQuery,
+    filterCategoryId,
+    filterRelatedSystemId,
+    filterRequestedPriority,
+    filterCurrentStatus,
+    sortBy,
+    sortOrder,
+    currentPage,
+    pageSize,
+  ]);
+
+  // Load Ticket Detail when selectedTicketId is set
+  useEffect(() => {
+    if (selectedTicketId) {
+      loadTicketDetail(selectedTicketId);
+    }
+  }, [selectedTicketId]);
 
   async function loadReferenceData() {
     setRefDataLoading(true);
@@ -111,15 +183,12 @@ export default function App() {
 
       const storedId = getSelectedRequesterId();
 
-      // Validate stored ID against active requesters list
       if (storedId) {
         const found = requesters.find((r) => String(r.id) === String(storedId) && r.isActive !== false);
         if (found) {
           setCurrentRequester(found);
           setIsSelecting(false);
-          loadTicketsForRequester(String(found.id));
         } else {
-          // Invalid, unknown, or inactive stored ID -> require selection
           setSelectedRequesterId(null);
           setCurrentRequester(null);
           setIsSelecting(true);
@@ -135,22 +204,74 @@ export default function App() {
     }
   }
 
-  // Explicit requester context passed down with concurrency race protection
-  async function loadTicketsForRequester(requesterId: string) {
+  // Explicit requester-scoped ticket fetch with race protection
+  async function loadMyTickets(overridePage?: number) {
+    const pageToLoad = overridePage ?? currentPage;
     const requestId = ++latestTicketRequestIdRef.current;
     setTicketsLoading(true);
+    setTicketsError(null);
+
+    const capturedRequesterId = getSelectedRequesterId() || String(currentRequester?.id);
+
     try {
-      const res = await fetchMyTickets(requesterId);
+      const res = await fetchMyTickets(
+        {
+          search: searchQuery,
+          categoryId: filterCategoryId,
+          relatedSystemId: filterRelatedSystemId,
+          requestedPriority: filterRequestedPriority,
+          currentStatus: filterCurrentStatus,
+          sortBy,
+          sortOrder,
+          page: pageToLoad,
+          pageSize,
+        },
+        capturedRequesterId
+      );
+
       if (requestId === latestTicketRequestIdRef.current) {
         setTickets(res?.data || []);
+        setPagination(
+          res?.pagination || { page: pageToLoad, pageSize, totalItems: res?.data?.length || 0, totalPages: 1 }
+        );
       }
-    } catch (err) {
+    } catch (err: any) {
       if (requestId === latestTicketRequestIdRef.current) {
+        setTicketsError("Unable to load tickets. Please try again.");
         setTickets([]);
       }
     } finally {
       if (requestId === latestTicketRequestIdRef.current) {
         setTicketsLoading(false);
+      }
+    }
+  }
+
+  // Load Ticket Detail with ownership check and race protection
+  async function loadTicketDetail(id: string) {
+    const requestId = ++latestDetailRequestIdRef.current;
+    setDetailLoading(true);
+    setDetailError(null);
+    setDetailTicket(null);
+
+    const capturedRequesterId = getSelectedRequesterId() || String(currentRequester?.id);
+
+    try {
+      const res = await fetchTicketById(id, capturedRequesterId);
+      if (requestId === latestDetailRequestIdRef.current) {
+        setDetailTicket(res);
+      }
+    } catch (err: any) {
+      if (requestId === latestDetailRequestIdRef.current) {
+        if (err?.status === 404 || err?.data?.error?.code === "TICKET_NOT_FOUND") {
+          setDetailError("Ticket not found.");
+        } else {
+          setDetailError("Unable to load ticket detail. Please try again.");
+        }
+      }
+    } finally {
+      if (requestId === latestDetailRequestIdRef.current) {
+        setDetailLoading(false);
       }
     }
   }
@@ -167,23 +288,42 @@ export default function App() {
       setSelectedRequesterId(String(chosen.id));
       setCurrentRequester(chosen);
       setIsSelecting(false);
-      // ISSUE #3: Clear all previous ticket/attachment retry state when requester context changes
-      resetFormFields();
-      setCreatedTicketSuccess(null);
-      setUploadWarning(null);
-      setSubmitError(null);
-      loadTicketsForRequester(String(chosen.id));
+      resetRequesterState();
     }
   }
 
   function handleChangeRequester() {
     setIsSelecting(true);
     setSelectedId(currentRequester ? String(currentRequester.id) : null);
-    // ISSUE #3: Clear all previous ticket/attachment retry state when user changes requester
+    resetRequesterState();
+  }
+
+  function resetRequesterState() {
+    setSelectedTicketId(null);
+    setDetailTicket(null);
+    setDetailError(null);
+    setSearchQuery("");
+    setFilterCategoryId("");
+    setFilterRelatedSystemId("");
+    setFilterRequestedPriority("");
+    setFilterCurrentStatus("");
+    setSortBy("createdAt");
+    setSortOrder("desc");
+    setCurrentPage(1);
     resetFormFields();
     setCreatedTicketSuccess(null);
     setUploadWarning(null);
     setSubmitError(null);
+  }
+
+  // Clear filters on My Tickets
+  function handleClearFilters() {
+    setSearchQuery("");
+    setFilterCategoryId("");
+    setFilterRelatedSystemId("");
+    setFilterRequestedPriority("");
+    setFilterCurrentStatus("");
+    setCurrentPage(1);
   }
 
   // Lab 1 handler
@@ -231,7 +371,6 @@ export default function App() {
 
     const filesArray = Array.from(e.target.files);
 
-    // Check active attachment limit (max 5)
     if (attachmentItems.length + filesArray.length > 5) {
       setDropzoneError("Maximum of 5 active attachments allowed.");
       return;
@@ -312,12 +451,10 @@ export default function App() {
 
     if (submitLockRef.current || isSubmitting) return;
 
-    // ISSUE #1: Guard submission if reference data is loading, failed, or empty
     if (refDataLoading || Boolean(refDataError) || formCategories.length === 0 || formRelatedSystems.length === 0) {
       return;
     }
 
-    // Capture requester context ID at invocation start to protect against context switching races
     const capturedRequesterId = getSelectedRequesterId() || String(currentRequester?.id);
 
     submitLockRef.current = true;
@@ -329,7 +466,6 @@ export default function App() {
     try {
       let activeTicket = retainedCreatedTicket;
 
-      // If ticket has not been created yet, perform validation and createTicket API call
       if (!activeTicket) {
         if (!validateForm()) {
           submitLockRef.current = false;
@@ -349,7 +485,6 @@ export default function App() {
         const ticketNum = newTicket?.ticketNumber || newTicket?.data?.ticketNumber;
         const ticketId = newTicket?.id || newTicket?.data?.id;
 
-        // FIX 2: Require valid backend-generated ticketNumber and ticketId (no hard-coded fallbacks)
         if (!ticketNum || typeof ticketNum !== "string" || !ticketId) {
           throw new Error("Invalid ticket response from server: missing ticketNumber or id");
         }
@@ -357,30 +492,23 @@ export default function App() {
         activeTicket = { id: String(ticketId), ticketNumber: String(ticketNum) };
       }
 
-      // Attempt attachment uploads if files were selected
       if (attachmentItems.length > 0) {
         let hasUploadError = false;
-
-        // Select ONLY items that have NOT succeeded yet (pending or failed)
         const itemsToUpload = attachmentItems.filter((item) => item.status !== "succeeded");
 
         for (const item of itemsToUpload) {
           try {
-            // Mark item as uploading in state
             setAttachmentItems((prev) =>
               prev.map((i) => (i.id === item.id ? { ...i, status: "uploading" } : i))
             );
 
             await uploadAttachment(activeTicket.id, item.file, capturedRequesterId);
 
-            // Mark item as succeeded in state
             setAttachmentItems((prev) =>
               prev.map((i) => (i.id === item.id ? { ...i, status: "succeeded" } : i))
             );
           } catch (uploadErr) {
             hasUploadError = true;
-
-            // Mark item as failed in state
             setAttachmentItems((prev) =>
               prev.map((i) => (i.id === item.id ? { ...i, status: "failed" } : i))
             );
@@ -388,7 +516,6 @@ export default function App() {
         }
 
         if (hasUploadError) {
-          // Retain created ticket for retry so createTicket is NOT called again on retry
           setRetainedCreatedTicket(activeTicket);
           setUploadWarning(`Ticket ${activeTicket.ticketNumber} saved, but attachment upload failed.`);
         } else {
@@ -400,7 +527,6 @@ export default function App() {
         resetFormFields();
       }
     } catch (err: any) {
-      // Display safe error banner without exposing internal server details (BR-15, AC-14, UI-03)
       setSubmitError("Failed to create ticket. Please try again.");
     } finally {
       submitLockRef.current = false;
@@ -421,6 +547,100 @@ export default function App() {
     setCategoryError(null);
     setSystemError(null);
     setDropzoneError(null);
+  }
+
+  // Attachment Download Handler
+  async function handleDownload(attachment: any) {
+    if (attachment.isRemoved || attachment.removedAt) return;
+    try {
+      const res = await downloadAttachment(attachment.id);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", attachment.fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      // Handled visually
+    }
+  }
+
+  // Soft Removal Modal Handlers
+  function handleOpenRemovalModal(attachment: any) {
+    setRemovalTargetAttachment(attachment);
+    setRemovalReason("");
+    setRemovalReasonError(null);
+  }
+
+  function handleCloseRemovalModal() {
+    setRemovalTargetAttachment(null);
+    setRemovalReason("");
+    setRemovalReasonError(null);
+  }
+
+  async function handleConfirmRemoval(e: React.FormEvent) {
+    e.preventDefault();
+    if (!removalTargetAttachment || isSubmittingRemoval) return;
+
+    const trimmed = removalReason.trim();
+    if (trimmed.length < 5) {
+      setRemovalReasonError("Removal reason must be at least 5 characters.");
+      return;
+    }
+    if (trimmed.length > 200) {
+      setRemovalReasonError("Removal reason cannot exceed 200 characters.");
+      return;
+    }
+
+    setIsSubmittingRemoval(true);
+    setRemovalReasonError(null);
+
+    const capturedRequesterId = getSelectedRequesterId() || String(currentRequester?.id);
+
+    try {
+      const updatedAttachment = await softRemoveAttachment(
+        removalTargetAttachment.id,
+        trimmed,
+        capturedRequesterId
+      );
+
+      // Update detail ticket attachments state
+      setDetailTicket((prev: any) => {
+        if (!prev) return prev;
+        const updatedAttachments = (prev.attachments || []).map((att: any) => {
+          if (att.id === removalTargetAttachment.id) {
+            return {
+              ...att,
+              isRemoved: true,
+              removedAt: updatedAttachment.removedAt || new Date().toISOString(),
+              removalReason: trimmed,
+            };
+          }
+          return att;
+        });
+        return { ...prev, attachments: updatedAttachments };
+      });
+
+      handleCloseRemovalModal();
+    } catch (err: any) {
+      setRemovalReasonError(err?.data?.error?.message || "Failed to remove attachment. Please try again.");
+    } finally {
+      setIsSubmittingRemoval(false);
+    }
+  }
+
+  // Helper Priority Badge renderer
+  function renderPriorityBadge(priority: string) {
+    let bgClass = "bg-secondary";
+    if (priority === "URGENT") bgClass = "bg-danger text-white";
+    else if (priority === "HIGH") bgClass = "bg-warning text-dark";
+    else if (priority === "MEDIUM") bgClass = "bg-success text-white";
+    else if (priority === "LOW") bgClass = "bg-secondary text-white";
+
+    return <span className={`badge ${bgClass}`}>{priority}</span>;
   }
 
   // Render Requester Selection View
@@ -543,9 +763,16 @@ export default function App() {
     );
   }
 
+  const isFilterActive =
+    searchQuery.trim() !== "" ||
+    filterCategoryId !== "" ||
+    filterRelatedSystemId !== "" ||
+    filterRequestedPriority !== "" ||
+    filterCurrentStatus !== "";
+
   // Render Application Shell with Selected Requester Context & Navigation Tabs
   return (
-    <div className="container py-5" style={{ maxWidth: 800 }}>
+    <div className="container py-5" style={{ maxWidth: 900 }}>
       {/* App Shell Header displaying Current Requester Identity, Dev Mode Badge & Change Requester button */}
       <nav className="navbar navbar-light bg-light rounded p-3 mb-4 d-flex flex-wrap align-items-center justify-content-between gap-2 border">
         <div>
@@ -553,7 +780,6 @@ export default function App() {
             <span className="text-muted">Current Requester:</span>
             <span className="fw-bold text-success fs-5">{currentRequester?.name}</span>
             <span className="badge bg-secondary">ID: {currentRequester?.id}</span>
-            {/* ISSUE #4: Development Mode - Testing Context Only Badge */}
             <span className="badge bg-warning text-dark border ms-1">
               Development Mode - Testing Context Only
             </span>
@@ -576,9 +802,12 @@ export default function App() {
         <li className="nav-item">
           <button
             type="button"
-            className={`nav-link ${activeTab === "my-tickets" ? "active fw-bold text-success" : "text-secondary"}`}
-            aria-current={activeTab === "my-tickets" ? "page" : undefined}
-            onClick={() => setActiveTab("my-tickets")}
+            className={`nav-link ${activeTab === "my-tickets" && !selectedTicketId ? "active fw-bold text-success" : "text-secondary"}`}
+            aria-current={activeTab === "my-tickets" && !selectedTicketId ? "page" : undefined}
+            onClick={() => {
+              setActiveTab("my-tickets");
+              setSelectedTicketId(null);
+            }}
           >
             My Tickets
           </button>
@@ -588,57 +817,514 @@ export default function App() {
             type="button"
             className={`nav-link ${activeTab === "create-ticket" ? "active fw-bold text-success" : "text-secondary"}`}
             aria-current={activeTab === "create-ticket" ? "page" : undefined}
-            onClick={() => setActiveTab("create-ticket")}
+            onClick={() => {
+              setActiveTab("create-ticket");
+              setSelectedTicketId(null);
+            }}
           >
             Create Ticket
           </button>
         </li>
       </ul>
 
-      {/* Tab Content 1: My Tickets Screen View */}
-      {activeTab === "my-tickets" && (
+      {/* VIEW 1: Ticket Detail View Screen */}
+      {selectedTicketId && (
         <section className="mb-5">
-          <h2 className="h5 mb-3 fw-bold">My Tickets</h2>
-          {ticketsLoading ? (
-            <div className="text-muted">Loading tickets…</div>
-          ) : tickets.length > 0 ? (
-            <ul className="list-group">
-              {tickets.map((t) => (
-                <li key={t.id} className="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    <div className="fw-bold">{t.summary}</div>
-                    <div className="small text-muted">{t.ticketNumber}</div>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h2 className="h4 fw-bold mb-0">
+              Ticket Detail {detailTicket ? `— ${detailTicket.ticketNumber}` : ""}
+            </h2>
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm"
+              onClick={() => setSelectedTicketId(null)}
+              style={{ outlineColor: "#0B7A46" }}
+            >
+              Back to My Tickets
+            </button>
+          </div>
+
+          {detailLoading && (
+            <div className="alert alert-info" role="status">
+              Loading ticket details…
+            </div>
+          )}
+
+          {detailError && (
+            <div className="alert alert-danger mb-4" role="alert">
+              {detailError}
+            </div>
+          )}
+
+          {!detailLoading && !detailError && detailTicket && (
+            <div>
+              {/* Shaded Read-Only Metadata Card */}
+              <div className="card mb-4 bg-light shadow-sm">
+                <div className="card-header bg-light fw-semibold">Ticket Information</div>
+                <div className="card-body" style={{ backgroundColor: "#F0F4F2" }}>
+                  <div className="row g-3">
+                    <div className="col-12 col-md-4">
+                      <label className="form-label small text-muted">Ticket Number</label>
+                      <input type="text" className="form-control form-control-sm" value={detailTicket.ticketNumber || ""} readOnly style={{ backgroundColor: "#FFFFFF" }} />
+                    </div>
+                    <div className="col-12 col-md-4">
+                      <label className="form-label small text-muted">Requester</label>
+                      <input type="text" className="form-control form-control-sm" value={detailTicket.requester?.name || currentRequester?.name || ""} readOnly style={{ backgroundColor: "#FFFFFF" }} />
+                    </div>
+                    <div className="col-12 col-md-4">
+                      <label className="form-label small text-muted">Requester Email</label>
+                      <input type="text" className="form-control form-control-sm" value={detailTicket.requester?.email || currentRequester?.email || ""} readOnly style={{ backgroundColor: "#FFFFFF" }} />
+                    </div>
+                    <div className="col-12 col-md-4">
+                      <label className="form-label small text-muted">Category</label>
+                      <input type="text" className="form-control form-control-sm" value={detailTicket.category?.name || detailTicket.categoryName || "N/A"} readOnly style={{ backgroundColor: "#FFFFFF" }} />
+                    </div>
+                    <div className="col-12 col-md-4">
+                      <label className="form-label small text-muted">Related System</label>
+                      <input type="text" className="form-control form-control-sm" value={detailTicket.relatedSystem?.name || detailTicket.relatedSystemName || "N/A"} readOnly style={{ backgroundColor: "#FFFFFF" }} />
+                    </div>
+                    <div className="col-12 col-md-4">
+                      <label className="form-label small text-muted d-block">Priority / Status</label>
+                      <div className="d-flex align-items-center gap-2 mt-1">
+                        {renderPriorityBadge(detailTicket.requestedPriority)}
+                        <span className="badge bg-primary">{detailTicket.currentStatus || "NEW"}</span>
+                      </div>
+                    </div>
+                    <div className="col-12 col-md-6">
+                      <label className="form-label small text-muted">Created Date</label>
+                      <input type="text" className="form-control form-control-sm" value={formatDateTime(detailTicket.createdAt)} readOnly style={{ backgroundColor: "#FFFFFF" }} />
+                    </div>
+                    <div className="col-12 col-md-6">
+                      <label className="form-label small text-muted">Last Updated</label>
+                      <input type="text" className="form-control form-control-sm" value={formatDateTime(detailTicket.updatedAt || detailTicket.createdAt)} readOnly style={{ backgroundColor: "#FFFFFF" }} />
+                    </div>
                   </div>
-                  <span className="badge bg-primary">{t.requestedPriority}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-muted italic">No tickets found.</div>
+                </div>
+              </div>
+
+              {/* Ticket Summary & Description */}
+              <div className="card mb-4 shadow-sm">
+                <div className="card-header bg-light fw-semibold">Summary & Description</div>
+                <div className="card-body">
+                  <div className="mb-3">
+                    <label className="form-label fw-bold small text-muted">Summary</label>
+                    <div className="p-2 border rounded bg-light">{detailTicket.summary}</div>
+                  </div>
+                  <div>
+                    <label className="form-label fw-bold small text-muted">Description</label>
+                    <div className="p-3 border rounded bg-light" style={{ whiteSpace: "pre-wrap" }}>
+                      {detailTicket.description}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Attachments Section */}
+              <div className="card mb-4 shadow-sm">
+                <div className="card-header bg-light fw-semibold">Attachments</div>
+                <div className="card-body">
+                  {detailTicket.attachments && detailTicket.attachments.length > 0 ? (
+                    <ul className="list-group">
+                      {detailTicket.attachments.map((att: any) => {
+                        const isRemoved = att.isRemoved || Boolean(att.removedAt);
+                        return (
+                          <li key={att.id} className="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2 p-3">
+                            <div>
+                              <div className="fw-bold d-flex align-items-center gap-2">
+                                <span>{att.fileName}</span>
+                                {isRemoved && <span className="badge bg-secondary">Removed</span>}
+                              </div>
+                              <div className="small text-muted">
+                                Size: {(att.fileSize / 1024).toFixed(1)} KB | Uploaded: {formatDateTime(att.uploadedAt)}
+                              </div>
+                              {isRemoved && att.removalReason && (
+                                <div className="small text-danger mt-1">
+                                  Removal Reason: {att.removalReason} (Removed on {formatDateTime(att.removedAt)})
+                                </div>
+                              )}
+                            </div>
+                            <div className="d-flex align-items-center gap-2">
+                              {!isRemoved ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-primary btn-sm"
+                                    onClick={() => handleDownload(att)}
+                                    style={{ outlineColor: "#0B7A46" }}
+                                  >
+                                    Download
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-danger btn-sm"
+                                    onClick={() => handleOpenRemovalModal(att)}
+                                    style={{ outlineColor: "#0B7A46" }}
+                                  >
+                                    Remove
+                                  </button>
+                                </>
+                              ) : (
+                                <button type="button" className="btn btn-outline-secondary btn-sm" disabled>
+                                  Download Disabled
+                                </button>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <div className="text-muted italic">No attachments for this ticket.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Soft Removal Confirmation Modal */}
+          {removalTargetAttachment && (
+            <div className="modal d-block" tabIndex={-1} style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+              <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title h6 fw-bold">Remove Attachment</h5>
+                    <button type="button" className="btn-close" onClick={handleCloseRemovalModal} aria-label="Close"></button>
+                  </div>
+                  <form onSubmit={handleConfirmRemoval}>
+                    <div className="modal-body">
+                      <p className="small text-muted mb-3">
+                        Are you sure you want to remove <strong>{removalTargetAttachment.fileName}</strong>?
+                        Soft removal hides the file from downloads but retains metadata recording.
+                      </p>
+                      <div className="mb-3">
+                        <label htmlFor="removalReason" className="form-label fw-semibold small">
+                          Removal Reason <span className="text-danger">*</span> (5–200 characters)
+                        </label>
+                        <textarea
+                          id="removalReason"
+                          aria-label="Removal Reason"
+                          rows={3}
+                          className={`form-control ${removalReasonError ? "is-invalid" : ""}`}
+                          value={removalReason}
+                          onChange={(e) => setRemovalReason(e.target.value)}
+                          placeholder="State the reason for removing this attachment..."
+                          style={{ outlineColor: "#0B7A46" }}
+                        />
+                        {removalReasonError && (
+                          <div className="invalid-feedback d-block mt-1" style={{ color: "#B42318" }}>
+                            {removalReasonError}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="modal-footer">
+                      <button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleCloseRemovalModal}>
+                        Cancel
+                      </button>
+                      <button type="submit" className="btn btn-danger btn-sm" disabled={isSubmittingRemoval}>
+                        {isSubmittingRemoval ? "Removing…" : "Confirm Removal"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
           )}
         </section>
       )}
 
-      {/* Tab Content 2: Create Ticket Screen View (Issue #28 Production Form Implementation) */}
-      {activeTab === "create-ticket" && (
+      {/* VIEW 2: My Tickets Screen View */}
+      {activeTab === "my-tickets" && !selectedTicketId && (
+        <section className="mb-5">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h2 className="h5 fw-bold mb-0">My Tickets</h2>
+          </div>
+
+          {/* Search, Filter & Sort Toolbar Card */}
+          <div className="card mb-4 bg-light shadow-sm">
+            <div className="card-body">
+              <div className="row g-3">
+                {/* Search Bar */}
+                <div className="col-12 col-md-4">
+                  <label htmlFor="searchTickets" className="form-label small fw-semibold">Search</label>
+                  <input
+                    type="text"
+                    id="searchTickets"
+                    aria-label="Search tickets"
+                    className="form-control form-control-sm"
+                    placeholder="Search tickets by number, summary..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    style={{ outlineColor: "#0B7A46" }}
+                  />
+                </div>
+
+                {/* Category Filter */}
+                <div className="col-6 col-md-2">
+                  <label htmlFor="filterCategory" className="form-label small fw-semibold">Category</label>
+                  <select
+                    id="filterCategory"
+                    aria-label="Filter by Category"
+                    className="form-select form-select-sm"
+                    value={filterCategoryId}
+                    onChange={(e) => {
+                      setFilterCategoryId(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    style={{ outlineColor: "#0B7A46" }}
+                  >
+                    <option value="">All Categories</option>
+                    {formCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* System Filter */}
+                <div className="col-6 col-md-2">
+                  <label htmlFor="filterSystem" className="form-label small fw-semibold">System</label>
+                  <select
+                    id="filterSystem"
+                    aria-label="Filter by System"
+                    className="form-select form-select-sm"
+                    value={filterRelatedSystemId}
+                    onChange={(e) => {
+                      setFilterRelatedSystemId(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    style={{ outlineColor: "#0B7A46" }}
+                  >
+                    <option value="">All Systems</option>
+                    {formRelatedSystems.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Priority Filter */}
+                <div className="col-6 col-md-2">
+                  <label htmlFor="filterPriority" className="form-label small fw-semibold">Priority</label>
+                  <select
+                    id="filterPriority"
+                    aria-label="Filter by Priority"
+                    className="form-select form-select-sm"
+                    value={filterRequestedPriority}
+                    onChange={(e) => {
+                      setFilterRequestedPriority(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    style={{ outlineColor: "#0B7A46" }}
+                  >
+                    <option value="">All Priorities</option>
+                    <option value="LOW">LOW</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="URGENT">URGENT</option>
+                  </select>
+                </div>
+
+                {/* Status Filter */}
+                <div className="col-6 col-md-2">
+                  <label htmlFor="filterStatus" className="form-label small fw-semibold">Status</label>
+                  <select
+                    id="filterStatus"
+                    aria-label="Filter by Status"
+                    className="form-select form-select-sm"
+                    value={filterCurrentStatus}
+                    onChange={(e) => {
+                      setFilterCurrentStatus(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    style={{ outlineColor: "#0B7A46" }}
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="NEW">NEW</option>
+                  </select>
+                </div>
+
+                {/* Sort Control */}
+                <div className="col-12 col-md-4">
+                  <label htmlFor="sortBySelect" className="form-label small fw-semibold">Sort Tickets</label>
+                  <select
+                    id="sortBySelect"
+                    aria-label="Sort by"
+                    className="form-select form-select-sm"
+                    value={sortBy}
+                    onChange={(e) => {
+                      setSortBy(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    style={{ outlineColor: "#0B7A46" }}
+                  >
+                    <option value="createdAt">Created Date (Newest First)</option>
+                    <option value="updatedAt">Updated Date</option>
+                    <option value="ticketNumber">Ticket Number</option>
+                    <option value="requestedPriority">Priority Severity</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Loading Indicator */}
+          {ticketsLoading && (
+            <div className="alert alert-info" role="status">
+              Loading tickets…
+            </div>
+          )}
+
+          {/* Error Banner */}
+          {ticketsError && (
+            <div className="alert alert-danger d-flex align-items-center justify-content-between mb-4" role="alert">
+              <span>{ticketsError}</span>
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm ms-2"
+                onClick={() => loadMyTickets()}
+                style={{ outlineColor: "#0B7A46" }}
+              >
+                Reload
+              </button>
+            </div>
+          )}
+
+          {/* Empty State (0 total tickets, no active filters) */}
+          {!ticketsLoading && !ticketsError && tickets.length === 0 && !isFilterActive && (
+            <div className="card text-center p-5 shadow-sm bg-light mb-4">
+              <div className="card-body">
+                <h3 className="h6 fw-bold text-muted mb-2">You have not created any IT support tickets yet</h3>
+                <p className="small text-muted mb-3">Submit your first IT support ticket to get help with software, hardware, or access requests.</p>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  aria-label="Create new ticket"
+                  onClick={() => {
+                    setActiveTab("create-ticket");
+                    setSelectedTicketId(null);
+                  }}
+                  style={{ backgroundColor: "#006B3C", borderColor: "#006B3C", outlineColor: "#0B7A46" }}
+                >
+                  Create Ticket
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* No-Results Filter State (0 matching tickets, active filters) */}
+          {!ticketsLoading && !ticketsError && tickets.length === 0 && isFilterActive && (
+            <div className="card text-center p-4 shadow-sm bg-light mb-4">
+              <div className="card-body">
+                <h3 className="h6 fw-bold text-muted mb-2">No tickets match your filter criteria</h3>
+                <p className="small text-muted mb-3">Try adjusting your search keyword or clearing category/system/priority filters.</p>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={handleClearFilters}
+                  style={{ outlineColor: "#0B7A46" }}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Ticket List View: Responsive Card items with complete columns */}
+          {!ticketsLoading && !ticketsError && tickets.length > 0 && (
+            <div>
+              <div className="mb-4">
+                {tickets.map((t) => (
+                  <div key={t.id} className="card mb-3 shadow-sm border">
+                    <div className="card-body p-3">
+                      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                        <div className="d-flex align-items-center gap-2">
+                          <span className="fw-bold text-success">{t.ticketNumber}</span>
+                          <span className="small text-muted">Created: {formatDate(t.createdAt)}</span>
+                        </div>
+                        <div className="d-flex align-items-center gap-2">
+                          {renderPriorityBadge(t.requestedPriority)}
+                          <span className="badge bg-primary">{t.currentStatus || "NEW"}</span>
+                        </div>
+                      </div>
+
+                      <div className="fw-semibold fs-6 mb-2">{t.summary}</div>
+
+                      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <div className="small text-muted">
+                          Category: <strong className="text-dark me-3">{t.categoryName || t.category?.name || "N/A"}</strong>
+                          System: <strong className="text-dark">{t.relatedSystemName || t.relatedSystem?.name || "N/A"}</strong>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-outline-success btn-sm"
+                          onClick={() => setSelectedTicketId(t.id)}
+                          style={{ borderColor: "#006B3C", color: "#006B3C", outlineColor: "#0B7A46" }}
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 p-3 bg-light rounded border mb-4">
+                <span className="small text-muted">
+                  Page {pagination.page} of {pagination.totalPages || 1} ({pagination.totalItems} tickets total)
+                </span>
+                <div className="d-flex align-items-center gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm"
+                    disabled={pagination.page <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    style={{ outlineColor: "#0B7A46" }}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm"
+                    disabled={pagination.page >= (pagination.totalPages || 1)}
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                    style={{ outlineColor: "#0B7A46" }}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* VIEW 3: Create Ticket Screen View (Issue #28 Production Form Implementation) */}
+      {activeTab === "create-ticket" && !selectedTicketId && (
         <section className="mb-5">
           <h2 className="h5 mb-3 fw-bold">Create IT Support Ticket</h2>
 
-          {/* ISSUE #1: Reference Data Loading Indicator */}
+          {/* Reference Data Loading Indicator */}
           {refDataLoading && (
             <div className="alert alert-info mb-4" role="status">
               Loading ticket reference data…
             </div>
           )}
 
-          {/* ISSUE #1: Reference Data Error Banner */}
+          {/* Reference Data Error Banner */}
           {refDataError && (
             <div className="alert alert-danger mb-4" role="alert">
               {refDataError}
             </div>
           )}
 
-          {/* ISSUE #2: Success Banner with "Create Another Ticket" Action */}
+          {/* Success Banner with "Create Another Ticket" Action */}
           {createdTicketSuccess && (
             <div className="alert alert-success mb-4 d-flex flex-column gap-2" role="alert" style={{ backgroundColor: "#EAF6EF", borderColor: "#006B3C", color: "#006B3C" }}>
               <div>Ticket {createdTicketSuccess.ticketNumber} created successfully!</div>
