@@ -522,4 +522,114 @@ describe("Issue #28: Create Ticket Requester UI & Validation Suite", () => {
       });
     });
   });
+
+  describe("12. PR #36 Review Regression Tests (BR-18 & Missing ticketNumber Validation)", () => {
+    it("REGRESSION 1: retrying attachment upload uses existing ticket ID and does NOT create a duplicate ticket", async () => {
+      let ticketPostCalls = 0;
+      let attachmentPostCalls = 0;
+      let capturedAttachmentTicketId: string | null = null;
+
+      await renderAndNavigateToCreateTicket("1", (url: string, init?: RequestInit) => {
+        if (url.includes("/attachments") && init?.method === "POST") {
+          attachmentPostCalls++;
+          const match = url.match(/\/tickets\/([^\/]+)\/attachments/);
+          if (match) capturedAttachmentTicketId = match[1];
+
+          if (attachmentPostCalls === 1) {
+            // First attachment upload attempt fails with 500
+            return Promise.resolve({
+              ok: false,
+              status: 500,
+              json: () => Promise.resolve({ error: { code: "UPLOAD_FAILED", message: "Storage offline" } }),
+            } as Response);
+          } else {
+            // Second attachment upload attempt (retry) succeeds with 201
+            return Promise.resolve({
+              ok: true,
+              status: 201,
+              json: () => Promise.resolve({ id: "att-uuid-1", filename: "log.pdf" }),
+            } as Response);
+          }
+        }
+        if (url.includes("/api/tickets") && init?.method === "POST") {
+          ticketPostCalls++;
+          return Promise.resolve({
+            ok: true,
+            status: 201,
+            json: () => Promise.resolve({ id: "existing-ticket-uuid-777", ticketNumber: "TKT-2026-000777" }),
+          } as Response);
+        }
+        return undefined;
+      });
+
+      fireEvent.change(screen.getByLabelText(/Summary/i), { target: { value: "Attachment Upload Retry Concurrency Test" } });
+      fireEvent.change(screen.getByLabelText(/Description/i), { target: { value: "Detailed description for attachment upload retry duplicate prevention test." } });
+      fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "101" } });
+      fireEvent.change(screen.getByLabelText(/Related System/i), { target: { value: "201" } });
+
+      const dropzone = screen.getByLabelText(/Attach Files|Attachment Dropzone|Upload Files/i);
+      const validPdf = new File(["evidence"], "log.pdf", { type: "application/pdf" });
+      fireEvent.change(dropzone, { target: { files: [validPdf] } });
+
+      await waitFor(() => {
+        expect(screen.getByText(/log.pdf/i)).toBeInTheDocument();
+      });
+
+      const submitBtn = screen.getByRole("button", { name: /Submit Ticket|Submit|Retry/i });
+
+      // Initial submit -> Ticket POST succeeds (call #1), attachment POST fails (call #1)
+      fireEvent.click(submitBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText(/attachment upload failed/i)).toBeInTheDocument();
+      });
+
+      // Assert Ticket creation was called exactly ONCE so far
+      expect(ticketPostCalls).toBe(1);
+      expect(attachmentPostCalls).toBe(1);
+      expect(capturedAttachmentTicketId).toBe("existing-ticket-uuid-777");
+
+      // Action: User retries upload on retained state
+      const retryBtn = screen.getByRole("button", { name: /Submit Ticket|Submit|Retry/i });
+      fireEvent.click(retryBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Ticket TKT-2026-000777 created successfully!/i)).toBeInTheDocument();
+      });
+
+      // Assert Ticket creation was NOT called a second time (MUST REMAIN 1)
+      expect(ticketPostCalls).toBe(1);
+      // Assert Attachment upload was retried on the SAME ticket ID
+      expect(attachmentPostCalls).toBe(2);
+      expect(capturedAttachmentTicketId).toBe("existing-ticket-uuid-777");
+    });
+
+    it("REGRESSION 2: enters safe error state and suppresses hard-coded fallbacks when backend omits ticketNumber", async () => {
+      await renderAndNavigateToCreateTicket("1", (url: string, init?: RequestInit) => {
+        if (url.includes("/api/tickets") && init?.method === "POST") {
+          return Promise.resolve({
+            ok: true,
+            status: 201,
+            // Return 201 Created but omit ticketNumber field
+            json: () => Promise.resolve({ id: "tkt-no-num-uuid" }),
+          } as Response);
+        }
+        return undefined;
+      });
+
+      fireEvent.change(screen.getByLabelText(/Summary/i), { target: { value: "Missing Ticket Number Test" } });
+      fireEvent.change(screen.getByLabelText(/Description/i), { target: { value: "Detailed description for missing ticket number validation test." } });
+      fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "101" } });
+      fireEvent.change(screen.getByLabelText(/Related System/i), { target: { value: "201" } });
+
+      fireEvent.click(screen.getByRole("button", { name: /Submit Ticket|Submit/i }));
+
+      await waitFor(() => {
+        // Must enter safe error state
+        expect(screen.getByText(/Failed to create ticket. Please try again./i)).toBeInTheDocument();
+        // Must NOT display hard-coded fallback ticket numbers
+        expect(screen.queryByText(/TKT-2026-000001/i)).not.toBeInTheDocument();
+      });
+    });
+  });
 });

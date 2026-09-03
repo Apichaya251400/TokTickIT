@@ -53,7 +53,10 @@ export default function App() {
   const [description, setDescription] = useState<string>("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
-  // 7. Create Ticket Validation & Feedback State
+  // 7. Retained Created Ticket State for Attachment Retry (BR-18 Duplicate Ticket Protection)
+  const [retainedCreatedTicket, setRetainedCreatedTicket] = useState<{ id: string; ticketNumber: string } | null>(null);
+
+  // 8. Create Ticket Validation & Feedback State
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
@@ -281,7 +284,6 @@ export default function App() {
   async function handleCreateTicketSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!validateForm()) return;
     if (submitLockRef.current || isSubmitting) return;
 
     // Capture requester context ID at invocation start to protect against context switching races
@@ -293,17 +295,36 @@ export default function App() {
     setUploadWarning(null);
     setCreatedTicketSuccess(null);
 
-    const payload = {
-      categoryId: Number(categoryId),
-      relatedSystemId: Number(relatedSystemId),
-      requestedPriority,
-      summary: summary.trim(),
-      description: description.trim(),
-    };
-
     try {
-      const newTicket = await createTicket(payload, capturedRequesterId);
-      const ticketNum = newTicket?.ticketNumber || newTicket?.data?.ticketNumber || "TKT-2026-000001";
+      let activeTicket = retainedCreatedTicket;
+
+      // If ticket has not been created yet, perform validation and createTicket API call
+      if (!activeTicket) {
+        if (!validateForm()) {
+          submitLockRef.current = false;
+          setIsSubmitting(false);
+          return;
+        }
+
+        const payload = {
+          categoryId: Number(categoryId),
+          relatedSystemId: Number(relatedSystemId),
+          requestedPriority,
+          summary: summary.trim(),
+          description: description.trim(),
+        };
+
+        const newTicket = await createTicket(payload, capturedRequesterId);
+        const ticketNum = newTicket?.ticketNumber || newTicket?.data?.ticketNumber;
+        const ticketId = newTicket?.id || newTicket?.data?.id;
+
+        // FIX 2: Require valid backend-generated ticketNumber and ticketId (no hard-coded fallbacks)
+        if (!ticketNum || typeof ticketNum !== "string" || !ticketId) {
+          throw new Error("Invalid ticket response from server: missing ticketNumber or id");
+        }
+
+        activeTicket = { id: String(ticketId), ticketNumber: String(ticketNum) };
+      }
 
       // Attempt attachment uploads if files were selected
       if (selectedFiles.length > 0) {
@@ -311,21 +332,22 @@ export default function App() {
 
         for (const file of selectedFiles) {
           try {
-            await uploadAttachment(newTicket?.id || newTicket?.data?.id || "ticket-id", file, capturedRequesterId);
+            await uploadAttachment(activeTicket.id, file, capturedRequesterId);
           } catch (uploadErr) {
             hasUploadError = true;
           }
         }
 
         if (hasUploadError) {
-          // Display warning callout with #F59E0B per ui-spec §4.2 item 8
-          setUploadWarning(`Ticket ${ticketNum} saved, but attachment upload failed.`);
+          // FIX 1: Retain created ticket for retry so createTicket is NOT called again on retry
+          setRetainedCreatedTicket(activeTicket);
+          setUploadWarning(`Ticket ${activeTicket.ticketNumber} saved, but attachment upload failed.`);
         } else {
-          setCreatedTicketSuccess({ ...newTicket, ticketNumber: ticketNum });
+          setCreatedTicketSuccess({ id: activeTicket.id, ticketNumber: activeTicket.ticketNumber });
           resetFormFields();
         }
       } else {
-        setCreatedTicketSuccess({ ...newTicket, ticketNumber: ticketNum });
+        setCreatedTicketSuccess({ id: activeTicket.id, ticketNumber: activeTicket.ticketNumber });
         resetFormFields();
       }
     } catch (err: any) {
@@ -344,6 +366,7 @@ export default function App() {
     setSummary("");
     setDescription("");
     setSelectedFiles([]);
+    setRetainedCreatedTicket(null);
     setSummaryError(null);
     setDescriptionError(null);
     setCategoryError(null);
