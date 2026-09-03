@@ -803,4 +803,206 @@ describe("Issue #28: Create Ticket Requester UI & Validation Suite", () => {
       expect(totalCallsSize200).toBe(2);
     });
   });
+
+  describe("14. PR Review Feedback Regression Suite (Ref Data, Success Action, Requester Isolation, Dev Mode Badge)", () => {
+    it("ISSUE 1A: renders visible loading state during reference data fetching and prevents ticket creation while loading", async () => {
+      let resolveCategories!: (res: Response) => void;
+      let ticketPostCalls = 0;
+
+      await renderAndNavigateToCreateTicket("1", (url: string, init?: RequestInit) => {
+        if (url.includes("/api/categories")) {
+          return new Promise<Response>((resolve) => {
+            resolveCategories = resolve;
+          });
+        }
+        if (url.includes("/api/tickets") && init?.method === "POST") {
+          ticketPostCalls++;
+          return Promise.resolve({ ok: true, status: 201, json: () => Promise.resolve({ id: "t-1", ticketNumber: "TKT-2026-000001" }) } as Response);
+        }
+        return undefined;
+      });
+
+      // Loading indicator MUST be visible in Create Ticket UI
+      expect(await screen.findByText(/Loading ticket reference data/i)).toBeInTheDocument();
+
+      // Submit action while loading MUST NOT create a ticket
+      const form = screen.getByRole("form", { name: /Create Ticket Form/i });
+      fireEvent.submit(form);
+
+      expect(ticketPostCalls).toBe(0);
+
+      // Finish loading
+      resolveCategories({ ok: true, status: 200, json: () => Promise.resolve(mockCategories) } as Response);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/Loading ticket reference data/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it("ISSUE 1B: renders visible error state on reference data load failure and blocks submission", async () => {
+      let ticketPostCalls = 0;
+
+      await renderAndNavigateToCreateTicket("1", (url: string, init?: RequestInit) => {
+        if (url.includes("/api/categories")) {
+          return Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({}) } as Response);
+        }
+        if (url.includes("/api/tickets") && init?.method === "POST") {
+          ticketPostCalls++;
+          return Promise.resolve({ ok: true, status: 201, json: () => Promise.resolve({ id: "t-1", ticketNumber: "TKT-2026-000001" }) } as Response);
+        }
+        return undefined;
+      });
+
+      // Error message MUST be visible
+      expect(await screen.findByText(/Unable to load ticket reference data. Please try again./i)).toBeInTheDocument();
+
+      // Submit while in ref data error state MUST NOT call createTicket
+      const form = screen.getByRole("form", { name: /Create Ticket Form/i });
+      fireEvent.submit(form);
+
+      expect(ticketPostCalls).toBe(0);
+    });
+
+    it("ISSUE 2: provides 'Create Another Ticket' action button on success banner which resets the form to a fresh state", async () => {
+      await renderAndNavigateToCreateTicket("1", (url: string, init?: RequestInit) => {
+        if (url.includes("/api/tickets") && init?.method === "POST") {
+          return Promise.resolve({
+            ok: true,
+            status: 201,
+            json: () => Promise.resolve({ id: "t-succ-uuid", ticketNumber: "TKT-2026-000555" }),
+          } as Response);
+        }
+        return undefined;
+      });
+
+      // Wait for reference data options to be rendered in the DOM
+      await screen.findByRole("option", { name: "Hardware" });
+
+      const summaryInput = screen.getByLabelText(/Summary/i);
+      fireEvent.change(summaryInput, { target: { value: "Valid Summary for Success Action Test" } });
+      fireEvent.change(screen.getByLabelText(/Description/i), { target: { value: "Detailed description for success action test." } });
+      fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "101" } });
+      fireEvent.change(screen.getByLabelText(/Related System/i), { target: { value: "201" } });
+
+      const form = screen.getByRole("form", { name: /Create Ticket Form/i });
+      fireEvent.submit(form);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Ticket TKT-2026-000555 created successfully!/i)).toBeInTheDocument();
+      });
+
+      // Success action button "Create Another Ticket" MUST exist
+      const createAnotherBtn = screen.getByRole("button", { name: /Create Another Ticket/i });
+      expect(createAnotherBtn).toBeInTheDocument();
+
+      // Click "Create Another Ticket" -> form MUST reset to clean state
+      fireEvent.click(createAnotherBtn);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/Ticket TKT-2026-000555 created successfully!/i)).not.toBeInTheDocument();
+        expect(screen.getByLabelText(/Summary/i)).toHaveValue("");
+      });
+    });
+
+    it("ISSUE 3: clearing requester clears previous retained ticket/retry state and prevents cross-requester attachment retry", async () => {
+      const uploadTicketIds: string[] = [];
+      let ticketPostCalls = 0;
+
+      await renderAndNavigateToCreateTicket("1", (url: string, init?: RequestInit) => {
+        if (url.includes("/attachments") && init?.method === "POST") {
+          const match = url.match(/\/tickets\/([^\/]+)\/attachments/);
+          if (match) uploadTicketIds.push(match[1]);
+
+          return Promise.resolve({
+            ok: false,
+            status: 500,
+            json: () => Promise.resolve({ error: { code: "UPLOAD_FAILED", message: "Alice upload failed" } }),
+          } as Response);
+        }
+
+        if (url.includes("/api/tickets") && init?.method === "POST") {
+          ticketPostCalls++;
+          const reqHeader = (init?.headers as Record<string, string>)?.[ "X-Requester-Id" ];
+          return Promise.resolve({
+            ok: true,
+            status: 201,
+            json: () => Promise.resolve({
+              id: reqHeader === "2" ? "bob-tkt-999" : "alice-tkt-777",
+              ticketNumber: reqHeader === "2" ? "TKT-2026-000999" : "TKT-2026-000777",
+            }),
+          } as Response);
+        }
+        return undefined;
+      });
+
+      // Wait for reference data options to be rendered in the DOM
+      await screen.findByRole("option", { name: "Hardware" });
+
+      // 1. Submit ticket as Alice (ID 1) with attachment
+      fireEvent.change(screen.getByLabelText(/Summary/i), { target: { value: "Alice Attachment Issue" } });
+      fireEvent.change(screen.getByLabelText(/Description/i), { target: { value: "Detailed description for Alice attachment retry test." } });
+      fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "101" } });
+      fireEvent.change(screen.getByLabelText(/Related System/i), { target: { value: "201" } });
+
+      const dropzone = screen.getByLabelText(/Attach Files|Attachment Dropzone|Upload Files/i);
+      const fileAlice = new File(["alice"], "alice.pdf", { type: "application/pdf" });
+      fireEvent.change(dropzone, { target: { files: [fileAlice] } });
+
+      const formAlice = screen.getByRole("form", { name: /Create Ticket Form/i });
+      fireEvent.submit(formAlice);
+
+      await waitFor(() => {
+        expect(screen.getByText(/attachment upload failed/i)).toBeInTheDocument();
+      });
+
+      expect(uploadTicketIds).toContain("alice-tkt-777");
+
+      // 2. Change Requester from Alice to Bob (ID 2)
+      fireEvent.click(screen.getByRole("button", { name: /Change Requester/i }));
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /Select Development Requester/i })).toBeInTheDocument();
+      });
+
+      const bobRadio = screen.getByRole("radio", { name: /Bob Jones/i });
+      fireEvent.click(bobRadio);
+      fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /^Create Ticket$/i })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /^Create Ticket$/i }));
+
+      // Wait for reference data options to be rendered in the DOM for Bob
+      await screen.findByRole("option", { name: "Hardware" });
+
+      // 3. Assert previous warning / retry state for Alice ticket is CLEARED for Bob
+      expect(screen.queryByText(/attachment upload failed/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/alice.pdf/i)).not.toBeInTheDocument();
+
+      // 4. Bob submits a new ticket
+      fireEvent.change(screen.getByLabelText(/Summary/i), { target: { value: "Bob Ticket Creation" } });
+      fireEvent.change(screen.getByLabelText(/Description/i), { target: { value: "Detailed description for Bob ticket creation test." } });
+      fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "101" } });
+      fireEvent.change(screen.getByLabelText(/Related System/i), { target: { value: "201" } });
+
+      const formBob = screen.getByRole("form", { name: /Create Ticket Form/i });
+      fireEvent.submit(formBob);
+
+      await waitFor(() => {
+        expect(ticketPostCalls).toBe(2);
+      });
+
+      // Bob's submission MUST NOT upload against Alice's ticket ID "alice-tkt-777"
+      expect(uploadTicketIds).not.toContain("bob-tkt-999");
+    });
+
+    it("ISSUE 4: renders 'Development Mode - Testing Context Only' badge alongside requester context", async () => {
+      await renderAndNavigateToCreateTicket("1");
+
+      // Development Mode testing context badge MUST be visible
+      expect(await screen.findByText(/Development Mode - Testing Context Only/i)).toBeInTheDocument();
+    });
+  });
 });

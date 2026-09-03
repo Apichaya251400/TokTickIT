@@ -95,7 +95,7 @@ export default function App() {
       setFormCategories(cats);
       setFormRelatedSystems(systems);
     } catch (err: any) {
-      setRefDataError("Unable to load reference data. Please refresh and try again.");
+      setRefDataError("Unable to load ticket reference data. Please try again.");
     } finally {
       setRefDataLoading(false);
     }
@@ -167,6 +167,11 @@ export default function App() {
       setSelectedRequesterId(String(chosen.id));
       setCurrentRequester(chosen);
       setIsSelecting(false);
+      // ISSUE #3: Clear all previous ticket/attachment retry state when requester context changes
+      resetFormFields();
+      setCreatedTicketSuccess(null);
+      setUploadWarning(null);
+      setSubmitError(null);
       loadTicketsForRequester(String(chosen.id));
     }
   }
@@ -174,6 +179,11 @@ export default function App() {
   function handleChangeRequester() {
     setIsSelecting(true);
     setSelectedId(currentRequester ? String(currentRequester.id) : null);
+    // ISSUE #3: Clear all previous ticket/attachment retry state when user changes requester
+    resetFormFields();
+    setCreatedTicketSuccess(null);
+    setUploadWarning(null);
+    setSubmitError(null);
   }
 
   // Lab 1 handler
@@ -301,6 +311,11 @@ export default function App() {
     e.preventDefault();
 
     if (submitLockRef.current || isSubmitting) return;
+
+    // ISSUE #1: Guard submission if reference data is loading, failed, or empty
+    if (refDataLoading || Boolean(refDataError) || formCategories.length === 0 || formRelatedSystems.length === 0) {
+      return;
+    }
 
     // Capture requester context ID at invocation start to protect against context switching races
     const capturedRequesterId = getSelectedRequesterId() || String(currentRequester?.id);
@@ -531,12 +546,18 @@ export default function App() {
   // Render Application Shell with Selected Requester Context & Navigation Tabs
   return (
     <div className="container py-5" style={{ maxWidth: 800 }}>
-      {/* App Shell Header displaying Current Requester Identity & Change Requester button */}
-      <nav className="navbar navbar-light bg-light rounded p-3 mb-4 d-flex align-items-center justify-content-between border">
+      {/* App Shell Header displaying Current Requester Identity, Dev Mode Badge & Change Requester button */}
+      <nav className="navbar navbar-light bg-light rounded p-3 mb-4 d-flex flex-wrap align-items-center justify-content-between gap-2 border">
         <div>
-          <span className="text-muted me-2">Current Requester:</span>
-          <span className="fw-bold text-success fs-5">{currentRequester?.name}</span>
-          <span className="badge bg-secondary ms-2">ID: {currentRequester?.id}</span>
+          <div className="d-flex align-items-center flex-wrap gap-2">
+            <span className="text-muted">Current Requester:</span>
+            <span className="fw-bold text-success fs-5">{currentRequester?.name}</span>
+            <span className="badge bg-secondary">ID: {currentRequester?.id}</span>
+            {/* ISSUE #4: Development Mode - Testing Context Only Badge */}
+            <span className="badge bg-warning text-dark border ms-1">
+              Development Mode - Testing Context Only
+            </span>
+          </div>
         </div>
         <button className="btn btn-outline-secondary btn-sm" onClick={handleChangeRequester}>
           Change Requester
@@ -603,10 +624,37 @@ export default function App() {
         <section className="mb-5">
           <h2 className="h5 mb-3 fw-bold">Create IT Support Ticket</h2>
 
-          {/* Success Banner */}
+          {/* ISSUE #1: Reference Data Loading Indicator */}
+          {refDataLoading && (
+            <div className="alert alert-info mb-4" role="status">
+              Loading ticket reference data…
+            </div>
+          )}
+
+          {/* ISSUE #1: Reference Data Error Banner */}
+          {refDataError && (
+            <div className="alert alert-danger mb-4" role="alert">
+              {refDataError}
+            </div>
+          )}
+
+          {/* ISSUE #2: Success Banner with "Create Another Ticket" Action */}
           {createdTicketSuccess && (
-            <div className="alert alert-success mb-4" role="alert" style={{ backgroundColor: "#EAF6EF", borderColor: "#006B3C", color: "#006B3C" }}>
-              Ticket {createdTicketSuccess.ticketNumber} created successfully!
+            <div className="alert alert-success mb-4 d-flex flex-column gap-2" role="alert" style={{ backgroundColor: "#EAF6EF", borderColor: "#006B3C", color: "#006B3C" }}>
+              <div>Ticket {createdTicketSuccess.ticketNumber} created successfully!</div>
+              <div>
+                <button
+                  type="button"
+                  className="btn btn-outline-success btn-sm mt-1"
+                  onClick={() => {
+                    resetFormFields();
+                    setCreatedTicketSuccess(null);
+                  }}
+                  style={{ borderColor: "#006B3C", color: "#006B3C" }}
+                >
+                  Create Another Ticket
+                </button>
+              </div>
             </div>
           )}
 
@@ -688,6 +736,7 @@ export default function App() {
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
                   style={{ outlineColor: "#0B7A46" }}
+                  disabled={refDataLoading || Boolean(refDataError)}
                 >
                   <option value="">Select Category</option>
                   {formCategories.map((c) => (
@@ -716,6 +765,7 @@ export default function App() {
                   value={relatedSystemId}
                   onChange={(e) => setRelatedSystemId(e.target.value)}
                   style={{ outlineColor: "#0B7A46" }}
+                  disabled={refDataLoading || Boolean(refDataError)}
                 >
                   <option value="">Select Related System</option>
                   {formRelatedSystems.map((s) => (
@@ -861,7 +911,7 @@ export default function App() {
               <button
                 type="submit"
                 className="btn btn-success btn-lg px-4"
-                disabled={isSubmitting}
+                disabled={isSubmitting || refDataLoading || Boolean(refDataError) || formCategories.length === 0 || formRelatedSystems.length === 0}
                 style={{ backgroundColor: "#006B3C", borderColor: "#006B3C", outlineColor: "#0B7A46" }}
               >
                 {isSubmitting ? (
