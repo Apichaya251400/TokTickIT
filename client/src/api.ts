@@ -3,6 +3,13 @@ const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 export interface Category {
   id: number;
   name: string;
+  isActive?: boolean;
+}
+
+export interface RelatedSystem {
+  id: number;
+  name: string;
+  isActive?: boolean;
 }
 
 export interface SystemStatus {
@@ -15,6 +22,14 @@ export interface Requester {
   name: string;
   email: string;
   isActive?: boolean;
+}
+
+export interface CreateTicketPayload {
+  categoryId: number;
+  relatedSystemId: number;
+  requestedPriority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  summary: string;
+  description: string;
 }
 
 export async function checkSystem(): Promise<SystemStatus> {
@@ -44,6 +59,22 @@ export async function fetchActiveRequesters(): Promise<Requester[]> {
   const data = await res.json();
   // Filter active requesters if API returns isActive property
   return Array.isArray(data) ? data.filter((r: Requester) => r.isActive !== false) : [];
+}
+
+export async function fetchCategories(): Promise<Category[]> {
+  const res = await fetch(`${API_URL}/api/categories`);
+  if (!res.ok) {
+    throw new Error("Unable to load categories.");
+  }
+  return res.json();
+}
+
+export async function fetchRelatedSystems(): Promise<RelatedSystem[]> {
+  const res = await fetch(`${API_URL}/api/related-systems`);
+  if (!res.ok) {
+    throw new Error("Unable to load related systems.");
+  }
+  return res.json();
 }
 
 export function getSelectedRequesterId(): string | null {
@@ -92,5 +123,47 @@ export async function fetchMyTickets(explicitRequesterId?: string): Promise<any>
   if (!res.ok) {
     throw new Error(`Failed to fetch tickets: ${res.status}`);
   }
+  return res.json();
+}
+
+export async function createTicket(payload: CreateTicketPayload, explicitRequesterId?: string): Promise<any> {
+  const res = await fetchWithRequesterContext(
+    `${API_URL}/api/tickets`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+    explicitRequesterId
+  );
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+
+  return res.json();
+}
+
+export async function uploadAttachment(ticketId: string, file: File, explicitRequesterId?: string): Promise<any> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetchWithRequesterContext(
+    `${API_URL}/api/tickets/${ticketId}/attachments`,
+    {
+      method: "POST",
+      body: formData,
+    },
+    explicitRequesterId
+  );
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+
   return res.json();
 }

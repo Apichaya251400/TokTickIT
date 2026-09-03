@@ -355,7 +355,7 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
       const myTicketsTab = screen.getByRole("button", { name: /^My Tickets$/i });
       expect(createTicketTab).toHaveAttribute("aria-current", "page");
       expect(myTicketsTab).not.toHaveAttribute("aria-current");
-      expect(screen.getByText(/Create Ticket Form Placeholder/i)).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /Create IT Support Ticket/i })).toBeInTheDocument();
     });
   });
 
