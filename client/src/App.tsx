@@ -12,27 +12,29 @@ import {
 type UiState = "idle" | "loading" | "success" | "error";
 
 export default function App() {
-  // Lab 1 state
+  // 1. Lab 1 state (Top level of App component)
   const [lab1State, setLab1State] = useState<UiState>("idle");
   const [categories, setCategories] = useState<Category[]>([]);
   const [lab1ErrorMessage, setLab1ErrorMessage] = useState<string>("");
 
-  // Lab 2 Requester Context & Selector state
+  // 2. Lab 2 Requester Context & Selector state (Top level of App component)
   const [requestersLoading, setRequestersLoading] = useState<boolean>(true);
   const [requestersError, setRequestersError] = useState<string | null>(null);
   const [activeRequesters, setActiveRequesters] = useState<Requester[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [currentRequester, setCurrentRequester] = useState<Requester | null>(null);
-  const [isSelecting, setIsSelecting] = useState<boolean>(false);
+  const [isSelecting, setIsSelecting] = useState<boolean>(true);
 
-  // Requester ticket data state
+  // 3. Requester ticket data state (Top level of App component)
   const [tickets, setTickets] = useState<any[]>([]);
   const [ticketsLoading, setTicketsLoading] = useState<boolean>(false);
 
+  // 4. Startup Effect (Top level of App component)
   useEffect(() => {
     loadRequestersAndRestoreContext();
   }, []);
 
+  // Normal helper functions (No React Hooks declared inside helper functions)
   async function loadRequestersAndRestoreContext() {
     setRequestersLoading(true);
     setRequestersError(null);
@@ -43,7 +45,7 @@ export default function App() {
 
       const storedId = getSelectedRequesterId();
 
-      // Validate stored ID against active requesters
+      // Validate stored ID against active requesters list
       if (storedId) {
         const found = requesters.find((r) => String(r.id) === String(storedId) && r.isActive !== false);
         if (found) {
@@ -119,7 +121,10 @@ export default function App() {
     return (
       <div className="container py-5" style={{ maxWidth: 640 }}>
         <header className="mb-4">
-          <h1 className="h3 text-success fw-bold">Select Development Requester</h1>
+          <h1 className="h3">
+            TokTickIT <span className="text-success">IT Service Desk</span>
+          </h1>
+          <h2 className="h4 text-success fw-bold mt-3">Select Development Requester</h2>
           <p className="text-muted small">
             Select a Development Requester for Lab 2 testing context. This selector attaches the{" "}
             <code>X-Requester-Id</code> header to API requests (this is for development testing context, not user authentication).
@@ -198,6 +203,35 @@ export default function App() {
             </div>
           </form>
         )}
+
+        {/* Lab 1 System Check Panel */}
+        <section className="border-top pt-4 mt-5">
+          <button className="btn btn-success mb-3" onClick={handleCheckSystem} disabled={lab1State === "loading"}>
+            {lab1State === "loading" ? "Loading…" : "Check System"}
+          </button>
+
+          {lab1State === "success" && (
+            <div className="mt-2">
+              <p className="fw-bold mb-2">
+                System Status: <span className="text-success">Online</span>
+              </p>
+              <ol className="list-group list-group-numbered">
+                {categories.map((cat) => (
+                  <li key={cat.id} className="list-group-item">
+                    {cat.name}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {lab1State === "error" && (
+            <div className="mt-2">
+              <p className="fw-bold text-danger mb-1">System Status: Offline</p>
+              <p className="text-muted">{lab1ErrorMessage || "Unable to connect to the server."}</p>
+            </div>
+          )}
+        </section>
       </div>
     );
   }

@@ -17,22 +17,22 @@ const mockAllRequestersWithInactive = [
 ];
 
 describe("Issue #34: Development Requester Selection & Context Suite", () => {
-  let originalFetch: typeof global.fetch;
+  let originalFetch: typeof globalThis.fetch;
 
   beforeEach(() => {
     localStorage.clear();
-    originalFetch = global.fetch;
+    originalFetch = globalThis.fetch;
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
-    global.fetch = originalFetch;
+    globalThis.fetch = originalFetch;
     localStorage.clear();
   });
 
   describe("1. Inactive Requester Exclusion", () => {
     it("displays only active requesters and excludes inactive requesters (Eve Adams) from selector UI", async () => {
-      global.fetch = vi.fn().mockImplementation((url: string) => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("/api/requesters/active")) {
           return Promise.resolve({
             ok: true,
@@ -62,7 +62,7 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
       // Pre-set invalid/unknown requester ID in LocalStorage
       localStorage.setItem("selectedRequesterId", "9999");
 
-      global.fetch = vi.fn().mockImplementation((url: string) => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("/api/requesters/active")) {
           return Promise.resolve({
             ok: true,
@@ -85,7 +85,7 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
     it("redirects to Requester Selector when LocalStorage contains an inactive requester ID (e.g. Eve Adams ID 5)", async () => {
       localStorage.setItem("selectedRequesterId", "5");
 
-      global.fetch = vi.fn().mockImplementation((url: string) => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("/api/requesters/active")) {
           return Promise.resolve({
             ok: true,
@@ -109,7 +109,7 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
     it("allows direct access to requester-scoped screen without redirect when LocalStorage contains valid active requester ID", async () => {
       localStorage.setItem("selectedRequesterId", "1"); // Valid active requester Alice Smith
 
-      global.fetch = vi.fn().mockImplementation((url: string) => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("/api/requesters/active")) {
           return Promise.resolve({
             ok: true,
@@ -145,7 +145,7 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
 
       const fetchCalls: { url: string; headers: any }[] = [];
 
-      global.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
         fetchCalls.push({ url, headers: init?.headers });
         if (url.includes("/api/requesters/active")) {
           return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(mockActiveRequesters) } as Response);
@@ -188,7 +188,9 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
       await waitFor(() => {
         expect(screen.getByText(/Bob Jones/i)).toBeInTheDocument();
         const latestTicketCall = [...fetchCalls].reverse().find((c) => c.url.includes("/api/tickets"));
-        const reqHeader = latestTicketCall?.headers?.["X-Requester-Id"] || (latestTicketCall?.headers instanceof Headers ? latestTicketCall.headers.get("X-Requester-Id") : undefined);
+        const reqHeader = (latestTicketCall?.headers as Record<string, string>)?.[
+          "X-Requester-Id"
+        ] || (latestTicketCall?.headers instanceof Headers ? latestTicketCall.headers.get("X-Requester-Id") : undefined);
         expect(reqHeader).toBe("2");
       });
     });
@@ -199,9 +201,9 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
       const user = userEvent.setup();
       localStorage.setItem("selectedRequesterId", "1"); // Start as Alice Smith (ID 1)
 
-      global.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
-        const headers = init?.headers;
-        const reqId = headers?.["X-Requester-Id"] || (headers instanceof Headers ? headers.get("X-Requester-Id") : undefined);
+      globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        const headers = init?.headers as Record<string, string> | undefined;
+        const reqId = headers?.["X-Requester-Id"] || (init?.headers instanceof Headers ? init.headers.get("X-Requester-Id") : undefined);
 
         if (url.includes("/api/requesters/active")) {
           return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(mockActiveRequesters) } as Response);
@@ -273,7 +275,7 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
         window.innerHeight = vp.height;
         window.dispatchEvent(new Event("resize"));
 
-        global.fetch = vi.fn().mockImplementation((url: string) => {
+        globalThis.fetch = vi.fn().mockImplementation((url: string) => {
           if (url.includes("/api/requesters/active")) {
             return Promise.resolve({
               ok: true,
@@ -291,6 +293,20 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
           expect(screen.getByRole("button", { name: /Continue/i })).toBeInTheDocument();
         });
       });
+    });
+  });
+
+  describe("7. Initial Rendering State & Mount Behavior", () => {
+    it("renders the selection view or loading state on initial mount rather than the App Shell with no current requester", () => {
+      // Mock fetch to return a pending Promise so requester loading stays in progress
+      globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => {}));
+
+      render(<App />);
+
+      // On initial mount while loading, the app must show loading/selection view
+      expect(screen.getByText("Loading active requesters…")).toBeInTheDocument();
+      // Must NOT render the App Shell navigation bar displaying "Current Requester:"
+      expect(screen.queryByText(/Current Requester:/i)).not.toBeInTheDocument();
     });
   });
 });
