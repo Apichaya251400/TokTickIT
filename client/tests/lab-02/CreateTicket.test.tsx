@@ -632,4 +632,175 @@ describe("Issue #28: Create Ticket Requester UI & Validation Suite", () => {
       });
     });
   });
+
+  describe("13. PR #36 Attachment Idempotency & Partial Retry Regression Suite", () => {
+    it("REGRESSION 3: retries ONLY failed/pending attachments when some uploads succeed and others fail (Case B: A succeeds, B fails, C succeeds)", async () => {
+      const uploadCounts: Record<string, number> = { "A.pdf": 0, "B.png": 0, "C.jpg": 0 };
+      let ticketPostCalls = 0;
+
+      await renderAndNavigateToCreateTicket("1", (url: string, init?: RequestInit) => {
+        if (url.includes("/attachments") && init?.method === "POST") {
+          const body = init?.body as FormData | undefined;
+          const file = body?.get("file") as File | null;
+          const fileName = file?.name || "unknown";
+          uploadCounts[fileName] = (uploadCounts[fileName] || 0) + 1;
+
+          if (fileName === "B.png" && uploadCounts["B.png"] === 1) {
+            // First upload attempt for B.png fails with 500
+            return Promise.resolve({
+              ok: false,
+              status: 500,
+              json: () => Promise.resolve({ error: { code: "UPLOAD_FAILED", message: "B failed" } }),
+            } as Response);
+          } else {
+            // A.pdf, C.jpg, and 2nd attempt of B.png succeed with 201
+            return Promise.resolve({
+              ok: true,
+              status: 201,
+              json: () => Promise.resolve({ id: `att-${fileName}`, filename: fileName }),
+            } as Response);
+          }
+        }
+
+        if (url.includes("/api/tickets") && init?.method === "POST") {
+          ticketPostCalls++;
+          return Promise.resolve({
+            ok: true,
+            status: 201,
+            json: () => Promise.resolve({ id: "tkt-mixed-uuid", ticketNumber: "TKT-2026-000888" }),
+          } as Response);
+        }
+        return undefined;
+      });
+
+      fireEvent.change(screen.getByLabelText(/Summary/i), { target: { value: "Mixed Attachment Failure Test" } });
+      fireEvent.change(screen.getByLabelText(/Description/i), { target: { value: "Detailed description for mixed attachment upload failure and retry idempotency." } });
+      fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "101" } });
+      fireEvent.change(screen.getByLabelText(/Related System/i), { target: { value: "201" } });
+
+      const dropzone = screen.getByLabelText(/Attach Files|Attachment Dropzone|Upload Files/i);
+      const fileA = new File(["contentA"], "A.pdf", { type: "application/pdf" });
+      const fileB = new File(["contentB"], "B.png", { type: "image/png" });
+      const fileC = new File(["contentC"], "C.jpg", { type: "image/jpeg" });
+
+      fireEvent.change(dropzone, { target: { files: [fileA, fileB, fileC] } });
+
+      await waitFor(() => {
+        expect(screen.getByText(/A.pdf/i)).toBeInTheDocument();
+        expect(screen.getByText(/B.png/i)).toBeInTheDocument();
+        expect(screen.getByText(/C.jpg/i)).toBeInTheDocument();
+      });
+
+      const submitBtn = screen.getByRole("button", { name: /Submit Ticket|Submit|Retry/i });
+      fireEvent.click(submitBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText(/attachment upload failed/i)).toBeInTheDocument();
+      });
+
+      // Initial submit verification:
+      expect(ticketPostCalls).toBe(1);
+      expect(uploadCounts["A.pdf"]).toBe(1);
+      expect(uploadCounts["B.png"]).toBe(1);
+      expect(uploadCounts["C.jpg"]).toBe(1);
+
+      // User clicks Retry
+      const retryBtn = screen.getByRole("button", { name: /Submit Ticket|Submit|Retry/i });
+      fireEvent.click(retryBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Ticket TKT-2026-000888 created successfully!/i)).toBeInTheDocument();
+      });
+
+      // Retry verification:
+      // Ticket creation MUST remain 1
+      expect(ticketPostCalls).toBe(1);
+      // A.pdf MUST NOT be uploaded again (remains 1)
+      expect(uploadCounts["A.pdf"]).toBe(1);
+      // B.png MUST be retried (becomes 2)
+      expect(uploadCounts["B.png"]).toBe(2);
+      // C.jpg MUST NOT be uploaded again (remains 1)
+      expect(uploadCounts["C.jpg"]).toBe(1);
+    });
+
+    it("REGRESSION 4: distinguishes duplicate filenames as separate attachments and retries ONLY the failed File object", async () => {
+      const uploadCalls: Array<{ fileName: string; size: number }> = [];
+      let ticketPostCalls = 0;
+
+      await renderAndNavigateToCreateTicket("1", (url: string, init?: RequestInit) => {
+        if (url.includes("/attachments") && init?.method === "POST") {
+          const body = init?.body as FormData | undefined;
+          const file = body?.get("file") as File | null;
+          if (file) {
+            uploadCalls.push({ fileName: file.name, size: file.size });
+            // Fail only the file with size 200 bytes
+            if (file.size === 200 && uploadCalls.filter((c) => c.size === 200).length === 1) {
+              return Promise.resolve({
+                ok: false,
+                status: 500,
+                json: () => Promise.resolve({ error: { code: "UPLOAD_FAILED", message: "File 2 failed" } }),
+              } as Response);
+            }
+          }
+          return Promise.resolve({
+            ok: true,
+            status: 201,
+            json: () => Promise.resolve({ id: "att-dup-uuid" }),
+          } as Response);
+        }
+
+        if (url.includes("/api/tickets") && init?.method === "POST") {
+          ticketPostCalls++;
+          return Promise.resolve({
+            ok: true,
+            status: 201,
+            json: () => Promise.resolve({ id: "tkt-dup-files-uuid", ticketNumber: "TKT-2026-000999" }),
+          } as Response);
+        }
+        return undefined;
+      });
+
+      fireEvent.change(screen.getByLabelText(/Summary/i), { target: { value: "Duplicate Filenames Test" } });
+      fireEvent.change(screen.getByLabelText(/Description/i), { target: { value: "Detailed description for duplicate filenames attachment idempotency test." } });
+      fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "101" } });
+      fireEvent.change(screen.getByLabelText(/Related System/i), { target: { value: "201" } });
+
+      const dropzone = screen.getByLabelText(/Attach Files|Attachment Dropzone|Upload Files/i);
+      // Two separate File objects with identical name "document.pdf" but different sizes (100 vs 200 bytes)
+      const doc1 = new File([new ArrayBuffer(100)], "document.pdf", { type: "application/pdf" });
+      const doc2 = new File([new ArrayBuffer(200)], "document.pdf", { type: "application/pdf" });
+
+      fireEvent.change(dropzone, { target: { files: [doc1, doc2] } });
+
+      await waitFor(() => {
+        expect(screen.getAllByText(/document.pdf/i)).toHaveLength(2);
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /Submit Ticket|Submit|Retry/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/attachment upload failed/i)).toBeInTheDocument();
+      });
+
+      const initialCallsSize100 = uploadCalls.filter((c) => c.size === 100).length;
+      const initialCallsSize200 = uploadCalls.filter((c) => c.size === 200).length;
+      expect(initialCallsSize100).toBe(1);
+      expect(initialCallsSize200).toBe(1);
+
+      // Retry
+      fireEvent.click(screen.getByRole("button", { name: /Submit Ticket|Submit|Retry/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Ticket TKT-2026-000999 created successfully!/i)).toBeInTheDocument();
+      });
+
+      const totalCallsSize100 = uploadCalls.filter((c) => c.size === 100).length;
+      const totalCallsSize200 = uploadCalls.filter((c) => c.size === 200).length;
+
+      // doc1 (size 100) succeeded on first try, MUST NOT be retried (remains 1)
+      expect(totalCallsSize100).toBe(1);
+      // doc2 (size 200) failed on first try, MUST be retried (becomes 2)
+      expect(totalCallsSize200).toBe(2);
+    });
+  });
 });

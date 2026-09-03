@@ -17,6 +17,12 @@ import {
 type UiState = "idle" | "loading" | "success" | "error";
 type NavigationTab = "my-tickets" | "create-ticket";
 
+export interface AttachmentItem {
+  id: string;
+  file: File;
+  status: "pending" | "uploading" | "succeeded" | "failed";
+}
+
 export default function App() {
   // 1. Lab 1 state (Top level of App component)
   const [lab1State, setLab1State] = useState<UiState>("idle");
@@ -51,7 +57,7 @@ export default function App() {
   const [requestedPriority, setRequestedPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "URGENT">("MEDIUM");
   const [summary, setSummary] = useState<string>("");
   const [description, setDescription] = useState<string>("");
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [attachmentItems, setAttachmentItems] = useState<AttachmentItem[]>([]);
 
   // 7. Retained Created Ticket State for Attachment Retry (BR-18 Duplicate Ticket Protection)
   const [retainedCreatedTicket, setRetainedCreatedTicket] = useState<{ id: string; ticketNumber: string } | null>(null);
@@ -216,7 +222,7 @@ export default function App() {
     const filesArray = Array.from(e.target.files);
 
     // Check active attachment limit (max 5)
-    if (selectedFiles.length + filesArray.length > 5) {
+    if (attachmentItems.length + filesArray.length > 5) {
       setDropzoneError("Maximum of 5 active attachments allowed.");
       return;
     }
@@ -236,7 +242,17 @@ export default function App() {
       }
     }
 
-    setSelectedFiles((prev) => [...prev, ...filesArray]);
+    const newItems: AttachmentItem[] = filesArray.map((file, idx) => ({
+      id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${idx}`,
+      file,
+      status: "pending",
+    }));
+
+    setAttachmentItems((prev) => [...prev, ...newItems]);
+  }
+
+  function handleRemoveFile(id: string) {
+    setAttachmentItems((prev) => prev.filter((item) => item.id !== id));
   }
 
   function validateForm(): boolean {
@@ -327,19 +343,37 @@ export default function App() {
       }
 
       // Attempt attachment uploads if files were selected
-      if (selectedFiles.length > 0) {
+      if (attachmentItems.length > 0) {
         let hasUploadError = false;
 
-        for (const file of selectedFiles) {
+        // Select ONLY items that have NOT succeeded yet (pending or failed)
+        const itemsToUpload = attachmentItems.filter((item) => item.status !== "succeeded");
+
+        for (const item of itemsToUpload) {
           try {
-            await uploadAttachment(activeTicket.id, file, capturedRequesterId);
+            // Mark item as uploading in state
+            setAttachmentItems((prev) =>
+              prev.map((i) => (i.id === item.id ? { ...i, status: "uploading" } : i))
+            );
+
+            await uploadAttachment(activeTicket.id, item.file, capturedRequesterId);
+
+            // Mark item as succeeded in state
+            setAttachmentItems((prev) =>
+              prev.map((i) => (i.id === item.id ? { ...i, status: "succeeded" } : i))
+            );
           } catch (uploadErr) {
             hasUploadError = true;
+
+            // Mark item as failed in state
+            setAttachmentItems((prev) =>
+              prev.map((i) => (i.id === item.id ? { ...i, status: "failed" } : i))
+            );
           }
         }
 
         if (hasUploadError) {
-          // FIX 1: Retain created ticket for retry so createTicket is NOT called again on retry
+          // Retain created ticket for retry so createTicket is NOT called again on retry
           setRetainedCreatedTicket(activeTicket);
           setUploadWarning(`Ticket ${activeTicket.ticketNumber} saved, but attachment upload failed.`);
         } else {
@@ -365,7 +399,7 @@ export default function App() {
     setRequestedPriority("MEDIUM");
     setSummary("");
     setDescription("");
-    setSelectedFiles([]);
+    setAttachmentItems([]);
     setRetainedCreatedTicket(null);
     setSummaryError(null);
     setDescriptionError(null);
@@ -799,15 +833,19 @@ export default function App() {
                 )}
 
                 {/* Selected File List Preview */}
-                {selectedFiles.length > 0 && (
+                {attachmentItems.length > 0 && (
                   <ul className="list-group mt-2">
-                    {selectedFiles.map((file, idx) => (
-                      <li key={idx} className="list-group-item d-flex justify-content-between align-items-center p-2 small">
-                        <span>{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+                    {attachmentItems.map((item) => (
+                      <li key={item.id} className="list-group-item d-flex justify-content-between align-items-center p-2 small">
+                        <span>
+                          {item.file.name} ({(item.file.size / 1024).toFixed(1)} KB)
+                          {item.status === "succeeded" && <span className="badge bg-success ms-2">Uploaded</span>}
+                          {item.status === "failed" && <span className="badge bg-danger ms-2">Upload Failed</span>}
+                        </span>
                         <button
                           type="button"
                           className="btn btn-outline-danger btn-sm py-0 px-2"
-                          onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== idx))}
+                          onClick={() => handleRemoveFile(item.id)}
                         >
                           Remove
                         </button>
