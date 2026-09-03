@@ -1,0 +1,441 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import App from "../../src/App";
+import * as api from "../../src/api";
+
+const mockActiveRequesters = [
+  { id: 1, name: "Alice Smith", email: "alice@example.com", isActive: true },
+  { id: 2, name: "Bob Jones", email: "bob@example.com", isActive: true },
+  { id: 3, name: "Charlie Brown", email: "charlie@example.com", isActive: true },
+  { id: 4, name: "Diana Prince", email: "diana@example.com", isActive: true },
+];
+
+const mockAllRequestersWithInactive = [
+  ...mockActiveRequesters,
+  { id: 5, name: "Eve Adams", email: "eve@example.com", isActive: false },
+];
+
+describe("Issue #34: Development Requester Selection & Context Suite", () => {
+  let originalFetch: typeof globalThis.fetch;
+
+  beforeEach(() => {
+    localStorage.clear();
+    originalFetch = globalThis.fetch;
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    localStorage.clear();
+  });
+
+  describe("1. Inactive Requester Exclusion", () => {
+    it("displays only active requesters and excludes inactive requesters (Eve Adams) from selector UI", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/api/requesters/active")) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(mockActiveRequesters), // Backend API returns only active
+          } as Response);
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Alice Smith/i)).toBeInTheDocument();
+        expect(screen.getByText(/Bob Jones/i)).toBeInTheDocument();
+        expect(screen.getByText(/Charlie Brown/i)).toBeInTheDocument();
+        expect(screen.getByText(/Diana Prince/i)).toBeInTheDocument();
+      });
+
+      // Assert inactive seed user Eve Adams is NOT rendered or selectable in the DOM
+      expect(screen.queryByText(/Eve Adams/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("2. Invalid Stored Requester Context", () => {
+    it("redirects to Requester Selector when LocalStorage contains an invalid or unknown requester ID", async () => {
+      // Pre-set invalid/unknown requester ID in LocalStorage
+      localStorage.setItem("selectedRequesterId", "9999");
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/api/requesters/active")) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(mockActiveRequesters),
+          } as Response);
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        // App must NOT silently authorize invalid requester ID "9999"; it must require selector UI
+        expect(screen.getByText(/Select Development Requester|Select Requester/i)).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /Continue/i })).toBeInTheDocument();
+      });
+    });
+
+    it("redirects to Requester Selector when LocalStorage contains an inactive requester ID (e.g. Eve Adams ID 5)", async () => {
+      localStorage.setItem("selectedRequesterId", "5");
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/api/requesters/active")) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(mockActiveRequesters),
+          } as Response);
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Select Development Requester|Select Requester/i)).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /Continue/i })).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("3. Valid Stored Requester Access", () => {
+    it("allows direct access to requester-scoped screen without redirect when LocalStorage contains valid active requester ID", async () => {
+      localStorage.setItem("selectedRequesterId", "1"); // Valid active requester Alice Smith
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/api/requesters/active")) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(mockActiveRequesters),
+          } as Response);
+        }
+        if (url.includes("/api/tickets")) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ data: [], pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } }),
+          } as Response);
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        // Valid context allows access to main application shell displaying Alice Smith's identity
+        expect(screen.getByText(/Alice Smith/i)).toBeInTheDocument();
+        // Should NOT show the selector screen Continue submission button
+        expect(screen.queryByRole("button", { name: /^Continue$/i })).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("4. Requester Switching Replaces Context", () => {
+    it("replaces header context and displays new requester identity when switching from Requester A to Requester B", async () => {
+      const user = userEvent.setup();
+      localStorage.setItem("selectedRequesterId", "1"); // Start with Alice (ID 1)
+
+      const fetchCalls: { url: string; headers: any }[] = [];
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        fetchCalls.push({ url, headers: init?.headers });
+        if (url.includes("/api/requesters/active")) {
+          return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(mockActiveRequesters) } as Response);
+        }
+        if (url.includes("/api/tickets")) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ data: [], pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } }),
+          } as Response);
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+      });
+
+      render(<App />);
+
+      // 1. Initially Alice Smith is active
+      await waitFor(() => {
+        expect(screen.getByText(/Alice Smith/i)).toBeInTheDocument();
+      });
+
+      // 2. Click Change Requester
+      const changeBtn = screen.getByRole("button", { name: /Change Requester/i });
+      await user.click(changeBtn);
+
+      // 3. Select Bob Jones (ID 2)
+      await waitFor(() => {
+        expect(screen.getByText(/Bob Jones/i)).toBeInTheDocument();
+      });
+
+      const bobOption = screen.getByLabelText(/Bob Jones/i) || screen.getByText(/Bob Jones/i);
+      await user.click(bobOption);
+
+      const continueBtn = screen.getByRole("button", { name: /Continue/i });
+      await user.click(continueBtn);
+
+      // 4. Verify LocalStorage and Header updated to ID 2 (Bob Jones)
+      expect(localStorage.getItem("selectedRequesterId")).toBe("2");
+
+      await waitFor(() => {
+        expect(screen.getByText(/Bob Jones/i)).toBeInTheDocument();
+        const latestTicketCall = [...fetchCalls].reverse().find((c) => c.url.includes("/api/tickets"));
+        const reqHeader = (latestTicketCall?.headers as Record<string, string>)?.[
+          "X-Requester-Id"
+        ] || (latestTicketCall?.headers instanceof Headers ? latestTicketCall.headers.get("X-Requester-Id") : undefined);
+        expect(reqHeader).toBe("2");
+      });
+    });
+  });
+
+  describe("5. Requester-Specific Data Refresh & Explicit Context", () => {
+    it("refreshes and replaces requester A ticket data with requester B ticket data upon switching context using explicit X-Requester-Id header", async () => {
+      const user = userEvent.setup();
+      localStorage.setItem("selectedRequesterId", "1"); // Start as Alice Smith (ID 1)
+
+      const ticketFetchHeaders: string[] = [];
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        const headers = init?.headers as Record<string, string> | undefined;
+        const reqId = headers?.["X-Requester-Id"] || (init?.headers instanceof Headers ? init.headers.get("X-Requester-Id") : undefined);
+
+        if (url.includes("/api/requesters/active")) {
+          return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(mockActiveRequesters) } as Response);
+        }
+        if (url.includes("/api/tickets")) {
+          if (reqId) ticketFetchHeaders.push(String(reqId));
+          if (reqId === "1") {
+            return Promise.resolve({
+              ok: true,
+              status: 200,
+              json: () => Promise.resolve({
+                data: [{ id: "t1", ticketNumber: "TCK-001", summary: "Alice VPN Connection Issue", requestedPriority: "HIGH", currentStatus: "NEW" }],
+                pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+              }),
+            } as Response);
+          } else if (reqId === "2") {
+            return Promise.resolve({
+              ok: true,
+              status: 200,
+              json: () => Promise.resolve({
+                data: [{ id: "t2", ticketNumber: "TCK-002", summary: "Bob Hardware Printer Offline", requestedPriority: "LOW", currentStatus: "NEW" }],
+                pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+              }),
+            } as Response);
+          }
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+      });
+
+      render(<App />);
+
+      // Verify Alice's ticket is rendered initially and header sent is '1'
+      await waitFor(() => {
+        expect(screen.getByText(/Alice VPN Connection Issue/i)).toBeInTheDocument();
+        expect(ticketFetchHeaders).toContain("1");
+      });
+
+      // Switch to Bob (ID 2)
+      const changeBtn = screen.getByRole("button", { name: /Change Requester/i });
+      await user.click(changeBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Bob Jones/i)).toBeInTheDocument();
+      });
+
+      const bobOption = screen.getByLabelText(/Bob Jones/i) || screen.getByText(/Bob Jones/i);
+      await user.click(bobOption);
+
+      const continueBtn = screen.getByRole("button", { name: /Continue/i });
+      await user.click(continueBtn);
+
+      // Verify Bob's ticket replaces Alice's ticket and header sent is '2'
+      await waitFor(() => {
+        expect(screen.getByText(/Bob Hardware Printer Offline/i)).toBeInTheDocument();
+        expect(screen.queryByText(/Alice VPN Connection Issue/i)).not.toBeInTheDocument();
+        expect(ticketFetchHeaders[ticketFetchHeaders.length - 1]).toBe("2");
+      });
+    });
+  });
+
+  describe("6. Responsive Viewport & UI Contract (docs/lab-02/ui-spec.md)", () => {
+    const viewports = [
+      { name: "Desktop", width: 1200, height: 900 },
+      { name: "Tablet", width: 768, height: 1024 },
+      { name: "Mobile", width: 375, height: 667 },
+    ];
+
+    viewports.forEach((vp) => {
+      it(`renders accessible and usable requester selection controls on ${vp.name} (${vp.width}px)`, async () => {
+        // Set viewport width & height
+        window.innerWidth = vp.width;
+        window.innerHeight = vp.height;
+        window.dispatchEvent(new Event("resize"));
+
+        globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+          if (url.includes("/api/requesters/active")) {
+            return Promise.resolve({
+              ok: true,
+              status: 200,
+              json: () => Promise.resolve(mockActiveRequesters),
+            } as Response);
+          }
+          return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+        });
+
+        render(<App />);
+
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+          expect(screen.getByRole("button", { name: /Continue/i })).toBeInTheDocument();
+        });
+      });
+    });
+  });
+
+  describe("7. Initial Rendering State & Mount Behavior", () => {
+    it("renders the selection view or loading state on initial mount rather than the App Shell with no current requester", () => {
+      // Mock fetch to return a pending Promise so requester loading stays in progress
+      globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => {}));
+
+      render(<App />);
+
+      // On initial mount while loading, the app must show loading/selection view
+      expect(screen.getByText("Loading active requesters…")).toBeInTheDocument();
+      // Must NOT render the App Shell navigation bar displaying "Current Requester:"
+      expect(screen.queryByText(/Current Requester:/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("8. Application Shell Navigation Tabs (docs/lab-02/ui-spec.md §3.1)", () => {
+    it("renders My Tickets and Create Ticket navigation tabs with aria-current='page' on active tab", async () => {
+      const user = userEvent.setup();
+      localStorage.setItem("selectedRequesterId", "1");
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/api/requesters/active")) {
+          return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(mockActiveRequesters) } as Response);
+        }
+        if (url.includes("/api/tickets")) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ data: [], pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } }),
+          } as Response);
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+      });
+
+      render(<App />);
+
+      // 1. Initially My Tickets tab is active with aria-current="page"
+      await waitFor(() => {
+        const myTicketsTab = screen.getByRole("button", { name: /^My Tickets$/i });
+        const createTicketTab = screen.getByRole("button", { name: /^Create Ticket$/i });
+
+        expect(myTicketsTab).toBeInTheDocument();
+        expect(createTicketTab).toBeInTheDocument();
+        expect(myTicketsTab).toHaveAttribute("aria-current", "page");
+        expect(createTicketTab).not.toHaveAttribute("aria-current");
+      });
+
+      // 2. Click Create Ticket tab
+      const createTicketTab = screen.getByRole("button", { name: /^Create Ticket$/i });
+      await user.click(createTicketTab);
+
+      // 3. Create Ticket tab becomes active with aria-current="page"
+      const myTicketsTab = screen.getByRole("button", { name: /^My Tickets$/i });
+      expect(createTicketTab).toHaveAttribute("aria-current", "page");
+      expect(myTicketsTab).not.toHaveAttribute("aria-current");
+      expect(screen.getByText(/Create Ticket Form Placeholder/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("9. Concurrency & Stale Response Race Protection", () => {
+    it("discards stale tickets from Alice when Alice's request resolves after Bob's request has already completed", async () => {
+      const user = userEvent.setup();
+      localStorage.setItem("selectedRequesterId", "1"); // Start as Alice (ID 1)
+
+      let resolveAliceTickets!: (value: any) => void;
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        const headers = init?.headers as Record<string, string> | undefined;
+        const reqId = headers?.["X-Requester-Id"] || (init?.headers instanceof Headers ? init.headers.get("X-Requester-Id") : undefined);
+
+        if (url.includes("/api/requesters/active")) {
+          return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(mockActiveRequesters) } as Response);
+        }
+        if (url.includes("/api/tickets")) {
+          if (reqId === "1") {
+            // Keep Alice's request pending until manually resolved
+            return new Promise((resolve) => {
+              resolveAliceTickets = resolve;
+            });
+          }
+          if (reqId === "2") {
+            // Resolve Bob's request immediately
+            return Promise.resolve({
+              ok: true,
+              status: 200,
+              json: () => Promise.resolve({
+                data: [{ id: "t2", ticketNumber: "TCK-002", summary: "Bob Hardware Printer Offline", requestedPriority: "LOW", currentStatus: "NEW" }],
+                pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+              }),
+            } as Response);
+          }
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+      });
+
+      render(<App />);
+
+      // 1. Initial render starts Alice's request (held pending)
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /Change Requester/i })).toBeInTheDocument();
+      });
+
+      // 2. Switch to Bob (ID 2) while Alice's request is still pending
+      const changeBtn = screen.getByRole("button", { name: /Change Requester/i });
+      await user.click(changeBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Bob Jones/i)).toBeInTheDocument();
+      });
+
+      const bobOption = screen.getByLabelText(/Bob Jones/i) || screen.getByText(/Bob Jones/i);
+      await user.click(bobOption);
+
+      const continueBtn = screen.getByRole("button", { name: /Continue/i });
+      await user.click(continueBtn);
+
+      // 3. Bob's request completes first and displays Bob's tickets
+      await waitFor(() => {
+        expect(screen.getByText(/Bob Hardware Printer Offline/i)).toBeInTheDocument();
+      });
+
+      // 4. Resolve Alice's stale request AFTER Bob's request has completed
+      resolveAliceTickets({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({
+          data: [{ id: "t1", ticketNumber: "TCK-001", summary: "Alice Stale VPN Ticket", requestedPriority: "HIGH", currentStatus: "NEW" }],
+          pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+        }),
+      });
+
+      // 5. Verify Alice's stale ticket response does NOT overwrite Bob's ticket data
+      await waitFor(() => {
+        expect(screen.getByText(/Bob Hardware Printer Offline/i)).toBeInTheDocument();
+        expect(screen.queryByText(/Alice Stale VPN Ticket/i)).not.toBeInTheDocument();
+      });
+    });
+  });
+});
