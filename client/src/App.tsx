@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   checkSystem,
   Category,
@@ -10,6 +10,7 @@ import {
 } from "./api.js";
 
 type UiState = "idle" | "loading" | "success" | "error";
+type NavigationTab = "my-tickets" | "create-ticket";
 
 export default function App() {
   // 1. Lab 1 state (Top level of App component)
@@ -25,11 +26,15 @@ export default function App() {
   const [currentRequester, setCurrentRequester] = useState<Requester | null>(null);
   const [isSelecting, setIsSelecting] = useState<boolean>(true);
 
-  // 3. Requester ticket data state (Top level of App component)
+  // 3. Navigation Tab state (Top level of App component)
+  const [activeTab, setActiveTab] = useState<NavigationTab>("my-tickets");
+
+  // 4. Requester ticket data state & request tracker ref (Top level of App component)
   const [tickets, setTickets] = useState<any[]>([]);
   const [ticketsLoading, setTicketsLoading] = useState<boolean>(false);
+  const latestTicketRequestIdRef = useRef<number>(0);
 
-  // 4. Startup Effect (Top level of App component)
+  // 5. Startup Effect (Top level of App component)
   useEffect(() => {
     loadRequestersAndRestoreContext();
   }, []);
@@ -69,15 +74,24 @@ export default function App() {
     }
   }
 
+  // Explicit requester context passed down with concurrency race protection
   async function loadTicketsForRequester(requesterId: string) {
+    const requestId = ++latestTicketRequestIdRef.current;
     setTicketsLoading(true);
     try {
-      const res = await fetchMyTickets();
-      setTickets(res?.data || []);
+      const res = await fetchMyTickets(requesterId);
+      // Ignore response if a newer request was initiated
+      if (requestId === latestTicketRequestIdRef.current) {
+        setTickets(res?.data || []);
+      }
     } catch (err) {
-      setTickets([]);
+      if (requestId === latestTicketRequestIdRef.current) {
+        setTickets([]);
+      }
     } finally {
-      setTicketsLoading(false);
+      if (requestId === latestTicketRequestIdRef.current) {
+        setTicketsLoading(false);
+      }
     }
   }
 
@@ -236,7 +250,7 @@ export default function App() {
     );
   }
 
-  // Render Application Shell with Selected Requester Context
+  // Render Application Shell with Selected Requester Context & Navigation Tabs
   return (
     <div className="container py-5" style={{ maxWidth: 800 }}>
       {/* App Shell Header displaying Current Requester Identity & Change Requester button */}
@@ -251,34 +265,70 @@ export default function App() {
         </button>
       </nav>
 
-      {/* Main Application Shell Content */}
+      {/* Main Application Shell Title & Logo */}
       <header className="mb-4">
         <h1 className="h3">
           TokTickIT <span className="text-success">IT Service Desk</span>
         </h1>
       </header>
 
-      {/* Requester-specific ticket data view */}
-      <section className="mb-5">
-        <h2 className="h5 mb-3 fw-bold">My Tickets</h2>
-        {ticketsLoading ? (
-          <div className="text-muted">Loading tickets…</div>
-        ) : tickets.length > 0 ? (
-          <ul className="list-group">
-            {tickets.map((t) => (
-              <li key={t.id} className="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  <div className="fw-bold">{t.summary}</div>
-                  <div className="small text-muted">{t.ticketNumber}</div>
-                </div>
-                <span className="badge bg-primary">{t.requestedPriority}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="text-muted italic">No tickets found.</div>
-        )}
-      </section>
+      {/* Application Shell Navigation Tabs (docs/lab-02/ui-spec.md §3.1) */}
+      <ul className="nav nav-tabs mb-4" role="tablist">
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${activeTab === "my-tickets" ? "active fw-bold text-success" : "text-secondary"}`}
+            aria-current={activeTab === "my-tickets" ? "page" : undefined}
+            onClick={() => setActiveTab("my-tickets")}
+          >
+            My Tickets
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${activeTab === "create-ticket" ? "active fw-bold text-success" : "text-secondary"}`}
+            aria-current={activeTab === "create-ticket" ? "page" : undefined}
+            onClick={() => setActiveTab("create-ticket")}
+          >
+            Create Ticket
+          </button>
+        </li>
+      </ul>
+
+      {/* Tab Content 1: My Tickets Screen View */}
+      {activeTab === "my-tickets" && (
+        <section className="mb-5">
+          <h2 className="h5 mb-3 fw-bold">My Tickets</h2>
+          {ticketsLoading ? (
+            <div className="text-muted">Loading tickets…</div>
+          ) : tickets.length > 0 ? (
+            <ul className="list-group">
+              {tickets.map((t) => (
+                <li key={t.id} className="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    <div className="fw-bold">{t.summary}</div>
+                    <div className="small text-muted">{t.ticketNumber}</div>
+                  </div>
+                  <span className="badge bg-primary">{t.requestedPriority}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-muted italic">No tickets found.</div>
+          )}
+        </section>
+      )}
+
+      {/* Tab Content 2: Create Ticket Screen View Placeholder (Business form implemented in Issue #28) */}
+      {activeTab === "create-ticket" && (
+        <section className="mb-5">
+          <h2 className="h5 mb-3 fw-bold">Create Ticket</h2>
+          <div className="card p-4 text-center bg-light border-dashed">
+            <p className="text-muted mb-0">Create Ticket Form Placeholder (Issue #28)</p>
+          </div>
+        </section>
+      )}
 
       {/* Lab 1 System Check Panel */}
       <section className="border-top pt-4">

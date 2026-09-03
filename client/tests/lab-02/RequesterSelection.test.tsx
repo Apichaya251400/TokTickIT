@@ -196,10 +196,12 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
     });
   });
 
-  describe("5. Requester-Specific Data Refresh", () => {
-    it("refreshes and replaces requester A ticket data with requester B ticket data upon switching context", async () => {
+  describe("5. Requester-Specific Data Refresh & Explicit Context", () => {
+    it("refreshes and replaces requester A ticket data with requester B ticket data upon switching context using explicit X-Requester-Id header", async () => {
       const user = userEvent.setup();
       localStorage.setItem("selectedRequesterId", "1"); // Start as Alice Smith (ID 1)
+
+      const ticketFetchHeaders: string[] = [];
 
       globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
         const headers = init?.headers as Record<string, string> | undefined;
@@ -209,6 +211,7 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
           return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(mockActiveRequesters) } as Response);
         }
         if (url.includes("/api/tickets")) {
+          if (reqId) ticketFetchHeaders.push(String(reqId));
           if (reqId === "1") {
             return Promise.resolve({
               ok: true,
@@ -234,9 +237,10 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
 
       render(<App />);
 
-      // Verify Alice's ticket is rendered initially
+      // Verify Alice's ticket is rendered initially and header sent is '1'
       await waitFor(() => {
         expect(screen.getByText(/Alice VPN Connection Issue/i)).toBeInTheDocument();
+        expect(ticketFetchHeaders).toContain("1");
       });
 
       // Switch to Bob (ID 2)
@@ -253,10 +257,11 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
       const continueBtn = screen.getByRole("button", { name: /Continue/i });
       await user.click(continueBtn);
 
-      // Verify Bob's ticket replaces Alice's ticket
+      // Verify Bob's ticket replaces Alice's ticket and header sent is '2'
       await waitFor(() => {
         expect(screen.getByText(/Bob Hardware Printer Offline/i)).toBeInTheDocument();
         expect(screen.queryByText(/Alice VPN Connection Issue/i)).not.toBeInTheDocument();
+        expect(ticketFetchHeaders[ticketFetchHeaders.length - 1]).toBe("2");
       });
     });
   });
@@ -307,6 +312,130 @@ describe("Issue #34: Development Requester Selection & Context Suite", () => {
       expect(screen.getByText("Loading active requesters…")).toBeInTheDocument();
       // Must NOT render the App Shell navigation bar displaying "Current Requester:"
       expect(screen.queryByText(/Current Requester:/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("8. Application Shell Navigation Tabs (docs/lab-02/ui-spec.md §3.1)", () => {
+    it("renders My Tickets and Create Ticket navigation tabs with aria-current='page' on active tab", async () => {
+      const user = userEvent.setup();
+      localStorage.setItem("selectedRequesterId", "1");
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/api/requesters/active")) {
+          return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(mockActiveRequesters) } as Response);
+        }
+        if (url.includes("/api/tickets")) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ data: [], pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } }),
+          } as Response);
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+      });
+
+      render(<App />);
+
+      // 1. Initially My Tickets tab is active with aria-current="page"
+      await waitFor(() => {
+        const myTicketsTab = screen.getByRole("button", { name: /^My Tickets$/i });
+        const createTicketTab = screen.getByRole("button", { name: /^Create Ticket$/i });
+
+        expect(myTicketsTab).toBeInTheDocument();
+        expect(createTicketTab).toBeInTheDocument();
+        expect(myTicketsTab).toHaveAttribute("aria-current", "page");
+        expect(createTicketTab).not.toHaveAttribute("aria-current");
+      });
+
+      // 2. Click Create Ticket tab
+      const createTicketTab = screen.getByRole("button", { name: /^Create Ticket$/i });
+      await user.click(createTicketTab);
+
+      // 3. Create Ticket tab becomes active with aria-current="page"
+      const myTicketsTab = screen.getByRole("button", { name: /^My Tickets$/i });
+      expect(createTicketTab).toHaveAttribute("aria-current", "page");
+      expect(myTicketsTab).not.toHaveAttribute("aria-current");
+      expect(screen.getByText(/Create Ticket Form Placeholder/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("9. Concurrency & Stale Response Race Protection", () => {
+    it("discards stale tickets from Alice when Alice's request resolves after Bob's request has already completed", async () => {
+      const user = userEvent.setup();
+      localStorage.setItem("selectedRequesterId", "1"); // Start as Alice (ID 1)
+
+      let resolveAliceTickets!: (value: any) => void;
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        const headers = init?.headers as Record<string, string> | undefined;
+        const reqId = headers?.["X-Requester-Id"] || (init?.headers instanceof Headers ? init.headers.get("X-Requester-Id") : undefined);
+
+        if (url.includes("/api/requesters/active")) {
+          return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(mockActiveRequesters) } as Response);
+        }
+        if (url.includes("/api/tickets")) {
+          if (reqId === "1") {
+            // Keep Alice's request pending until manually resolved
+            return new Promise((resolve) => {
+              resolveAliceTickets = resolve;
+            });
+          }
+          if (reqId === "2") {
+            // Resolve Bob's request immediately
+            return Promise.resolve({
+              ok: true,
+              status: 200,
+              json: () => Promise.resolve({
+                data: [{ id: "t2", ticketNumber: "TCK-002", summary: "Bob Hardware Printer Offline", requestedPriority: "LOW", currentStatus: "NEW" }],
+                pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+              }),
+            } as Response);
+          }
+        }
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+      });
+
+      render(<App />);
+
+      // 1. Initial render starts Alice's request (held pending)
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /Change Requester/i })).toBeInTheDocument();
+      });
+
+      // 2. Switch to Bob (ID 2) while Alice's request is still pending
+      const changeBtn = screen.getByRole("button", { name: /Change Requester/i });
+      await user.click(changeBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Bob Jones/i)).toBeInTheDocument();
+      });
+
+      const bobOption = screen.getByLabelText(/Bob Jones/i) || screen.getByText(/Bob Jones/i);
+      await user.click(bobOption);
+
+      const continueBtn = screen.getByRole("button", { name: /Continue/i });
+      await user.click(continueBtn);
+
+      // 3. Bob's request completes first and displays Bob's tickets
+      await waitFor(() => {
+        expect(screen.getByText(/Bob Hardware Printer Offline/i)).toBeInTheDocument();
+      });
+
+      // 4. Resolve Alice's stale request AFTER Bob's request has completed
+      resolveAliceTickets({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({
+          data: [{ id: "t1", ticketNumber: "TCK-001", summary: "Alice Stale VPN Ticket", requestedPriority: "HIGH", currentStatus: "NEW" }],
+          pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+        }),
+      });
+
+      // 5. Verify Alice's stale ticket response does NOT overwrite Bob's ticket data
+      await waitFor(() => {
+        expect(screen.getByText(/Bob Hardware Printer Offline/i)).toBeInTheDocument();
+        expect(screen.queryByText(/Alice Stale VPN Ticket/i)).not.toBeInTheDocument();
+      });
     });
   });
 });

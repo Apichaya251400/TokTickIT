@@ -58,8 +58,12 @@ export function setSelectedRequesterId(id: string | null): void {
   }
 }
 
-export async function fetchWithRequesterContext(url: string, options: RequestInit = {}): Promise<Response> {
-  const requesterId = getSelectedRequesterId();
+export async function fetchWithRequesterContext(
+  url: string,
+  options: RequestInit = {},
+  explicitRequesterId?: string
+): Promise<Response> {
+  const requesterId = explicitRequesterId ?? getSelectedRequesterId();
   const headers: Record<string, string> = {};
 
   if (options.headers) {
@@ -77,14 +81,14 @@ export async function fetchWithRequesterContext(url: string, options: RequestIni
   }
 
   if (requesterId) {
-    headers["X-Requester-Id"] = requesterId;
+    headers["X-Requester-Id"] = String(requesterId);
   }
 
   return fetch(url, { ...options, headers });
 }
 
-export async function fetchMyTickets(): Promise<any> {
-  const res = await fetchWithRequesterContext(`${API_URL}/api/tickets`);
+export async function fetchMyTickets(explicitRequesterId?: string): Promise<any> {
+  const res = await fetchWithRequesterContext(`${API_URL}/api/tickets`, {}, explicitRequesterId);
   if (!res.ok) {
     throw new Error(`Failed to fetch tickets: ${res.status}`);
   }
