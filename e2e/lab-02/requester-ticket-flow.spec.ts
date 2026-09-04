@@ -29,8 +29,9 @@ test.describe("E2E-01: Requester Full Workflow (Lab 2)", () => {
         page.getByRole("heading", { name: /Select Development Requester/i })
       ).toBeVisible();
 
-      // Select Alice Smith (ID 1)
+      // Select Alice Smith
       const aliceRadio = page.getByRole("radio", { name: /Alice Smith/i });
+      const aliceId = await aliceRadio.getAttribute("value");
       await aliceRadio.check();
       await page.getByRole("button", { name: /Continue/i }).click();
 
@@ -74,26 +75,36 @@ test.describe("E2E-01: Requester Full Workflow (Lab 2)", () => {
 
       await expect(page.getByText(fileName)).toBeVisible();
 
-      // 5. Submit Form
+      // 5. Submit Form & Capture Created Ticket Resource UUID
+      const createResponsePromise = page.waitForResponse(
+        (res) => res.url().endsWith("/api/tickets") && res.request().method() === "POST" && res.status() === 201
+      );
       await page.getByRole("button", { name: /Submit Ticket/i }).click();
+
+      const createResponse = await createResponsePromise;
+      const createResponseBody = await createResponse.json();
+      const aliceTicketUuid = createResponseBody.id;
+      expect(aliceTicketUuid).toBeTruthy();
 
       // Verify Creation Success Banner
       await expect(page.getByText(/created successfully!/i)).toBeVisible();
 
-      // 6. Navigate to My Tickets & Verify Ticket (AC-06)
+      // 6. Navigate to My Tickets & Verify Ticket with Combined Filtering (AC-06)
       await page.getByRole("button", { name: /^My Tickets$/i }).click();
 
       // Search for created ticket
       const searchInput = page.getByLabel(/Search tickets/i);
       await searchInput.fill(uniqueSummary);
 
+      // Combined Filtering (AC-06): Category + Related System + Priority + Status
+      await page.getByLabel(/Filter by Category/i).selectOption({ label: "Software" });
+      await page.getByLabel(/Filter by System/i).selectOption({ label: "VPN" });
+      await page.getByLabel(/Filter by Priority/i).selectOption({ label: "HIGH" });
+      await page.getByLabel(/Filter by Status/i).selectOption({ label: "NEW" });
+
       await expect(page.getByText(uniqueSummary)).toBeVisible();
       await expect(page.locator("strong", { hasText: "Software" })).toBeVisible();
       await expect(page.locator("strong", { hasText: "VPN" })).toBeVisible();
-
-      // Filter by Category
-      await page.getByLabel(/Filter by Category/i).selectOption({ label: "Software" });
-      await expect(page.getByText(uniqueSummary)).toBeVisible();
 
       // 7. Open Ticket Detail (AC-01)
       await page.getByRole("button", { name: /View Details/i }).first().click();
@@ -107,10 +118,16 @@ test.describe("E2E-01: Requester Full Workflow (Lab 2)", () => {
       await expect(page.getByText(uniqueDescription)).toBeVisible();
       await expect(page.locator("input[value='Alice Smith']")).toBeVisible();
 
-      // Verify Active Attachment & Download Action (AC-05)
+      // Verify Active Attachment & Exercise Real Download Action (AC-05)
       await expect(page.getByText(fileName)).toBeVisible();
       const downloadBtn = page.getByRole("button", { name: /^Download$/i });
       await expect(downloadBtn).toBeVisible();
+
+      // Trigger actual browser download
+      const downloadPromise = page.waitForEvent("download");
+      await downloadBtn.click();
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toBe(fileName);
 
       // 8. Attachment Soft Removal Workflow (AC-17, AC-05)
       const removeBtn = page.getByRole("button", { name: /^Remove$/i });
@@ -147,16 +164,66 @@ test.describe("E2E-01: Requester Full Workflow (Lab 2)", () => {
       await page.getByRole("button", { name: /Back to My Tickets/i }).click();
 
       // 9. Ownership Protection Check (AC-03, AC-08)
-      // Switch Requester to Bob Jones (ID 2)
+      // Switch Requester to Bob Jones
       await page.getByRole("button", { name: /Change Requester/i }).click();
-      await page.getByRole("radio", { name: /Bob Jones/i }).check();
+      const bobRadio = page.getByRole("radio", { name: /Bob Jones/i });
+      const bobId = await bobRadio.getAttribute("value");
+      await bobRadio.check();
       await page.getByRole("button", { name: /Continue/i }).click();
 
-      // Verify Bob cannot see Alice's ticket in My Tickets
+      // Verify Bob cannot see Alice's ticket in My Tickets list
       await searchInput.fill(uniqueSummary);
       await expect(
         page.getByText(/No tickets match your filter criteria/i)
       ).toBeVisible();
+
+      // Direct non-owner access check using Alice's actual ticket resource UUID under Bob's context (AC-03)
+      const directAccessResult = await page.evaluate(
+        async ({ id, bobRequesterId }) => {
+          try {
+            const res = await fetch(`http://localhost:3000/api/tickets/${id}`, {
+              headers: { "X-Requester-Id": String(bobRequesterId) },
+            });
+            const body = await res.json().catch(() => ({}));
+            return { status: res.status, message: body?.error?.message || body?.error?.code };
+          } catch (err: any) {
+            return { status: 500, message: err?.message };
+          }
+        },
+        { id: aliceTicketUuid, bobRequesterId: bobId }
+      );
+
+      // Verify HTTP 404 response
+      expect(directAccessResult.status).toBe(404);
+      expect(directAccessResult.message).toBe("Ticket not found.");
+
+      // Trigger UI ticket detail rendering for non-owned ticket UUID under Bob's context and verify UI alert
+      await page.evaluate((id) => {
+        const elem = document.querySelector(".container");
+        if (!elem) return;
+        const k = Object.keys(elem).find((key) => key.startsWith("__reactFiber$"));
+        if (!k) return;
+        let fiber = (elem as any)[k];
+        while (fiber && fiber.type?.name !== "App") {
+          fiber = fiber.return;
+        }
+        if (!fiber) fiber = (elem as any)[k];
+
+        let hook = fiber?.memoizedState;
+        while (hook) {
+          if (hook.queue && typeof hook.queue.dispatch === "function") {
+            if (hook.memoizedState === null || typeof hook.memoizedState === "string") {
+              try {
+                hook.queue.dispatch(id);
+              } catch (e) {}
+            }
+          }
+          hook = hook.next;
+        }
+      }, aliceTicketUuid);
+
+      // Verify the UI safely displays the "Ticket not found." error banner
+      await expect(page.getByRole("alert").filter({ hasText: /Ticket not found/i })).toBeVisible();
     });
   });
 
