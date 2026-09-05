@@ -125,7 +125,7 @@ Testing is organized across all six required Lab 2 testing levels (Unit, API / I
 | **AC-16** | Given Requester attempts to access another Requester's attachment directly, backend returns HTTP 404 Not Found. | `API-25` | `attachments.api.test.ts`, `MyTicketsAndDetail.test.tsx` | Automated Integration + UI | **PASS** |
 | **AC-17** | Given user soft-removes an attachment, when removal reason is under 5 characters or omitted, removal is prevented and validation message displays. | `API-20`, `API-21`, `API-22`, `API-23`, `UI-05`, `E2E-01` | `attachments.api.test.ts`, `MyTicketsAndDetail.test.tsx`, `requester-ticket-flow.spec.ts` | Automated Integration + UI + E2E | **PASS** |
 | **AC-18** | Given desktop, tablet, and mobile viewports, controls remain usable without clipping, overlap, or unintended horizontal scrolling. | `UI-09`, `RESP-01`, `RESP-02`, `E2E-01`, `E2E-02` | `MyTicketsAndDetail.test.tsx`, `requester-ticket-flow.spec.ts` | Automated + Manual Inspection | **PASS** |
-| **AC-19** | Given keyboard user, controls are reachable, focus ring is visible (`#0B7A46`), and contrast meets WCAG AA. | `UI-10`, `VIS-01`, `VIS-02` | `CreateTicket.test.tsx`, `MyTicketsAndDetail.test.tsx` | Automated + Manual Inspection | **PASS** |
+| **AC-19** | Given keyboard user, controls are reachable, focus ring is visible (`#0B7A46`), and keyboard-accessible controls are manually reviewed against the specified accessibility requirements. | `UI-10`, `VIS-01`, `VIS-02` | `CreateTicket.test.tsx`, `MyTicketsAndDetail.test.tsx` | Automated + Manual Inspection | **PASS** |
 | **AC-20** | Given user submits a valid ticket, Submit button enters busy state and prevents duplicate submission during processing. | `API-13`, `UI-02` | `create-ticket.api.test.ts`, `CreateTicket.test.tsx` | Automated Integration + UI | **PASS** |
 
 ---
@@ -150,7 +150,7 @@ Testing is organized across all six required Lab 2 testing levels (Unit, API / I
 | **BR-14** | Duplicate submission means repeated submission of the same ticket creation request while the previous submission is still being processed. Repeated submission during processing returns HTTP 409 Conflict and preserves form values. | `API-13`, `UI-02` | `create-ticket.api.test.ts`, `CreateTicket.test.tsx` | **PASS** |
 | **BR-15** | In case of submission or attachment upload failure, form inputs and requester context must be retained. | `UI-03`, `UI-16` | `CreateTicket.test.tsx` | **PASS** |
 | **BR-16** | Uploaded filenames must be sanitized before storage to prevent path traversal (e.g. `../secret.txt`). | `UNIT-03`, `API-30` | `attachments.api.test.ts` | **PASS** |
-| **BR-17** | Attachment metadata includes original filename, size in bytes, MIME type, storage path, upload timestamp, and removal information. | `API-15` | `attachments.api.test.ts` | **PASS** |
+| **BR-17** | Attachment metadata includes original filename, size in bytes, MIME type, storage path, upload timestamp, and removal information. | `API-15`, `API-16`, `API-21` | `attachments.api.test.ts` | **PASS** |
 | **BR-18** | If attachment upload fails after ticket creation, the ticket remains saved, the failure is reported, and form/attachment selections are preserved for retry without creating corrupt attachment records. | `API-31`, `UI-16` | `attachments.api.test.ts`, `CreateTicket.test.tsx` | **PASS** |
 | **BR-19** | Search is case-insensitive, matches substrings in Ticket Number (`ticketNumber`), Summary, or Description, and trims search input. | `API-26` | `my-tickets.api.test.ts`, `MyTicketsAndDetail.test.tsx` | **PASS** |
 | **BR-20** | Filters combine with `AND` logic across Category, Related System, Requested Priority, and Status. | `API-27` | `my-tickets.api.test.ts`, `MyTicketsAndDetail.test.tsx` | **PASS** |
@@ -160,7 +160,7 @@ Testing is organized across all six required Lab 2 testing levels (Unit, API / I
 | **BR-24** | Switching Development Requester reloads requester-specific ticket data. | `UI-12` | `RequesterSelection.test.tsx`, `MyTicketsAndDetail.test.tsx` | **PASS** |
 | **BR-25** | If no Requester is selected, protected UI routes redirect to the Requester Selection screen. | `UI-11` | `RequesterSelection.test.tsx` | **PASS** |
 | **BR-26** | Empty states are displayed when a requester has no tickets; no-results states are displayed when search/filters match zero tickets. | `UI-07`, `UI-08` | `MyTicketsAndDetail.test.tsx` | **PASS** |
-| **BR-27** | Lab 2 does not implement real password or login authentication. The Development Requester Selection mechanism is strictly a temporary testing mechanism used to simulate requester context (`X-Requester-Id` header) for Lab 2 workflows. It is intended to be replaced by real authentication and session-based requester identification in Lab 3. | `API-03`, `UI-11` | `docs/lab-02/specification.md`, `RequesterSelection.test.tsx` | **PASS** |
+| **BR-27** | Lab 2 does not implement real password or login authentication. The Development Requester Selection mechanism is strictly a temporary testing mechanism used to simulate requester context (`X-Requester-Id` header) for Lab 2 workflows. It is intended to be replaced by real authentication and session-based requester identification in Lab 3. | `API-03`, `UI-11` | `docs/lab-02/specification.md`, `RequesterSelection.test.tsx` | **PASS (Scope Compliance)** |
 
 ---
 
