@@ -26,9 +26,11 @@ Lab 3 Pull Requests under review by [@Pilaiwan3492](https://github.com/Pilaiwan3
 | Pull Request | Review | Comment received | My response |
 |---|---|---|---|
 | **[#60](https://github.com/Apichaya251400/TokTickIT/pull/60)** — PR 17: Sprint 3 Engineering Specification & Contracts | Approved | Approved. I reviewed this PR against the Lab 3 Spec DD requirements. The specification, API contract, UI specification, functional requirements, business rules, authorization rules, and acceptance criteria are clearly defined. | Merged PR into `lab3-staging` |
+| **[#61](https://github.com/Apichaya251400/TokTickIT/pull/61)** — PR 18: Sprint 3 Planned Test Strategy & Traceability Matrix | Approved | Looks good! I checked this PR against the Lab 3 Test DD requirements. The test plan, AC/BR traceability, planned test cases, test file paths, and the coverage for API, UI, authorization, regression, responsive, and E2E are all clearly defined and match the Lab 3 requirements. Approved Nice work! | Merged PR into `lab3-staging` |
 
 ### Changes Made in Response to Review
 - Validated specification consistency, operation-level authorization matrix, status transition matrix, and security decisions.
+- Validated test strategy, exact test file paths, Handout Section 10 traceability, working relative links, and concurrency scenarios.
 
 ---
 
@@ -51,5 +53,6 @@ Lab 3 Pull Requests reviewed on partner's repository.
 | **[#64](https://github.com/Pilaiwan3492/TokTickIT/pull/64)** — PR 23: feat authentication foundation, session invalidation, and auth api tests | LGTM! Authentication foundation, token revocation, and auth guards in PR #64 are super solid and secure. Verified fail-secure JWT secret check, server-side token revocation, credential omission, and 129/129 passing tests! Approved and ready to merge to lab3-staging! | Merged PR into `lab3-staging` |
 | **[#65](https://github.com/Pilaiwan3492/TokTickIT/pull/65)** — PR 24: Client Authentication, Mandatory Password Change & App Shell | Just ran the client tests and build locally on pr-65, all 75 client tests passed and tsc && vite build compiled with zero errors! Everything looks super clean. Approved and ready to merge to lab3-staging! | Merged PR into `lab3-staging` |
 | **[#66](https://github.com/Pilaiwan3492/TokTickIT/pull/66)** — PR 25: Requester Regression & Public Comments | Checked PR #66 public comments look great and the internal notes guard is super solid. All 187 tests pass too. Good to merge! | Approved & merged into `lab3-staging` |
+| **[#67](https://github.com/Pilaiwan3492/TokTickIT/pull/67)** — PR 26: IT Staff Queue & Ticket Processing | Checked PR #67 for you! The IT Queue and status transition code looks great, all tests passed locally, and the mobile layout looks really nice. Go ahead and merge into lab3-staging! | Approved & merged into `lab3-staging` |
 
 ---
