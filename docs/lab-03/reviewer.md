@@ -45,6 +45,10 @@ Lab 3 Pull Requests reviewed on partner's repository.
 
 | Pull Request I reviewed | Comment I gave | Their response |
 |---|---|---|
-| *(Will be populated as partner PRs are reviewed)* | *(Pending)* | *(Pending)* |
+| **[#61](https://github.com/Pilaiwan3492/TokTickIT/pull/61)** — PR 20: docs specification, api-spec, and ui-spec contracts for sprint 3 | PR #61 is good to go! Everything in the spec docs looks clean and complete. Approved, merge away! | Merged PR into `lab3-staging` |
+| **[#62](https://github.com/Pilaiwan3492/TokTickIT/pull/62)** — PR 21: docs planned test strategy and ac traceability for sprint 3 | LGTM! Checked docs/lab-03/tests.md in PR #62. The planned test strategy and traceability matrices for AC-01..25 and BR-01..28 are super thorough and 100% complete! Approved and ready to merge to lab3-staging! | Merged PR into `lab3-staging` |
+| **[#63](https://github.com/Pilaiwan3492/TokTickIT/pull/63)** — PR 22: feat database schema evolution, migration, and idempotent seed data | LGTM! Database schema evolution, pure SQL migration, and seed data in PR #63 look super solid! Verified zero data loss, exact enum/model alignment, and idempotent seeding. All 96 tests pass! Approved and ready to merge to lab3-staging! | Merged PR into `lab3-staging` |
+| **[#64](https://github.com/Pilaiwan3492/TokTickIT/pull/64)** — PR 23: feat authentication foundation, session invalidation, and auth api tests | LGTM! Authentication foundation, token revocation, and auth guards in PR #64 are super solid and secure. Verified fail-secure JWT secret check, server-side token revocation, credential omission, and 129/129 passing tests! Approved and ready to merge to lab3-staging! | Merged PR into `lab3-staging` |
+| **[#65](https://github.com/Pilaiwan3492/TokTickIT/pull/65)** — PR 24: Client Authentication, Mandatory Password Change & App Shell | Just ran the client tests and build locally on pr-65, all 75 client tests passed and tsc && vite build compiled with zero errors! Everything looks super clean. Approved and ready to merge to lab3-staging! | Merged PR into `lab3-staging` |
 
 ---
