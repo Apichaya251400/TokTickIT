@@ -13,7 +13,7 @@
 - **Mechanism**: JSON Web Token (JWT) transmitted via HTTP-Only secure cookie (`token`) or `Authorization: Bearer <token>` header.
 - **Token Payload**: Contains `userId`, `email`, `role`, and `requiresPasswordChange`.
 - **Token Expiration**: Access token expires after **15 minutes**.
-- **Real-Time DB Verification (BR-13 Enforcement)**: Auth middleware verifies `isActive` and `role` against the database on every authenticated request (not solely relying on static JWT claims claims), ensuring account deactivation or role changes take effect immediately on the user's next API request verification per BR-13.
+- **Real-Time DB Verification (BR-13 Enforcement)**: Auth middleware verifies `isActive` and `role` against the database on every authenticated request (not solely relying on static JWT claims), ensuring account deactivation or role changes take effect immediately on the user's next API request verification per BR-13.
 - **Password Hashing**: Passwords are hashed using `bcrypt` (salt rounds = 10). Plaintext passwords are NEVER logged or stored.
 - **Mandatory Password Change Enforcement**: If `requiresPasswordChange = true`, the auth middleware blocks access to all protected endpoints except `POST /api/auth/change-password`, `GET /api/auth/me`, and `POST /api/auth/logout`, returning `403 Forbidden` with error code `MUST_CHANGE_PASSWORD`.
 
