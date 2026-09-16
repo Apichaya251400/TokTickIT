@@ -1,24 +1,25 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   checkSystem,
   Category,
   RelatedSystem,
-  Requester,
-  fetchActiveRequesters,
+  User,
+  Role,
+  fetchCurrentUserApi,
   fetchCategories,
   fetchRelatedSystems,
-  getSelectedRequesterId,
-  setSelectedRequesterId,
   fetchMyTickets,
   fetchTicketById,
   createTicket,
   uploadAttachment,
   downloadAttachment,
   softRemoveAttachment,
-} from "./api.js";
+} from "./api";
+import Login from "./components/Login";
+import ChangePassword from "./components/ChangePassword";
+import AppHeader, { NavTab } from "./components/AppHeader";
 
 type UiState = "idle" | "loading" | "success" | "error";
-type NavigationTab = "my-tickets" | "create-ticket";
 
 export interface AttachmentItem {
   id: string;
@@ -38,25 +39,27 @@ function formatDateTime(dateStr?: string): string {
   return isNaN(d.getTime()) ? "N/A" : d.toLocaleString();
 }
 
+function getDefaultTab(role: Role): NavTab {
+  if (role === "IT_STAFF") return "staff-queue";
+  if (role === "ADMINISTRATOR") return "user-management";
+  return "my-tickets";
+}
+
 export default function App() {
-  // 1. Lab 1 state (Top level of App component)
+  // 1. Auth state
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+
+  // 2. Lab 1 state
   const [lab1State, setLab1State] = useState<UiState>("idle");
   const [categories, setCategories] = useState<Category[]>([]);
   const [lab1ErrorMessage, setLab1ErrorMessage] = useState<string>("");
 
-  // 2. Lab 2 Requester Context & Selector state (Top level of App component)
-  const [requestersLoading, setRequestersLoading] = useState<boolean>(true);
-  const [requestersError, setRequestersError] = useState<string | null>(null);
-  const [activeRequesters, setActiveRequesters] = useState<Requester[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [currentRequester, setCurrentRequester] = useState<Requester | null>(null);
-  const [isSelecting, setIsSelecting] = useState<boolean>(true);
-
   // 3. Navigation Tab & Ticket Detail Selection State
-  const [activeTab, setActiveTab] = useState<NavigationTab>("my-tickets");
+  const [activeTab, setActiveTab] = useState<NavTab>("my-tickets");
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
-  // 4. My Tickets Query & Data State (Issue #29)
+  // 4. My Tickets Query & Data State
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filterCategoryId, setFilterCategoryId] = useState<string>("");
   const [filterRelatedSystemId, setFilterRelatedSystemId] = useState<string>("");
@@ -78,7 +81,7 @@ export default function App() {
   const [ticketsError, setTicketsError] = useState<string | null>(null);
   const latestTicketRequestIdRef = useRef<number>(0);
 
-  // 5. Ticket Detail & Attachment Management State (Issue #29)
+  // 5. Ticket Detail & Attachment Management State
   const [detailTicket, setDetailTicket] = useState<any | null>(null);
   const [detailLoading, setDetailLoading] = useState<boolean>(false);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -104,7 +107,7 @@ export default function App() {
   const [description, setDescription] = useState<string>("");
   const [attachmentItems, setAttachmentItems] = useState<AttachmentItem[]>([]);
 
-  // 8. Retained Created Ticket State for Attachment Retry (BR-18 Duplicate Ticket Protection)
+  // 8. Retained Created Ticket State for Attachment Retry
   const [retainedCreatedTicket, setRetainedCreatedTicket] = useState<{ id: string; ticketNumber: string } | null>(null);
 
   // 9. Create Ticket Validation & Feedback State
@@ -120,26 +123,45 @@ export default function App() {
 
   const submitLockRef = useRef<boolean>(false);
 
-  // Startup Effect
+  // Initial Auth Check
   useEffect(() => {
-    loadRequestersAndRestoreContext();
+    checkAuthStatus();
   }, []);
+
+  async function checkAuthStatus() {
+    setAuthLoading(true);
+    try {
+      const res = await fetchCurrentUserApi();
+      if (res && res.user) {
+        setCurrentUser(res.user);
+        setActiveTab(getDefaultTab(res.user.role));
+      } else {
+        setCurrentUser(null);
+      }
+    } catch (err) {
+      setCurrentUser(null);
+    } finally {
+      setAuthLoading(false);
+    }
+  }
 
   // Fetch reference data when switching to Create Ticket tab or My Tickets filters
   useEffect(() => {
-    if ((activeTab === "create-ticket" || activeTab === "my-tickets") && formCategories.length === 0) {
-      loadReferenceData();
+    if (currentUser && !currentUser.requiresPasswordChange) {
+      if ((activeTab === "create-ticket" || activeTab === "my-tickets") && formCategories.length === 0) {
+        loadReferenceData();
+      }
     }
-  }, [activeTab]);
+  }, [currentUser, activeTab]);
 
   // Load My Tickets when parameters change or tab switches
   useEffect(() => {
-    if (activeTab === "my-tickets" && !isSelecting && !selectedTicketId) {
+    if (currentUser && !currentUser.requiresPasswordChange && activeTab === "my-tickets" && !selectedTicketId) {
       loadMyTickets();
     }
   }, [
+    currentUser,
     activeTab,
-    isSelecting,
     selectedTicketId,
     searchQuery,
     filterCategoryId,
@@ -173,61 +195,24 @@ export default function App() {
     }
   }
 
-  async function loadRequestersAndRestoreContext() {
-    setRequestersLoading(true);
-    setRequestersError(null);
-
-    try {
-      const requesters = await fetchActiveRequesters();
-      setActiveRequesters(requesters);
-
-      const storedId = getSelectedRequesterId();
-
-      if (storedId) {
-        const found = requesters.find((r) => String(r.id) === String(storedId) && r.isActive !== false);
-        if (found) {
-          setCurrentRequester(found);
-          setIsSelecting(false);
-        } else {
-          setSelectedRequesterId(null);
-          setCurrentRequester(null);
-          setIsSelecting(true);
-        }
-      } else {
-        setIsSelecting(true);
-      }
-    } catch (err: any) {
-      setRequestersError(err?.message || "Unable to load requesters. Please check your connection.");
-      setIsSelecting(true);
-    } finally {
-      setRequestersLoading(false);
-    }
-  }
-
-  // Explicit requester-scoped ticket fetch with race protection
   async function loadMyTickets(overridePage?: number) {
     const pageToLoad = overridePage ?? currentPage;
     const requestId = ++latestTicketRequestIdRef.current;
     setTicketsLoading(true);
     setTicketsError(null);
 
-    const capturedRequesterId = getSelectedRequesterId() || String(currentRequester?.id);
-
     try {
-      const res = await fetchMyTickets(
-        {
-          search: searchQuery,
-          categoryId: filterCategoryId,
-          relatedSystemId: filterRelatedSystemId,
-          requestedPriority: filterRequestedPriority,
-          currentStatus: filterCurrentStatus,
-          sortBy,
-          sortOrder,
-          page: pageToLoad,
-          pageSize,
-        },
-        capturedRequesterId
-      );
+      const res = await fetchMyTickets({
+        search: searchQuery,
+        categoryId: filterCategoryId,
+        relatedSystemId: filterRelatedSystemId,
+        requestedPriority: filterRequestedPriority,
+        currentStatus: filterCurrentStatus,
+        sortBy,
+        sortOrder,
+        page: pageToLoad,
+        pageSize,
+      });
 
       if (requestId === latestTicketRequestIdRef.current) {
         setTickets(res?.data || []);
@@ -247,17 +232,14 @@ export default function App() {
     }
   }
 
-  // Load Ticket Detail with ownership check and race protection
   async function loadTicketDetail(id: string) {
     const requestId = ++latestDetailRequestIdRef.current;
     setDetailLoading(true);
     setDetailError(null);
     setDetailTicket(null);
 
-    const capturedRequesterId = getSelectedRequesterId() || String(currentRequester?.id);
-
     try {
-      const res = await fetchTicketById(id, capturedRequesterId);
+      const res = await fetchTicketById(id);
       if (requestId === latestDetailRequestIdRef.current) {
         setDetailTicket(res);
       }
@@ -276,47 +258,24 @@ export default function App() {
     }
   }
 
-  function handleSelectRequester(id: string) {
-    setSelectedId(id);
+  function handleLoginSuccess(user: User) {
+    setCurrentUser(user);
+    setActiveTab(getDefaultTab(user.role));
+    setSelectedTicketId(null);
   }
 
-  function handleContinue() {
-    if (!selectedId) return;
-
-    const chosen = activeRequesters.find((r) => String(r.id) === String(selectedId));
-    if (chosen) {
-      setSelectedRequesterId(String(chosen.id));
-      setCurrentRequester(chosen);
-      setIsSelecting(false);
-      resetRequesterState();
-    }
+  function handlePasswordChangeSuccess(user: User) {
+    setCurrentUser(user);
   }
 
-  function handleChangeRequester() {
-    setIsSelecting(true);
-    setSelectedId(currentRequester ? String(currentRequester.id) : null);
-    resetRequesterState();
-  }
-
-  function resetRequesterState() {
+  function handleLogout() {
+    setCurrentUser(null);
     setSelectedTicketId(null);
     setDetailTicket(null);
     setDetailError(null);
-    setSearchQuery("");
-    setFilterCategoryId("");
-    setFilterRelatedSystemId("");
-    setFilterRequestedPriority("");
-    setFilterCurrentStatus("");
-    setSortBy("createdAt");
-    setSortOrder("desc");
-    setCurrentPage(1);
     resetFormFields();
-    setCreatedTicketSuccess(null);
-    setUploadWarning(null);
-    setSubmitError(null);
   }
 
-  // Clear filters on My Tickets
   function handleClearFilters() {
     setSearchQuery("");
     setFilterCategoryId("");
@@ -326,7 +285,6 @@ export default function App() {
     setCurrentPage(1);
   }
 
-  // Lab 1 handler
   async function handleCheckSystem() {
     setLab1State("loading");
     setLab1ErrorMessage("");
@@ -340,7 +298,6 @@ export default function App() {
     }
   }
 
-  // Form Field Change Handlers with Validation
   function handleSummaryChange(val: string) {
     setSummary(val);
     const trimmed = val.trim();
@@ -455,8 +412,6 @@ export default function App() {
       return;
     }
 
-    const capturedRequesterId = getSelectedRequesterId() || String(currentRequester?.id);
-
     submitLockRef.current = true;
     setIsSubmitting(true);
     setSubmitError(null);
@@ -481,7 +436,7 @@ export default function App() {
           description: description.trim(),
         };
 
-        const newTicket = await createTicket(payload, capturedRequesterId);
+        const newTicket = await createTicket(payload);
         const ticketNum = newTicket?.ticketNumber || newTicket?.data?.ticketNumber;
         const ticketId = newTicket?.id || newTicket?.data?.id;
 
@@ -502,7 +457,7 @@ export default function App() {
               prev.map((i) => (i.id === item.id ? { ...i, status: "uploading" } : i))
             );
 
-            await uploadAttachment(activeTicket.id, item.file, capturedRequesterId);
+            await uploadAttachment(activeTicket.id, item.file);
 
             setAttachmentItems((prev) =>
               prev.map((i) => (i.id === item.id ? { ...i, status: "succeeded" } : i))
@@ -549,7 +504,6 @@ export default function App() {
     setDropzoneError(null);
   }
 
-  // Attachment Download Handler
   async function handleDownload(attachment: any) {
     if (attachment.isRemoved || attachment.removedAt) return;
     try {
@@ -568,7 +522,6 @@ export default function App() {
     }
   }
 
-  // Soft Removal Modal Handlers
   function handleOpenRemovalModal(attachment: any) {
     setRemovalTargetAttachment(attachment);
     setRemovalReason("");
@@ -598,16 +551,12 @@ export default function App() {
     setIsSubmittingRemoval(true);
     setRemovalReasonError(null);
 
-    const capturedRequesterId = getSelectedRequesterId() || String(currentRequester?.id);
-
     try {
       const updatedAttachment = await softRemoveAttachment(
         removalTargetAttachment.id,
-        trimmed,
-        capturedRequesterId
+        trimmed
       );
 
-      // Update detail ticket attachments state
       setDetailTicket((prev: any) => {
         if (!prev) return prev;
         const updatedAttachments = (prev.attachments || []).map((att: any) => {
@@ -632,7 +581,6 @@ export default function App() {
     }
   }
 
-  // Helper Priority Badge renderer
   function renderPriorityBadge(priority: string) {
     let bgClass = "bg-secondary";
     if (priority === "URGENT") bgClass = "bg-danger text-white";
@@ -643,124 +591,26 @@ export default function App() {
     return <span className={`badge ${bgClass}`}>{priority}</span>;
   }
 
-  // Render Requester Selection View
-  if (isSelecting) {
+  // Auth Loading View
+  if (authLoading) {
     return (
-      <div className="container py-5" style={{ maxWidth: 640 }}>
-        <header className="mb-4">
-          <h1 className="h3">
-            TokTickIT <span className="text-success">IT Service Desk</span>
-          </h1>
-          <h2 className="h4 text-success fw-bold mt-3">Select Development Requester</h2>
-          <p className="text-muted small">
-            Select a Development Requester for Lab 2 testing context. This selector attaches the{" "}
-            <code>X-Requester-Id</code> header to API requests (this is for development testing context, not user authentication).
-          </p>
-        </header>
-
-        {requestersLoading && (
-          <div className="alert alert-info" role="status">
-            Loading active requesters…
-          </div>
-        )}
-
-        {requestersError && (
-          <div className="alert alert-danger" role="alert">
-            {requestersError}
-          </div>
-        )}
-
-        {!requestersLoading && !requestersError && activeRequesters.length === 0 && (
-          <div className="alert alert-warning" role="alert">
-            No active requesters available.
-          </div>
-        )}
-
-        {!requestersLoading && !requestersError && activeRequesters.length > 0 && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleContinue();
-            }}
-          >
-            <div className="card mb-4 shadow-sm">
-              <div className="card-header bg-light fw-semibold">Available Development Requesters</div>
-              <div className="list-group list-group-flush">
-                {activeRequesters.map((req) => {
-                  const isChecked = selectedId === String(req.id);
-                  return (
-                    <label
-                      key={req.id}
-                      className={`list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 ${
-                        isChecked ? "active bg-success text-white" : ""
-                      }`}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <div className="d-flex align-items-center">
-                        <input
-                          type="radio"
-                          name="requester"
-                          id={`requester-${req.id}`}
-                          aria-label={req.name}
-                          value={req.id}
-                          checked={isChecked}
-                          onChange={() => handleSelectRequester(String(req.id))}
-                          className="form-check-input me-3"
-                        />
-                        <div>
-                          <div className="fw-bold">{req.name}</div>
-                          <div className={`small ${isChecked ? "text-white-50" : "text-muted"}`}>{req.email}</div>
-                        </div>
-                      </div>
-                      <span className={`badge ${isChecked ? "bg-light text-dark" : "bg-secondary"}`}>ID: {req.id}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="d-grid">
-              <button
-                type="submit"
-                className="btn btn-success btn-lg"
-                disabled={!selectedId}
-              >
-                Continue
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Lab 1 System Check Panel */}
-        <section className="border-top pt-4 mt-5">
-          <button className="btn btn-success mb-3" onClick={handleCheckSystem} disabled={lab1State === "loading"}>
-            {lab1State === "loading" ? "Loading…" : "Check System"}
-          </button>
-
-          {lab1State === "success" && (
-            <div className="mt-2">
-              <p className="fw-bold mb-2">
-                System Status: <span className="text-success">Online</span>
-              </p>
-              <ol className="list-group list-group-numbered">
-                {categories.map((cat) => (
-                  <li key={cat.id} className="list-group-item">
-                    {cat.name}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          {lab1State === "error" && (
-            <div className="mt-2">
-              <p className="fw-bold text-danger mb-1">System Status: Offline</p>
-              <p className="text-muted">{lab1ErrorMessage || "Unable to connect to the server."}</p>
-            </div>
-          )}
-        </section>
+      <div className="container py-5 d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "80vh" }}>
+        <div className="spinner-border text-success mb-3" role="status" style={{ width: "3rem", height: "3rem" }}>
+          <span className="visually-hidden">Loading authentication status…</span>
+        </div>
+        <div className="text-muted">Loading authentication status…</div>
       </div>
     );
+  }
+
+  // Unauthenticated View -> Render Login Component
+  if (!currentUser) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Mandatory Password Change View -> Render ChangePassword Component
+  if (currentUser.requiresPasswordChange) {
+    return <ChangePassword user={currentUser} onPasswordChangeSuccess={handlePasswordChangeSuccess} />;
   }
 
   const isFilterActive =
@@ -770,62 +620,54 @@ export default function App() {
     filterRequestedPriority !== "" ||
     filterCurrentStatus !== "";
 
-  // Render Application Shell with Selected Requester Context & Navigation Tabs
   return (
-    <div className="container py-5" style={{ maxWidth: 900 }}>
-      {/* App Shell Header displaying Current Requester Identity, Dev Mode Badge & Change Requester button */}
-      <nav className="navbar navbar-light bg-light rounded p-3 mb-4 d-flex flex-wrap align-items-center justify-content-between gap-2 border">
-        <div>
-          <div className="d-flex align-items-center flex-wrap gap-2">
-            <span className="text-muted">Current Requester:</span>
-            <span className="fw-bold text-success fs-5">{currentRequester?.name}</span>
-            <span className="badge bg-secondary">ID: {currentRequester?.id}</span>
-            <span className="badge bg-warning text-dark border ms-1">
-              Development Mode - Testing Context Only
-            </span>
+    <div className="container py-4" style={{ maxWidth: 960 }}>
+      {/* Zen Green Application Shell Header */}
+      <AppHeader
+        user={currentUser}
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          setSelectedTicketId(null);
+        }}
+        onLogout={handleLogout}
+      />
+
+      {/* Staff Queue Placeholder */}
+      {activeTab === "staff-queue" && (
+        <section className="mb-5">
+          <div className="card shadow-sm p-4 bg-light border-0">
+            <h2 className="h5 fw-bold text-success mb-2">IT Staff Queue</h2>
+            <p className="text-muted mb-0">
+              Welcome, <strong>{currentUser.name}</strong>. The IT Staff ticket triage & queue view will be available in Sprint 4.
+            </p>
           </div>
-        </div>
-        <button className="btn btn-outline-secondary btn-sm" onClick={handleChangeRequester}>
-          Change Requester
-        </button>
-      </nav>
+        </section>
+      )}
 
-      {/* Main Application Shell Title & Logo */}
-      <header className="mb-4">
-        <h1 className="h3">
-          TokTickIT <span className="text-success">IT Service Desk</span>
-        </h1>
-      </header>
+      {/* User Management Placeholder */}
+      {activeTab === "user-management" && (
+        <section className="mb-5">
+          <div className="card shadow-sm p-4 bg-light border-0">
+            <h2 className="h5 fw-bold text-success mb-2">User Management</h2>
+            <p className="text-muted mb-0">
+              Welcome, <strong>{currentUser.name}</strong>. Administrator user provisioning & role management will be available in Sprint 4.
+            </p>
+          </div>
+        </section>
+      )}
 
-      {/* Application Shell Navigation Tabs (docs/lab-02/ui-spec.md §3.1) */}
-      <ul className="nav nav-tabs mb-4" role="tablist">
-        <li className="nav-item">
-          <button
-            type="button"
-            className={`nav-link ${activeTab === "my-tickets" && !selectedTicketId ? "active fw-bold text-success" : "text-secondary"}`}
-            aria-current={activeTab === "my-tickets" && !selectedTicketId ? "page" : undefined}
-            onClick={() => {
-              setActiveTab("my-tickets");
-              setSelectedTicketId(null);
-            }}
-          >
-            My Tickets
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            type="button"
-            className={`nav-link ${activeTab === "create-ticket" ? "active fw-bold text-success" : "text-secondary"}`}
-            aria-current={activeTab === "create-ticket" ? "page" : undefined}
-            onClick={() => {
-              setActiveTab("create-ticket");
-              setSelectedTicketId(null);
-            }}
-          >
-            Create Ticket
-          </button>
-        </li>
-      </ul>
+      {/* Ticket Lookup Placeholder */}
+      {activeTab === "ticket-lookup" && (
+        <section className="mb-5">
+          <div className="card shadow-sm p-4 bg-light border-0">
+            <h2 className="h5 fw-bold text-success mb-2">Ticket Lookup</h2>
+            <p className="text-muted mb-0">
+              Welcome, <strong>{currentUser.name}</strong>. Administrator ticket lookup & search view will be available in Sprint 4.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* VIEW 1: Ticket Detail View Screen */}
       {selectedTicketId && (
@@ -858,7 +700,7 @@ export default function App() {
 
           {!detailLoading && !detailError && detailTicket && (
             <div>
-              {/* Shaded Read-Only Metadata Card */}
+              {/* Metadata Card */}
               <div className="card mb-4 bg-light shadow-sm">
                 <div className="card-header bg-light fw-semibold">Ticket Information</div>
                 <div className="card-body" style={{ backgroundColor: "#F0F4F2" }}>
@@ -869,11 +711,11 @@ export default function App() {
                     </div>
                     <div className="col-12 col-md-4">
                       <label className="form-label small text-muted">Requester</label>
-                      <input type="text" className="form-control form-control-sm" value={detailTicket.requester?.name || currentRequester?.name || ""} readOnly style={{ backgroundColor: "#FFFFFF" }} />
+                      <input type="text" className="form-control form-control-sm" value={detailTicket.requester?.name || currentUser.name} readOnly style={{ backgroundColor: "#FFFFFF" }} />
                     </div>
                     <div className="col-12 col-md-4">
                       <label className="form-label small text-muted">Requester Email</label>
-                      <input type="text" className="form-control form-control-sm" value={detailTicket.requester?.email || currentRequester?.email || ""} readOnly style={{ backgroundColor: "#FFFFFF" }} />
+                      <input type="text" className="form-control form-control-sm" value={detailTicket.requester?.email || currentUser.email} readOnly style={{ backgroundColor: "#FFFFFF" }} />
                     </div>
                     <div className="col-12 col-md-4">
                       <label className="form-label small text-muted">Category</label>
@@ -902,7 +744,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Ticket Summary & Description */}
+              {/* Summary & Description */}
               <div className="card mb-4 shadow-sm">
                 <div className="card-header bg-light fw-semibold">Summary & Description</div>
                 <div className="card-body">
@@ -1195,7 +1037,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Empty State (0 total tickets, no active filters) */}
+          {/* Empty State */}
           {!ticketsLoading && !ticketsError && tickets.length === 0 && !isFilterActive && (
             <div className="card text-center p-5 shadow-sm bg-light mb-4">
               <div className="card-body">
@@ -1217,7 +1059,7 @@ export default function App() {
             </div>
           )}
 
-          {/* No-Results Filter State (0 matching tickets, active filters) */}
+          {/* No-Results Filter State */}
           {!ticketsLoading && !ticketsError && tickets.length === 0 && isFilterActive && (
             <div className="card text-center p-4 shadow-sm bg-light mb-4">
               <div className="card-body">
@@ -1235,7 +1077,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Ticket List View: Responsive Card items with complete columns */}
+          {/* Ticket List View */}
           {!ticketsLoading && !ticketsError && tickets.length > 0 && (
             <div>
               <div className="mb-4">
@@ -1305,26 +1147,23 @@ export default function App() {
         </section>
       )}
 
-      {/* VIEW 3: Create Ticket Screen View (Issue #28 Production Form Implementation) */}
+      {/* VIEW 3: Create Ticket Screen View */}
       {activeTab === "create-ticket" && !selectedTicketId && (
         <section className="mb-5">
           <h2 className="h5 mb-3 fw-bold">Create IT Support Ticket</h2>
 
-          {/* Reference Data Loading Indicator */}
           {refDataLoading && (
             <div className="alert alert-info mb-4" role="status">
               Loading ticket reference data…
             </div>
           )}
 
-          {/* Reference Data Error Banner */}
           {refDataError && (
             <div className="alert alert-danger mb-4" role="alert">
               {refDataError}
             </div>
           )}
 
-          {/* Success Banner with "Create Another Ticket" Action */}
           {createdTicketSuccess && (
             <div className="alert alert-success mb-4 d-flex flex-column gap-2" role="alert" style={{ backgroundColor: "#EAF6EF", borderColor: "#006B3C", color: "#006B3C" }}>
               <div>Ticket {createdTicketSuccess.ticketNumber} created successfully!</div>
@@ -1344,14 +1183,12 @@ export default function App() {
             </div>
           )}
 
-          {/* Warning Banner for Attachment Upload Failure */}
           {uploadWarning && (
             <div className="alert alert-warning mb-4" role="alert" style={{ color: "#F59E0B", borderColor: "#F59E0B" }}>
               {uploadWarning}
             </div>
           )}
 
-          {/* Server API Error Banner */}
           {submitError && (
             <div className="alert alert-danger mb-4" role="alert" style={{ color: "#B42318" }}>
               {submitError}
@@ -1359,7 +1196,7 @@ export default function App() {
           )}
 
           <form onSubmit={handleCreateTicketSubmit} noValidate aria-label="Create Ticket Form">
-            {/* Read-Only Information Card */}
+            {/* Metadata Card */}
             <div className="card mb-4 bg-light shadow-sm">
               <div className="card-header bg-light fw-semibold">Ticket Context Metadata</div>
               <div className="card-body">
@@ -1397,7 +1234,7 @@ export default function App() {
                       id="requesterName"
                       aria-label="Requester"
                       className="form-control form-control-sm"
-                      value={currentRequester?.name || "Selected Requester"}
+                      value={currentUser.name}
                       readOnly
                       aria-readonly="true"
                       style={{ backgroundColor: "#F0F4F2" }}
@@ -1407,9 +1244,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* Main Ticket Input Fields */}
+            {/* Form Fields */}
             <div className="row g-3 mb-4">
-              {/* Category Select */}
               <div className="col-12 col-md-6">
                 <label htmlFor="category" className="form-label fw-semibold">
                   Category <span style={{ color: "#B42318" }}>*</span>
@@ -1438,7 +1274,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Related System Select */}
               <div className="col-12 col-md-6">
                 <label htmlFor="relatedSystem" className="form-label fw-semibold">
                   Related System <span style={{ color: "#B42318" }}>*</span>
@@ -1467,7 +1302,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Requested Priority Selection */}
               <div className="col-12">
                 <label className="form-label fw-semibold">
                   Requested Priority <span style={{ color: "#B42318" }}>*</span>
@@ -1492,7 +1326,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Ticket Summary */}
               <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center">
                   <label htmlFor="summary" className="form-label fw-semibold">
@@ -1518,7 +1351,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Ticket Description */}
               <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center">
                   <label htmlFor="description" className="form-label fw-semibold">
@@ -1544,7 +1376,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Attachment Upload Dropzone */}
               <div className="col-12">
                 <label htmlFor="attachments" className="form-label fw-semibold">
                   Attach Files <span className="text-muted fw-normal">(Optional, max 5 files, up to 5 MB each)</span>
@@ -1568,7 +1399,6 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Selected File List Preview */}
                 {attachmentItems.length > 0 && (
                   <ul className="list-group mt-2">
                     {attachmentItems.map((item) => (
@@ -1592,7 +1422,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Submit Action Controls */}
             <div className="d-flex justify-content-end gap-2 border-top pt-4">
               <button
                 type="submit"

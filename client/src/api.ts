@@ -1,5 +1,24 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
+export type Role = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  isActive: boolean;
+  requiresPasswordChange: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token?: string;
+  message?: string;
+}
+
 export interface Category {
   id: number;
   name: string;
@@ -46,12 +65,12 @@ export interface TicketQueryParams {
 
 export async function checkSystem(): Promise<SystemStatus> {
   try {
-    const healthRes = await fetch(`${API_URL}/api/health`);
+    const healthRes = await fetch(`${API_URL}/api/health`, { credentials: "include" });
     if (!healthRes.ok) {
       throw new Error(`Server responded with status ${healthRes.status}`);
     }
 
-    const categoriesRes = await fetch(`${API_URL}/api/categories`);
+    const categoriesRes = await fetch(`${API_URL}/api/categories`, { credentials: "include" });
     if (!categoriesRes.ok) {
       throw new Error(`Server responded with status ${categoriesRes.status}`);
     }
@@ -63,8 +82,68 @@ export async function checkSystem(): Promise<SystemStatus> {
   }
 }
 
+export async function loginApi(email: string, password: string): Promise<AuthResponse> {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw { status: res.status, data };
+  }
+  return data;
+}
+
+export async function logoutApi(): Promise<any> {
+  const res = await fetch(`${API_URL}/api/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw { status: res.status, data };
+  }
+  return data;
+}
+
+export async function fetchCurrentUserApi(): Promise<AuthResponse> {
+  const res = await fetch(`${API_URL}/api/auth/me`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw { status: res.status, data };
+  }
+  return data;
+}
+
+export async function changePasswordApi(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<AuthResponse> {
+  const res = await fetch(`${API_URL}/api/auth/change-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw { status: res.status, data };
+  }
+  return data;
+}
+
 export async function fetchActiveRequesters(): Promise<Requester[]> {
-  const res = await fetch(`${API_URL}/api/requesters/active`);
+  const res = await fetch(`${API_URL}/api/requesters/active`, { credentials: "include" });
   if (!res.ok) {
     throw new Error("Unable to load requesters. Please check your connection and try again.");
   }
@@ -73,7 +152,7 @@ export async function fetchActiveRequesters(): Promise<Requester[]> {
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await fetch(`${API_URL}/api/categories`);
+  const res = await fetch(`${API_URL}/api/categories`, { credentials: "include" });
   if (!res.ok) {
     throw new Error("Unable to load categories.");
   }
@@ -81,31 +160,17 @@ export async function fetchCategories(): Promise<Category[]> {
 }
 
 export async function fetchRelatedSystems(): Promise<RelatedSystem[]> {
-  const res = await fetch(`${API_URL}/api/related-systems`);
+  const res = await fetch(`${API_URL}/api/related-systems`, { credentials: "include" });
   if (!res.ok) {
     throw new Error("Unable to load related systems.");
   }
   return res.json();
 }
 
-export function getSelectedRequesterId(): string | null {
-  return localStorage.getItem("selectedRequesterId");
-}
-
-export function setSelectedRequesterId(id: string | null): void {
-  if (id) {
-    localStorage.setItem("selectedRequesterId", id);
-  } else {
-    localStorage.removeItem("selectedRequesterId");
-  }
-}
-
-export async function fetchWithRequesterContext(
+export async function fetchWithAuth(
   url: string,
-  options: RequestInit = {},
-  explicitRequesterId?: string
+  options: RequestInit = {}
 ): Promise<Response> {
-  const requesterId = explicitRequesterId ?? getSelectedRequesterId();
   const headers: Record<string, string> = {};
 
   if (options.headers) {
@@ -122,16 +187,11 @@ export async function fetchWithRequesterContext(
     }
   }
 
-  if (requesterId) {
-    headers["X-Requester-Id"] = String(requesterId);
-  }
-
-  return fetch(url, { ...options, headers });
+  return fetch(url, { ...options, headers, credentials: "include" });
 }
 
 export async function fetchMyTickets(
-  params?: TicketQueryParams,
-  explicitRequesterId?: string
+  params?: TicketQueryParams
 ): Promise<any> {
   const searchParams = new URLSearchParams();
 
@@ -150,7 +210,7 @@ export async function fetchMyTickets(
   const queryString = searchParams.toString();
   const url = `${API_URL}/api/tickets${queryString ? `?${queryString}` : ""}`;
 
-  const res = await fetchWithRequesterContext(url, {}, explicitRequesterId);
+  const res = await fetchWithAuth(url);
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw { status: res.status, data: errorData };
@@ -158,8 +218,8 @@ export async function fetchMyTickets(
   return res.json();
 }
 
-export async function fetchTicketById(id: string, explicitRequesterId?: string): Promise<any> {
-  const res = await fetchWithRequesterContext(`${API_URL}/api/tickets/${id}`, {}, explicitRequesterId);
+export async function fetchTicketById(id: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${id}`);
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw { status: res.status, data: errorData };
@@ -167,8 +227,8 @@ export async function fetchTicketById(id: string, explicitRequesterId?: string):
   return res.json();
 }
 
-export async function createTicket(payload: CreateTicketPayload, explicitRequesterId?: string): Promise<any> {
-  const res = await fetchWithRequesterContext(
+export async function createTicket(payload: CreateTicketPayload): Promise<any> {
+  const res = await fetchWithAuth(
     `${API_URL}/api/tickets`,
     {
       method: "POST",
@@ -176,8 +236,7 @@ export async function createTicket(payload: CreateTicketPayload, explicitRequest
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    },
-    explicitRequesterId
+    }
   );
 
   if (!res.ok) {
@@ -188,17 +247,16 @@ export async function createTicket(payload: CreateTicketPayload, explicitRequest
   return res.json();
 }
 
-export async function uploadAttachment(ticketId: string, file: File, explicitRequesterId?: string): Promise<any> {
+export async function uploadAttachment(ticketId: string, file: File): Promise<any> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetchWithRequesterContext(
+  const res = await fetchWithAuth(
     `${API_URL}/api/tickets/${ticketId}/attachments`,
     {
       method: "POST",
       body: formData,
-    },
-    explicitRequesterId
+    }
   );
 
   if (!res.ok) {
@@ -209,12 +267,8 @@ export async function uploadAttachment(ticketId: string, file: File, explicitReq
   return res.json();
 }
 
-export async function downloadAttachment(attachmentId: string, explicitRequesterId?: string): Promise<Response> {
-  const res = await fetchWithRequesterContext(
-    `${API_URL}/api/attachments/${attachmentId}/download`,
-    {},
-    explicitRequesterId
-  );
+export async function downloadAttachment(attachmentId: string): Promise<Response> {
+  const res = await fetchWithAuth(`${API_URL}/api/attachments/${attachmentId}/download`);
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
@@ -226,10 +280,9 @@ export async function downloadAttachment(attachmentId: string, explicitRequester
 
 export async function softRemoveAttachment(
   attachmentId: string,
-  removalReason: string,
-  explicitRequesterId?: string
+  removalReason: string
 ): Promise<any> {
-  const res = await fetchWithRequesterContext(
+  const res = await fetchWithAuth(
     `${API_URL}/api/attachments/${attachmentId}`,
     {
       method: "DELETE",
@@ -237,8 +290,7 @@ export async function softRemoveAttachment(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ removalReason }),
-    },
-    explicitRequesterId
+    }
   );
 
   if (!res.ok) {
