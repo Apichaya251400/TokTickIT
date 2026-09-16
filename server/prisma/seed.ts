@@ -314,6 +314,8 @@ export async function seedDatabase() {
           fileSize: 1048576,
           mimeType: "image/png",
           filePath: "/uploads/error_screenshot.png",
+          removedAt: null,
+          removalReason: null,
         },
         create: {
           id: "00000000-0000-0000-0000-000000000001",
@@ -335,6 +337,8 @@ export async function seedDatabase() {
           fileSize: 2048,
           mimeType: "text/plain",
           filePath: "/uploads/wifi_diagnostics_log.txt",
+          removedAt: null,
+          removalReason: null,
         },
         create: {
           id: "00000000-0000-0000-0000-000000000002",
