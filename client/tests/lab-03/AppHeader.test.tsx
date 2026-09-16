@@ -102,6 +102,7 @@ describe("AppHeader Component - Role-Based Navigation & Shell", () => {
     expect(screen.getByText("Charlie Admin")).toBeInTheDocument();
     expect(screen.getByText("Administrator")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "User Management" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ticket Lookup" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "My Tickets" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "My Queue" })).not.toBeInTheDocument();
 

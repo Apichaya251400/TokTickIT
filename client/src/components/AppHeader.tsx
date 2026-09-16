@@ -1,7 +1,7 @@
 import React from "react";
 import { User, logoutApi } from "../api";
 
-export type NavTab = "my-tickets" | "create-ticket" | "staff-queue" | "user-management";
+export type NavTab = "my-tickets" | "create-ticket" | "staff-queue" | "user-management" | "ticket-lookup";
 
 interface AppHeaderProps {
   user: User;
@@ -103,14 +103,24 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
           )}
 
           {user.role === "ADMINISTRATOR" && (
-            <button
-              type="button"
-              className={`btn btn-sm ${activeTab === "user-management" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
-              aria-current={activeTab === "user-management" ? "page" : undefined}
-              onClick={() => onTabChange("user-management")}
-            >
-              User Management
-            </button>
+            <>
+              <button
+                type="button"
+                className={`btn btn-sm ${activeTab === "user-management" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "user-management" ? "page" : undefined}
+                onClick={() => onTabChange("user-management")}
+              >
+                User Management
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${activeTab === "ticket-lookup" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "ticket-lookup" ? "page" : undefined}
+                onClick={() => onTabChange("ticket-lookup")}
+              >
+                Ticket Lookup
+              </button>
+            </>
           )}
         </div>
 

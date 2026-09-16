@@ -657,6 +657,18 @@ export default function App() {
         </section>
       )}
 
+      {/* Ticket Lookup Placeholder */}
+      {activeTab === "ticket-lookup" && (
+        <section className="mb-5">
+          <div className="card shadow-sm p-4 bg-light border-0">
+            <h2 className="h5 fw-bold text-success mb-2">Ticket Lookup</h2>
+            <p className="text-muted mb-0">
+              Welcome, <strong>{currentUser.name}</strong>. Administrator ticket lookup & search view will be available in Sprint 4.
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* VIEW 1: Ticket Detail View Screen */}
       {selectedTicketId && (
         <section className="mb-5">
