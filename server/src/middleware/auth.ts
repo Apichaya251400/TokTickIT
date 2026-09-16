@@ -72,6 +72,7 @@ export async function authenticateToken(
 
     req.user = user;
     req.token = token;
+    (req as any).requesterId = user.id;
 
     // Enforce mandatory password change (BR-02)
     if (user.requiresPasswordChange) {
@@ -152,7 +153,10 @@ export async function requireTicketOwnership(
 
     const ticketId = req.params.id || req.params.ticketId || req.body?.ticketId;
     if (!ticketId) {
-      next();
+      res.status(400).json({
+        error: "INVALID_TICKET_ID",
+        message: "Ticket ID is required",
+      });
       return;
     }
 
@@ -207,7 +211,10 @@ export async function requireAttachmentOwnership(
 
     const attachmentId = req.params.id || req.params.attachmentId;
     if (!attachmentId) {
-      next();
+      res.status(400).json({
+        error: "INVALID_ATTACHMENT_ID",
+        message: "Attachment ID is required",
+      });
       return;
     }
 

@@ -238,4 +238,25 @@ describe("Issue 4: Authentication Foundation, Session Invalidation & Password AP
     expect(resNewLogin.status).toBe(200);
     expect(resNewLogin.body.user.requiresPasswordChange).toBe(false);
   });
+
+  it("API-AUTH-07: Prevents prefix-matching bypass on allowed paths when requiresPasswordChange is true", async () => {
+    app.get("/api/auth/me-extra", authenticateToken, (_req, res) => res.json({ ok: true }));
+
+    const loginRes = await request(app)
+      .post("/api/auth/login")
+      .send({
+        email: "bob@example.com",
+        password: DEFAULT_INITIAL_PASSWORD,
+      });
+
+    const token = loginRes.body.token;
+
+    // GET /api/auth/me-extra should NOT bypass password change check
+    const bypassAttemptRes = await request(app)
+      .get("/api/auth/me-extra")
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(bypassAttemptRes.status).toBe(403);
+    expect(bypassAttemptRes.body.error).toBe("MUST_CHANGE_PASSWORD");
+  });
 });
