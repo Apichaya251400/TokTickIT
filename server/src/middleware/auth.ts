@@ -80,7 +80,8 @@ export async function authenticateToken(
         "/api/auth/me",
         "/api/auth/logout",
       ];
-      const isAllowed = allowedPaths.some((path) => req.originalUrl.startsWith(path));
+      const requestPath = req.originalUrl.split("?")[0];
+      const isAllowed = allowedPaths.includes(requestPath);
 
       if (!isAllowed) {
         res.status(403).json({
