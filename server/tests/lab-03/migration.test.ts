@@ -65,6 +65,11 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     const countTickets1 = await prisma.ticket.count();
     const countAttachments1 = await prisma.attachment.count();
 
+    const ticketsBefore = await prisma.ticket.findMany({
+      select: { id: true, ticketNumber: true, currentStatus: true },
+      orderBy: { ticketNumber: "asc" },
+    });
+
     // Execute seed run 2 (idempotency check)
     await seedDatabase();
 
@@ -74,12 +79,18 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     const countTickets2 = await prisma.ticket.count();
     const countAttachments2 = await prisma.attachment.count();
 
-    // Verify empirical equality (zero duplicate records generated)
+    const ticketsAfter = await prisma.ticket.findMany({
+      select: { id: true, ticketNumber: true, currentStatus: true },
+      orderBy: { ticketNumber: "asc" },
+    });
+
+    // Verify empirical equality (zero duplicate records generated and identical content preserved)
     expect(countUsers2).toBe(countUsers1);
     expect(countCategories2).toBe(countCategories1);
     expect(countSystems2).toBe(countSystems1);
     expect(countTickets2).toBe(countTickets1);
     expect(countAttachments2).toBe(countAttachments1);
+    expect(ticketsAfter).toEqual(ticketsBefore);
 
     // Verify required active/inactive users per role
     const requesters = await prisma.user.findMany({ where: { role: "REQUESTER" } });
@@ -184,8 +195,10 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     const customTicketNumber = "TKT-2026-999999";
     const customAttachmentId = "att-lab2-custom-999";
 
-    const customTicket = await prisma.ticket.create({
-      data: {
+    const customTicket = await prisma.ticket.upsert({
+      where: { ticketNumber: customTicketNumber },
+      update: {},
+      create: {
         ticketNumber: customTicketNumber,
         requesterId: alice.id,
         categoryId: category.id,
@@ -195,12 +208,15 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
         requestedPriority: "MEDIUM",
         currentStatus: "NEW",
         attachments: {
-          create: {
-            id: customAttachmentId,
-            fileName: "custom_pre_existing_doc.pdf",
-            fileSize: 4096,
-            mimeType: "application/pdf",
-            filePath: "/uploads/custom_pre_existing_doc.pdf",
+          connectOrCreate: {
+            where: { id: customAttachmentId },
+            create: {
+              id: customAttachmentId,
+              fileName: "custom_pre_existing_doc.pdf",
+              fileSize: 4096,
+              mimeType: "application/pdf",
+              filePath: "/uploads/custom_pre_existing_doc.pdf",
+            },
           },
         },
       },
