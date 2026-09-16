@@ -5,6 +5,13 @@ import { getPrisma } from "../../src/prisma.js";
 import { seedDatabase } from "../../prisma/seed.js";
 import { clearRevocationBlocklist, signToken } from "../../src/utils/jwt.js";
 
+const PRIORITY_RANK: Record<string, number> = {
+  URGENT: 4,
+  HIGH: 3,
+  MEDIUM: 2,
+  LOW: 1,
+};
+
 describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", () => {
   const prisma = getPrisma();
   let staffToken: string;
@@ -40,6 +47,27 @@ describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", (
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body.data)).toBe(true);
       expect(res.body.pagination).toBeDefined();
+
+      // Verify exact response schema
+      if (res.body.data.length > 0) {
+        const first = res.body.data[0];
+        expect(first.id).toBeDefined();
+        expect(first.ticketNumber).toBeDefined();
+        expect(first.category?.id).toBeDefined();
+        expect(first.category?.name).toBeDefined();
+        expect(first.relatedSystem?.id).toBeDefined();
+        expect(first.relatedSystem?.name).toBeDefined();
+        expect(first.requester?.id).toBeDefined();
+        expect(first.categoryName).toBeUndefined();
+        expect(first.relatedSystemName).toBeUndefined();
+      }
+
+      expect(res.body.pagination.total).toBeDefined();
+      expect(res.body.pagination.page).toBeDefined();
+      expect(res.body.pagination.limit).toBeDefined();
+      expect(res.body.pagination.totalPages).toBeDefined();
+      expect(res.body.pagination.pageSize).toBeUndefined();
+      expect(res.body.pagination.totalItems).toBeUndefined();
     });
 
     it("denies Administrator access to ticket queue endpoint (403 Forbidden per Authorization Matrix)", async () => {
@@ -145,7 +173,7 @@ describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", (
     });
   });
 
-  describe("Sorting Options", () => {
+  describe("Sorting Options & Order Verification", () => {
     it("sorts by ticketNumber asc", async () => {
       const res = await request(app)
         .get("/api/tickets?sortBy=ticketNumber&sortDir=asc")
@@ -157,13 +185,28 @@ describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", (
       expect(numbers).toEqual(sorted);
     });
 
+    it("sorts by createdAt desc (newest first)", async () => {
+      const res = await request(app)
+        .get("/api/tickets?sortBy=createdAt&sortDir=desc")
+        .set("Authorization", `Bearer ${staffToken}`);
+
+      expect(res.status).toBe(200);
+      const dates = res.body.data.map((t: any) => new Date(t.createdAt).getTime());
+      for (let i = 0; i < dates.length - 1; i++) {
+        expect(dates[i]).toBeGreaterThanOrEqual(dates[i + 1]);
+      }
+    });
+
     it("sorts by itPriority desc (URGENT > HIGH > MEDIUM > LOW)", async () => {
       const res = await request(app)
         .get("/api/tickets?sortBy=itPriority&sortDir=desc")
         .set("Authorization", `Bearer ${staffToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.data.length).toBeGreaterThan(0);
+      const ranks = res.body.data.map((t: any) => PRIORITY_RANK[t.itPriority] || 0);
+      for (let i = 0; i < ranks.length - 1; i++) {
+        expect(ranks[i]).toBeGreaterThanOrEqual(ranks[i + 1]);
+      }
     });
   });
 
@@ -216,6 +259,15 @@ describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", (
       expect(res.body.error.code).toBe("INVALID_QUERY_PARAMETER");
     });
 
+    it("rejects invalid itPriority parameter", async () => {
+      const res = await request(app)
+        .get("/api/tickets?itPriority=INVALID_PRIORITY")
+        .set("Authorization", `Bearer ${staffToken}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("INVALID_QUERY_PARAMETER");
+    });
+
     it("rejects invalid owner parameter", async () => {
       const res = await request(app)
         .get("/api/tickets?owner=everyone")
@@ -234,6 +286,15 @@ describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", (
       expect(res.body.error.code).toBe("INVALID_QUERY_PARAMETER");
     });
 
+    it("rejects invalid sortDir parameter", async () => {
+      const res = await request(app)
+        .get("/api/tickets?sortDir=upwards")
+        .set("Authorization", `Bearer ${staffToken}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("INVALID_QUERY_PARAMETER");
+    });
+
     it("rejects invalid limit parameter (> 50)", async () => {
       const res = await request(app)
         .get("/api/tickets?limit=100")
@@ -241,6 +302,18 @@ describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", (
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe("INVALID_QUERY_PARAMETER");
+    });
+
+    it("rejects invalid page parameter (< 1 or non-numeric)", async () => {
+      const res0 = await request(app)
+        .get("/api/tickets?page=0")
+        .set("Authorization", `Bearer ${staffToken}`);
+      expect(res0.status).toBe(400);
+
+      const resAbc = await request(app)
+        .get("/api/tickets?page=abc")
+        .set("Authorization", `Bearer ${staffToken}`);
+      expect(resAbc.status).toBe(400);
     });
   });
 

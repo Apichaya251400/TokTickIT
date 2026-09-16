@@ -504,6 +504,13 @@ ticketRouter.get(
   }
 );
 
+const PRIORITY_RANK: Record<string, number> = {
+  URGENT: 4,
+  HIGH: 3,
+  MEDIUM: 2,
+  LOW: 1,
+};
+
 // GET /api/tickets - IT Staff Ticket Queue REST API (IT Staff Only / BR-04)
 ticketRouter.get(
   "/tickets",
@@ -512,28 +519,20 @@ ticketRouter.get(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const {
       q,
-      search,
       status,
-      currentStatus,
       requestedPriority,
       itPriority,
       owner,
       sortBy: sortByRaw,
       sortDir: sortDirRaw,
-      sortOrder: sortOrderRaw,
       page: pageRaw,
       limit: limitRaw,
-      pageSize: pageSizeRaw,
     } = req.query;
 
-    const isRequester = req.user!.role === "REQUESTER";
-
-    // Validate page
     let page = 1;
-    const rawPage = pageRaw;
-    if (rawPage !== undefined) {
-      const parsedPage = Number(rawPage);
-      if (!Number.isInteger(parsedPage) || parsedPage < 1 || String(rawPage).trim() === "") {
+    if (pageRaw !== undefined) {
+      const parsedPage = Number(pageRaw);
+      if (!Number.isInteger(parsedPage) || parsedPage < 1 || String(pageRaw).trim() === "") {
         res.status(400).json({
           error: {
             code: "INVALID_QUERY_PARAMETER",
@@ -545,12 +544,10 @@ ticketRouter.get(
       page = parsedPage;
     }
 
-    // Validate limit/pageSize (1-50, default 10)
     let limit = 10;
-    const rawLimit = limitRaw ?? pageSizeRaw;
-    if (rawLimit !== undefined) {
-      const parsedLimit = Number(rawLimit);
-      if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 50 || String(rawLimit).trim() === "") {
+    if (limitRaw !== undefined) {
+      const parsedLimit = Number(limitRaw);
+      if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 50 || String(limitRaw).trim() === "") {
         res.status(400).json({
           error: {
             code: "INVALID_QUERY_PARAMETER",
@@ -562,8 +559,7 @@ ticketRouter.get(
       limit = parsedLimit;
     }
 
-    const effectiveStatus = status ?? currentStatus;
-    if (effectiveStatus !== undefined && (typeof effectiveStatus !== "string" || !QUEUE_ALLOWED_STATUSES.has(effectiveStatus))) {
+    if (status !== undefined && (typeof status !== "string" || !QUEUE_ALLOWED_STATUSES.has(status))) {
       res.status(400).json({
         error: {
           code: "INVALID_QUERY_PARAMETER",
@@ -622,9 +618,8 @@ ticketRouter.get(
     }
 
     let sortDir: "asc" | "desc" = "desc";
-    const rawSortDir = sortDirRaw ?? sortOrderRaw;
-    if (rawSortDir !== undefined) {
-      if (typeof rawSortDir !== "string" || !QUEUE_ALLOWED_SORT_DIR.has(rawSortDir)) {
+    if (sortDirRaw !== undefined) {
+      if (typeof sortDirRaw !== "string" || !QUEUE_ALLOWED_SORT_DIR.has(sortDirRaw)) {
         res.status(400).json({
           error: {
             code: "INVALID_QUERY_PARAMETER",
@@ -633,27 +628,14 @@ ticketRouter.get(
         });
         return;
       }
-      sortDir = rawSortDir as "asc" | "desc";
+      sortDir = sortDirRaw as "asc" | "desc";
     }
 
     const prisma = getPrisma();
     const where: any = {};
 
-    // Requester Ownership Isolation: Requesters MUST ONLY see their own tickets
-    if (isRequester) {
-      where.requesterId = req.user!.id;
-    } else {
-      // IT_STAFF owner filtering
-      if (ownerFilter === "my_queue") {
-        where.ownerId = req.user!.id;
-      } else if (ownerFilter === "unassigned") {
-        where.ownerId = null;
-      }
-    }
-
-    const searchQuery = q ?? search;
-    if (searchQuery !== undefined && typeof searchQuery === "string") {
-      const cleanQ = searchQuery.trim();
+    if (q !== undefined && typeof q === "string") {
+      const cleanQ = q.trim();
       if (cleanQ.length > 0) {
         where.OR = [
           { ticketNumber: { contains: cleanQ, mode: "insensitive" } },
@@ -663,41 +645,76 @@ ticketRouter.get(
       }
     }
 
-    if (effectiveStatus) where.currentStatus = effectiveStatus;
+    if (status) where.currentStatus = status;
     if (requestedPriority) where.requestedPriority = requestedPriority;
     if (itPriority) where.itPriority = itPriority;
 
-    const orderBy: any[] = [];
-    if (sortBy === "itPriority") {
-      orderBy.push({ itPriority: sortDir });
-    } else if (sortBy === "ticketNumber") {
-      orderBy.push({ ticketNumber: sortDir });
-    } else if (sortBy === "updatedAt") {
-      orderBy.push({ updatedAt: sortDir });
-    } else {
-      orderBy.push({ createdAt: sortDir });
+    if (ownerFilter === "my_queue") {
+      where.ownerId = req.user!.id;
+    } else if (ownerFilter === "unassigned") {
+      where.ownerId = null;
     }
-    orderBy.push({ id: "desc" });
 
-    const skip = (page - 1) * limit;
-    const take = limit;
+    const include = {
+      category: { select: { id: true, name: true } },
+      relatedSystem: { select: { id: true, name: true } },
+      requester: { select: { id: true, name: true, email: true } },
+      owner: { select: { id: true, name: true, email: true } },
+    };
 
     try {
-      const [tickets, total] = await Promise.all([
-        prisma.ticket.findMany({
+      let tickets: any[] = [];
+      let total = 0;
+
+      if (sortBy === "itPriority") {
+        const allTickets = await prisma.ticket.findMany({
           where,
-          orderBy,
-          skip,
-          take,
-          include: {
-            category: { select: { id: true, name: true } },
-            relatedSystem: { select: { id: true, name: true } },
-            requester: { select: { id: true, name: true, email: true } },
-            owner: { select: { id: true, name: true, email: true } },
-          },
-        }),
-        prisma.ticket.count({ where }),
-      ]);
+          include,
+        });
+        total = allTickets.length;
+
+        allTickets.sort((a, b) => {
+          const rankA = PRIORITY_RANK[a.itPriority || ""] || 0;
+          const rankB = PRIORITY_RANK[b.itPriority || ""] || 0;
+          if (rankA !== rankB) {
+            return sortDir === "desc" ? rankB - rankA : rankA - rankB;
+          }
+          const timeA = new Date(a.createdAt).getTime();
+          const timeB = new Date(b.createdAt).getTime();
+          if (timeA !== timeB) return timeB - timeA;
+          return b.id.localeCompare(a.id);
+        });
+
+        const skip = (page - 1) * limit;
+        tickets = allTickets.slice(skip, skip + limit);
+      } else {
+        const orderBy: any[] = [];
+        if (sortBy === "ticketNumber") {
+          orderBy.push({ ticketNumber: sortDir });
+        } else if (sortBy === "updatedAt") {
+          orderBy.push({ updatedAt: sortDir });
+        } else {
+          orderBy.push({ createdAt: sortDir });
+        }
+        orderBy.push({ id: "desc" });
+
+        const skip = (page - 1) * limit;
+        const take = limit;
+
+        const [dbTickets, dbTotal] = await Promise.all([
+          prisma.ticket.findMany({
+            where,
+            orderBy,
+            skip,
+            take,
+            include,
+          }),
+          prisma.ticket.count({ where }),
+        ]);
+
+        tickets = dbTickets;
+        total = dbTotal;
+      }
 
       const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
@@ -707,9 +724,7 @@ ticketRouter.get(
           ticketNumber: t.ticketNumber,
           summary: t.summary,
           category: { id: t.category.id, name: t.category.name },
-          categoryName: t.category.name,
           relatedSystem: { id: t.relatedSystem.id, name: t.relatedSystem.name },
-          relatedSystemName: t.relatedSystem.name,
           requestedPriority: t.requestedPriority,
           itPriority: t.itPriority,
           currentStatus: t.currentStatus,
@@ -722,8 +737,6 @@ ticketRouter.get(
           total,
           page,
           limit,
-          pageSize: limit,
-          totalItems: total,
           totalPages,
         },
       });
