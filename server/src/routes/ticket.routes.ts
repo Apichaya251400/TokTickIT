@@ -6,6 +6,7 @@ import { getPrisma } from "../prisma.js";
 import { authenticateToken, requireRole, requireTicketOwnership, requireAttachmentOwnership, AuthenticatedRequest } from "../middleware/auth.js";
 import { validateSummary, validateDescription, validateFileSize, sanitizeFileName } from "../utils/validation.js";
 import { generateTicketNumber, getNextTicketSequence } from "../utils/ticketNumber.js";
+import { sanitizeHtml } from "../utils/sanitizer.js";
 import { RequestedPriority } from "@prisma/client";
 
 export const ticketRouter = Router();
@@ -940,5 +941,339 @@ ticketRouter.delete(
       removalReason: updated.removalReason,
       isRemoved: true,
     });
+  }
+);
+
+// POST /api/tickets/:id/resolve-indicator - Requester "Problem Appears Resolved" (FR-13, BR-05)
+ticketRouter.post(
+  "/tickets/:id/resolve-indicator",
+  authenticateToken,
+  requireRole("REQUESTER"),
+  requireTicketOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+    const prisma = getPrisma();
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    if (ticket.currentStatus !== "IN_PROGRESS" && ticket.currentStatus !== "WAITING_FOR_REQUESTER") {
+      res.status(400).json({
+        error: "INVALID_STATE",
+        message: "This action is not available for the current ticket status",
+      });
+      return;
+    }
+
+    const now = new Date();
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { requesterResolvedIndicatedAt: now },
+    });
+
+    await prisma.publicComment.create({
+      data: {
+        ticketId,
+        authorId: req.user!.id,
+        content: "Requester indicated that the problem appears resolved.",
+      },
+    });
+
+    res.status(200).json({
+      message: "Requester indicated that the problem appears resolved. IT Staff will review for formal resolution.",
+      ticket: {
+        id: updatedTicket.id,
+        currentStatus: updatedTicket.currentStatus,
+        requesterResolvedIndicatedAt: updatedTicket.requesterResolvedIndicatedAt,
+      },
+    });
+  }
+);
+
+// POST /api/tickets/:id/reopen-request - Requester Reopen Request (FR-13, BR-05)
+ticketRouter.post(
+  "/tickets/:id/reopen-request",
+  authenticateToken,
+  requireRole("REQUESTER"),
+  requireTicketOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+    const prisma = getPrisma();
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    if (ticket.currentStatus !== "RESOLVED" && ticket.currentStatus !== "CLOSED") {
+      res.status(400).json({
+        error: "INVALID_STATE",
+        message: "This action is not available for the current ticket status",
+      });
+      return;
+    }
+
+    const now = new Date();
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { requesterReopenRequestedAt: now },
+    });
+
+    await prisma.publicComment.create({
+      data: {
+        ticketId,
+        authorId: req.user!.id,
+        content: "Requester requested to reopen the ticket.",
+      },
+    });
+
+    res.status(200).json({
+      message: "Reopen request recorded. IT Staff will review the ticket.",
+      ticket: {
+        id: updatedTicket.id,
+        currentStatus: updatedTicket.currentStatus,
+        requesterReopenRequestedAt: updatedTicket.requesterReopenRequestedAt,
+      },
+    });
+  }
+);
+
+// GET /api/tickets/:id/comments - Retrieve Public Comments (FR-11, BR-04)
+ticketRouter.get(
+  "/tickets/:id/comments",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+    const prisma = getPrisma();
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    if (req.user!.role === "REQUESTER" && ticket.requesterId !== req.user!.id) {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied",
+      });
+      return;
+    }
+
+    const comments = await prisma.publicComment.findMany({
+      where: { ticketId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        author: {
+          select: { id: true, name: true, role: true },
+        },
+      },
+    });
+
+    res.status(200).json({ comments });
+  }
+);
+
+// POST /api/tickets/:id/comments - Post Public Comment (FR-11, BR-04, BR-11)
+ticketRouter.post(
+  "/tickets/:id/comments",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+    const { content } = req.body || {};
+
+    if (!content || typeof content !== "string" || content.trim() === "") {
+      res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Comment content cannot be empty or whitespace-only",
+      });
+      return;
+    }
+
+    const cleanContent = content.trim();
+    if (cleanContent.length > 2000) {
+      res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Comment content cannot exceed 2000 characters",
+      });
+      return;
+    }
+
+    const prisma = getPrisma();
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    if (req.user!.role === "REQUESTER" && ticket.requesterId !== req.user!.id) {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied",
+      });
+      return;
+    }
+
+    const sanitizedContent = sanitizeHtml(cleanContent);
+    const created = await prisma.publicComment.create({
+      data: {
+        ticketId,
+        authorId: req.user!.id,
+        content: sanitizedContent,
+      },
+      include: {
+        author: {
+          select: { id: true, name: true, role: true },
+        },
+      },
+    });
+
+    res.status(201).json(created);
+  }
+);
+
+// GET /api/tickets/:id/notes - Retrieve Internal Notes (Role Restricted: IT_STAFF, ADMINISTRATOR ONLY / BR-04)
+ticketRouter.get(
+  "/tickets/:id/notes",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    if (req.user!.role === "REQUESTER") {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied",
+      });
+      return;
+    }
+
+    const ticketId = req.params.id;
+    const prisma = getPrisma();
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    const notes = await prisma.internalNote.findMany({
+      where: { ticketId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        author: {
+          select: { id: true, name: true, role: true },
+        },
+      },
+    });
+
+    res.status(200).json({ notes });
+  }
+);
+
+// POST /api/tickets/:id/notes - Post Internal Note (Role Restricted: IT_STAFF, ADMINISTRATOR ONLY / BR-04, BR-11)
+ticketRouter.post(
+  "/tickets/:id/notes",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    if (req.user!.role === "REQUESTER") {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied",
+      });
+      return;
+    }
+
+    const ticketId = req.params.id;
+    const { content } = req.body || {};
+
+    if (!content || typeof content !== "string" || content.trim() === "") {
+      res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Note content cannot be empty or whitespace-only",
+      });
+      return;
+    }
+
+    const cleanContent = content.trim();
+    if (cleanContent.length > 2000) {
+      res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Note content cannot exceed 2000 characters",
+      });
+      return;
+    }
+
+    const prisma = getPrisma();
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    const sanitizedContent = sanitizeHtml(cleanContent);
+    const created = await prisma.internalNote.create({
+      data: {
+        ticketId,
+        authorId: req.user!.id,
+        content: sanitizedContent,
+      },
+      include: {
+        author: {
+          select: { id: true, name: true, role: true },
+        },
+      },
+    });
+
+    res.status(201).json(created);
   }
 );

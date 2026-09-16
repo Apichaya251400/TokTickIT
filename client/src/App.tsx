@@ -14,10 +14,13 @@ import {
   uploadAttachment,
   downloadAttachment,
   softRemoveAttachment,
+  indicateResolveApi,
+  requestReopenApi,
 } from "./api";
 import Login from "./components/Login";
 import ChangePassword from "./components/ChangePassword";
 import AppHeader, { NavTab } from "./components/AppHeader";
+import PublicComments from "./components/PublicComments";
 
 type UiState = "idle" | "loading" | "success" | "error";
 
@@ -581,6 +584,42 @@ export default function App() {
     }
   }
 
+  const [signallingState, setSignallingState] = useState<{ loading: boolean; message: string | null; error: string | null }>({
+    loading: false,
+    message: null,
+    error: null,
+  });
+
+  async function handleIndicateResolve() {
+    if (!selectedTicketId || signallingState.loading) return;
+    setSignallingState({ loading: true, message: null, error: null });
+    try {
+      const res = await indicateResolveApi(selectedTicketId);
+      setSignallingState({ loading: false, message: res.message || "Problem indicated as resolved.", error: null });
+      if (selectedTicketId) {
+        const ticketData = await fetchTicketById(selectedTicketId);
+        setDetailTicket(ticketData);
+      }
+    } catch (err: any) {
+      setSignallingState({ loading: false, message: null, error: err?.data?.message || err?.message || "Failed to indicate resolve." });
+    }
+  }
+
+  async function handleRequestReopen() {
+    if (!selectedTicketId || signallingState.loading) return;
+    setSignallingState({ loading: true, message: null, error: null });
+    try {
+      const res = await requestReopenApi(selectedTicketId);
+      setSignallingState({ loading: false, message: res.message || "Reopen request recorded.", error: null });
+      if (selectedTicketId) {
+        const ticketData = await fetchTicketById(selectedTicketId);
+        setDetailTicket(ticketData);
+      }
+    } catch (err: any) {
+      setSignallingState({ loading: false, message: null, error: err?.data?.message || err?.message || "Failed to request reopen." });
+    }
+  }
+
   function renderPriorityBadge(priority: string) {
     let bgClass = "bg-secondary";
     if (priority === "URGENT") bgClass = "bg-danger text-white";
@@ -820,6 +859,55 @@ export default function App() {
                   )}
                 </div>
               </div>
+
+              {/* Requester Signalling Action Bar */}
+              {currentUser.role === "REQUESTER" && (
+                <div className="card mb-4 border-0 shadow-sm bg-light">
+                  <div className="card-body p-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div>
+                      <span className="fw-semibold text-dark me-2">Ticket Actions:</span>
+                      <span className="text-muted small">
+                        {detailTicket.currentStatus === "IN_PROGRESS" || detailTicket.currentStatus === "WAITING_FOR_REQUESTER"
+                          ? "If the issue is solved, click below to notify IT Staff."
+                          : detailTicket.currentStatus === "RESOLVED" || detailTicket.currentStatus === "CLOSED"
+                          ? "If the issue is still persisting, you can request a reopen."
+                          : "Status updates are managed by IT Staff."}
+                      </span>
+                    </div>
+
+                    {(detailTicket.currentStatus === "IN_PROGRESS" || detailTicket.currentStatus === "WAITING_FOR_REQUESTER") && (
+                      <button
+                        type="button"
+                        className="btn btn-success btn-sm fw-semibold"
+                        onClick={handleIndicateResolve}
+                        disabled={signallingState.loading}
+                      >
+                        {signallingState.loading ? "Processing…" : "Problem Appears Resolved"}
+                      </button>
+                    )}
+
+                    {(detailTicket.currentStatus === "RESOLVED" || detailTicket.currentStatus === "CLOSED") && (
+                      <button
+                        type="button"
+                        className="btn btn-outline-warning text-dark btn-sm fw-semibold"
+                        onClick={handleRequestReopen}
+                        disabled={signallingState.loading}
+                      >
+                        {signallingState.loading ? "Processing…" : "Request Reopen"}
+                      </button>
+                    )}
+                  </div>
+                  {signallingState.message && (
+                    <div className="alert alert-success m-3 mb-0 py-2 small">{signallingState.message}</div>
+                  )}
+                  {signallingState.error && (
+                    <div className="alert alert-danger m-3 mb-0 py-2 small">{signallingState.error}</div>
+                  )}
+                </div>
+              )}
+
+              {/* Public Comments Section */}
+              <PublicComments ticketId={detailTicket.id} currentUser={currentUser} />
             </div>
           )}
 
