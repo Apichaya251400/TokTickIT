@@ -29,6 +29,26 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
       const passwordMatches = bcrypt.compareSync(DEFAULT_INITIAL_PASSWORD, u.passwordHash);
       expect(passwordMatches).toBe(true);
     }
+
+    // 3. Specifically verify migrated Lab 2 RequesterUser accounts receive initial password and force change
+    const migratedRequesters = await prisma.user.findMany({ where: { role: "REQUESTER" } });
+    expect(migratedRequesters.length).toBeGreaterThanOrEqual(5);
+
+    const knownLab2RequesterEmails = [
+      "alice@example.com",
+      "bob@example.com",
+      "charlie@example.com",
+      "diana@example.com",
+      "eve@example.com",
+    ];
+
+    for (const email of knownLab2RequesterEmails) {
+      const requester = migratedRequesters.find((r) => r.email === email);
+      expect(requester).toBeDefined();
+      expect(requester?.role).toBe("REQUESTER");
+      expect(requester?.requiresPasswordChange).toBe(true);
+      expect(bcrypt.compareSync(DEFAULT_INITIAL_PASSWORD, requester!.passwordHash)).toBe(true);
+    }
   });
 
   it("API-MIG-02: Verifies idempotent seed execution by running seed multiple times with zero duplicate creation", async () => {
@@ -95,19 +115,40 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     expect(statuses.has("REOPENED")).toBe(true);
     expect(statuses.has("CANCELLED")).toBe(true);
 
-    // Explicitly verify Attachment preservation and ticket linkage
-    const ticketWithAttachment = tickets.find((t) => t.attachments.length > 0);
-    expect(ticketWithAttachment).toBeDefined();
+    // 1. Explicitly verify preservation of pre-existing Lab 2 Attachments linked to Lab 2 Tickets
+    const ticket1 = tickets.find((t) => t.ticketNumber === "TKT-2026-000001");
+    expect(ticket1).toBeDefined();
+    expect(ticket1!.attachments.length).toBeGreaterThanOrEqual(1);
 
-    if (ticketWithAttachment) {
-      const attachment = ticketWithAttachment.attachments[0];
-      expect(attachment.ticketId).toBe(ticketWithAttachment.id);
+    const lab2Attachment1 = ticket1!.attachments.find((a) => a.fileName === "error_screenshot.png");
+    expect(lab2Attachment1).toBeDefined();
+    expect(lab2Attachment1!.ticketId).toBe(ticket1!.id);
+    expect(lab2Attachment1!.fileSize).toBe(1048576);
+    expect(lab2Attachment1!.mimeType).toBe("image/png");
+    expect(lab2Attachment1!.filePath).toBe("/uploads/error_screenshot.png");
+
+    const ticket2 = tickets.find((t) => t.ticketNumber === "TKT-2026-000002");
+    expect(ticket2).toBeDefined();
+    expect(ticket2!.attachments.length).toBeGreaterThanOrEqual(1);
+
+    const lab2Attachment2 = ticket2!.attachments.find((a) => a.fileName === "wifi_diagnostics_log.txt");
+    expect(lab2Attachment2).toBeDefined();
+    expect(lab2Attachment2!.ticketId).toBe(ticket2!.id);
+    expect(lab2Attachment2!.fileSize).toBe(2048);
+    expect(lab2Attachment2!.mimeType).toBe("text/plain");
+    expect(lab2Attachment2!.filePath).toBe("/uploads/wifi_diagnostics_log.txt");
+
+    // 2. Verify all attachments in DB maintain intact ticket relations post-migration
+    const allAttachments = await prisma.attachment.findMany({ include: { ticket: true } });
+    expect(allAttachments.length).toBeGreaterThanOrEqual(2);
+    for (const attachment of allAttachments) {
+      expect(attachment.ticket).toBeDefined();
+      expect(attachment.ticketId).toBe(attachment.ticket.id);
       expect(attachment.fileName).toBeDefined();
-      expect(attachment.fileSize).toBeGreaterThan(0);
       expect(attachment.filePath).toBeDefined();
     }
 
-    // Verify ticket relations and ownership fields
+    // 3. Verify ticket relations and ownership fields
     for (const ticket of tickets) {
       expect(ticket.ticketNumber).toMatch(/^TKT-\d{4}-\d{6}$/);
       expect(ticket.requester).toBeDefined();
@@ -120,3 +161,4 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     }
   });
 });
+
