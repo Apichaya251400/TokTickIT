@@ -3,7 +3,7 @@ import { getPrisma } from "../src/prisma.js";
 
 const DEFAULT_INITIAL_PASSWORD = "InitialPassword123!";
 
-async function main() {
+export async function seedDatabase() {
   const prisma = getPrisma();
   console.log("Starting Sprint 3 Idempotent Database Seed...");
 
@@ -161,20 +161,33 @@ async function main() {
     });
     seededUsers[u.email] = record.id;
   }
-  console.log("Seeded 12 users across Requester, IT Staff, and Administrator roles.");
 
   // Fetch Category & System IDs for ticket seeding
   const catAccount = await prisma.category.findUniqueOrThrow({ where: { name: "Account and Access" } });
   const catHardware = await prisma.category.findUniqueOrThrow({ where: { name: "Hardware" } });
+  const catSoftware = await prisma.category.findUniqueOrThrow({ where: { name: "Software" } });
+  const catNetwork = await prisma.category.findUniqueOrThrow({ where: { name: "Network" } });
+
   const sysEmail = await prisma.relatedSystem.findUniqueOrThrow({ where: { name: "Email" } });
   const sysWiFi = await prisma.relatedSystem.findUniqueOrThrow({ where: { name: "Campus Wi-Fi" } });
+  const sysVPN = await prisma.relatedSystem.findUniqueOrThrow({ where: { name: "VPN" } });
+  const sysLEB2 = await prisma.relatedSystem.findUniqueOrThrow({ where: { name: "LEB2 App" } });
+  const sysGrades = await prisma.relatedSystem.findUniqueOrThrow({ where: { name: "Grade Submission App" } });
+  const sysPrinter = await prisma.relatedSystem.findUniqueOrThrow({ where: { name: "Printer" } });
+  const sysLaptop = await prisma.relatedSystem.findUniqueOrThrow({ where: { name: "Corporate Laptop" } });
 
   const requesterId = seededUsers["requester@toktick.it"];
   const aliceId = seededUsers["alice@example.com"];
+  const bobId = seededUsers["bob@example.com"];
+  const charlieId = seededUsers["charlie@example.com"];
+  const dianaId = seededUsers["diana@example.com"];
+
   const staffId = seededUsers["staff@toktick.it"];
+  const johnStaffId = seededUsers["john.staff@toktick.it"];
+  const sarahStaffId = seededUsers["sarah.staff@toktick.it"];
   const adminId = seededUsers["admin@toktick.it"];
 
-  // 4. Seed Tickets with statuses, comments, and notes
+  // 4. Seed Diverse Tickets (covering all 8 statuses, priorities, assigned/unassigned)
   const sampleTickets = [
     {
       ticketNumber: "TKT-2026-000001",
@@ -213,6 +226,67 @@ async function main() {
       currentStatus: "RESOLVED" as const,
       requesterResolvedIndicatedAt: new Date(),
     },
+    {
+      ticketNumber: "TKT-2026-000004",
+      requesterId: bobId,
+      ownerId: johnStaffId,
+      categoryId: catSoftware.id,
+      relatedSystemId: sysLEB2.id,
+      summary: "LEB2 submission button disabled during assignment upload",
+      description: "Students report submission page hangs on upload progress bar.",
+      requestedPriority: "URGENT" as const,
+      itPriority: "URGENT" as const,
+      currentStatus: "OPEN" as const,
+    },
+    {
+      ticketNumber: "TKT-2026-000005",
+      requesterId: charlieId,
+      ownerId: sarahStaffId,
+      categoryId: catSoftware.id,
+      relatedSystemId: sysGrades.id,
+      summary: "Grade submission app throws 500 error on final CSV export",
+      description: "Exporting semester grades fails when course contains over 200 enrolled students.",
+      requestedPriority: "HIGH" as const,
+      itPriority: "HIGH" as const,
+      currentStatus: "WAITING_FOR_REQUESTER" as const,
+    },
+    {
+      ticketNumber: "TKT-2026-000006",
+      requesterId: dianaId,
+      ownerId: staffId,
+      categoryId: catHardware.id,
+      relatedSystemId: sysPrinter.id,
+      summary: "Main floor printer paper jam and low toner warning",
+      description: "Toner cartridge replaced but paper jam light remains blinking.",
+      requestedPriority: "MEDIUM" as const,
+      itPriority: "MEDIUM" as const,
+      currentStatus: "CLOSED" as const,
+    },
+    {
+      ticketNumber: "TKT-2026-000007",
+      requesterId: bobId,
+      ownerId: staffId,
+      categoryId: catNetwork.id,
+      relatedSystemId: sysVPN.id,
+      summary: "VPN connection drops immediately after multi-factor challenge",
+      description: "Re-occurring issue after OS security update.",
+      requestedPriority: "HIGH" as const,
+      itPriority: "URGENT" as const,
+      currentStatus: "REOPENED" as const,
+      requesterReopenRequestedAt: new Date(),
+    },
+    {
+      ticketNumber: "TKT-2026-000008",
+      requesterId: aliceId,
+      ownerId: null,
+      categoryId: catHardware.id,
+      relatedSystemId: sysLaptop.id,
+      summary: "Accidental duplicate ticket submission for laptop keyboard repair",
+      description: "Duplicate request created by mistake.",
+      requestedPriority: "LOW" as const,
+      itPriority: "LOW" as const,
+      currentStatus: "CANCELLED" as const,
+    },
   ];
 
   for (const t of sampleTickets) {
@@ -222,6 +296,8 @@ async function main() {
         ownerId: t.ownerId,
         currentStatus: t.currentStatus,
         itPriority: t.itPriority,
+        requesterResolvedIndicatedAt: t.requesterResolvedIndicatedAt || null,
+        requesterReopenRequestedAt: t.requesterReopenRequestedAt || null,
       },
       create: t,
     });
@@ -253,15 +329,17 @@ async function main() {
     }
   }
 
-  console.log("Seeded sample tickets, public comments, and internal notes successfully.");
+  console.log("Seeded sample tickets across 8 statuses, public comments, and internal notes successfully.");
   console.log("Sprint 3 Seed completed cleanly!");
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await getPrisma().$disconnect();
-  });
+if (process.argv[1]?.endsWith("seed.ts")) {
+  seedDatabase()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await getPrisma().$disconnect();
+    });
+}

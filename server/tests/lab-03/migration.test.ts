@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getPrisma } from "../../src/prisma.js";
+import { seedDatabase } from "../../prisma/seed.js";
 
 describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
   const prisma = getPrisma();
@@ -22,16 +23,30 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     }
   });
 
-  it("API-MIG-02: Verifies idempotent seed execution without duplicate constraint failures", async () => {
-    // Verifies active categories count >= 4
-    const categories = await prisma.category.findMany({ where: { isActive: true } });
-    expect(categories.length).toBeGreaterThanOrEqual(4);
+  it("API-MIG-02: Verifies idempotent seed execution by running seed multiple times with zero duplicate creation", async () => {
+    // Execute seed run 1
+    await seedDatabase();
 
-    // Verifies active related systems count >= 7
-    const systems = await prisma.relatedSystem.findMany({ where: { isActive: true } });
-    expect(systems.length).toBeGreaterThanOrEqual(7);
+    const countUsers1 = await prisma.user.count();
+    const countCategories1 = await prisma.category.count();
+    const countSystems1 = await prisma.relatedSystem.count();
+    const countTickets1 = await prisma.ticket.count();
 
-    // Verifies required active/inactive users per role
+    // Execute seed run 2 (idempotency check)
+    await seedDatabase();
+
+    const countUsers2 = await prisma.user.count();
+    const countCategories2 = await prisma.category.count();
+    const countSystems2 = await prisma.relatedSystem.count();
+    const countTickets2 = await prisma.ticket.count();
+
+    // Verify empirical equality (zero duplicate records generated)
+    expect(countUsers2).toBe(countUsers1);
+    expect(countCategories2).toBe(countCategories1);
+    expect(countSystems2).toBe(countSystems1);
+    expect(countTickets2).toBe(countTickets1);
+
+    // Verify required active/inactive users per role
     const requesters = await prisma.user.findMany({ where: { role: "REQUESTER" } });
     const staff = await prisma.user.findMany({ where: { role: "IT_STAFF" } });
     const admins = await prisma.user.findMany({ where: { role: "ADMINISTRATOR" } });
@@ -43,18 +58,33 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     expect(admins.filter((a) => a.isActive).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("API-MIG-03: Verifies Ticket model relations, ownerId, indicator fields, and comments/notes", async () => {
+  it("API-MIG-03: Verifies preservation of tickets, attachments, and relations post-migration", async () => {
     const tickets = await prisma.ticket.findMany({
       include: {
         requester: true,
         owner: true,
+        category: true,
+        relatedSystem: true,
         comments: true,
         notes: true,
+        attachments: true,
       },
     });
 
-    expect(tickets.length).toBeGreaterThan(0);
+    expect(tickets.length).toBeGreaterThanOrEqual(8);
 
+    // Verify ticket status coverage across all 8 required statuses
+    const statuses = new Set(tickets.map((t) => t.currentStatus));
+    expect(statuses.has("NEW")).toBe(true);
+    expect(statuses.has("OPEN")).toBe(true);
+    expect(statuses.has("IN_PROGRESS")).toBe(true);
+    expect(statuses.has("WAITING_FOR_REQUESTER")).toBe(true);
+    expect(statuses.has("RESOLVED")).toBe(true);
+    expect(statuses.has("CLOSED")).toBe(true);
+    expect(statuses.has("REOPENED")).toBe(true);
+    expect(statuses.has("CANCELLED")).toBe(true);
+
+    // Verify ticket relations and ownership fields
     for (const ticket of tickets) {
       expect(ticket.ticketNumber).toMatch(/^TKT-\d{4}-\d{6}$/);
       expect(ticket.requester).toBeDefined();
