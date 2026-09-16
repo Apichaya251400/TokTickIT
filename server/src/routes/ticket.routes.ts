@@ -792,11 +792,11 @@ ticketRouter.get(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const attachmentId = req.params.id;
 
-    if (!UUID_REGEX.test(attachmentId)) {
+    if (!attachmentId || typeof attachmentId !== "string" || attachmentId.trim() === "") {
       res.status(400).json({
         error: {
           code: "INVALID_ATTACHMENT_ID",
-          message: "Attachment ID must be a valid UUID.",
+          message: "Attachment ID is required.",
         },
       });
       return;
@@ -868,11 +868,11 @@ ticketRouter.delete(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const attachmentId = req.params.id;
 
-    if (!UUID_REGEX.test(attachmentId)) {
+    if (!attachmentId || typeof attachmentId !== "string" || attachmentId.trim() === "") {
       res.status(400).json({
         error: {
           code: "INVALID_ATTACHMENT_ID",
-          message: "Attachment ID must be a valid UUID.",
+          message: "Attachment ID is required.",
         },
       });
       return;

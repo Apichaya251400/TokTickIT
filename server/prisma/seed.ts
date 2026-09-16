@@ -307,7 +307,7 @@ export async function seedDatabase() {
     // Seed sample Attachment on Ticket 1 & Ticket 2
     if (t.ticketNumber === "TKT-2026-000001") {
       await prisma.attachment.upsert({
-        where: { id: "00000000-0000-0000-0000-000000000001" },
+        where: { id: "att-lab2-000001" },
         update: {
           ticketId: ticketRecord.id,
           fileName: "error_screenshot.png",
@@ -318,7 +318,7 @@ export async function seedDatabase() {
           removalReason: null,
         },
         create: {
-          id: "00000000-0000-0000-0000-000000000001",
+          id: "att-lab2-000001",
           ticketId: ticketRecord.id,
           fileName: "error_screenshot.png",
           fileSize: 1048576,
@@ -330,7 +330,7 @@ export async function seedDatabase() {
 
     if (t.ticketNumber === "TKT-2026-000002") {
       await prisma.attachment.upsert({
-        where: { id: "00000000-0000-0000-0000-000000000002" },
+        where: { id: "att-lab2-000002" },
         update: {
           ticketId: ticketRecord.id,
           fileName: "wifi_diagnostics_log.txt",
@@ -341,7 +341,7 @@ export async function seedDatabase() {
           removalReason: null,
         },
         create: {
-          id: "00000000-0000-0000-0000-000000000002",
+          id: "att-lab2-000002",
           ticketId: ticketRecord.id,
           fileName: "wifi_diagnostics_log.txt",
           fileSize: 2048,

@@ -90,7 +90,7 @@ describe("Issue 4: Authorization Matrix & Resource Ownership Isolation API Tests
   });
 
   it("API-AUTH-10: Enforces Requester Attachment Ownership Isolation on production routes (FR-06 / BR-03)", async () => {
-    const attachment2 = await prisma.attachment.findUniqueOrThrow({ where: { id: "00000000-0000-0000-0000-000000000002" } }); // Linked to TKT-2026-000002 (Alice's ticket)
+    const attachment2 = await prisma.attachment.findUniqueOrThrow({ where: { id: "att-lab2-000002" } }); // Linked to TKT-2026-000002 (Alice's ticket)
 
     // 1. Bob (Non-owner Requester) attempts to download Alice's attachment -> 403 Forbidden
     const resNonOwnerDownload = await request(app)
