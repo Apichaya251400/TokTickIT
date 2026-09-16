@@ -143,7 +143,7 @@ describe("Issue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-deta
       expect(dbTicket?.ownerId).toBe(staffUserId);
     });
 
-    it("rejects second claim attempt on already claimed ticket with 409 Conflict (STATE_CONFLICT)", async () => {
+    it("allows Administrator to claim an unassigned ticket", async () => {
       const unassigned = await prisma.ticket.create({
         data: {
           ticketNumber: makeTestTicketNumber(),
@@ -151,31 +151,63 @@ describe("Issue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-deta
           categoryId: 1,
           relatedSystemId: 1,
           requestedPriority: "MEDIUM",
-          summary: "Unassigned ticket for testing double claim",
-          description: "Testing atomic double-claim conflict.",
+          summary: "Unassigned ticket for admin claim test",
+          description: "Testing admin claim functionality.",
           currentStatus: "NEW",
           ownerId: null,
         },
       });
 
-      // First IT Staff claims ticket
-      const firstRes = await request(app)
+      const res = await request(app)
         .post(`/api/tickets/${unassigned.id}/claim`)
-        .set("Authorization", `Bearer ${staffToken}`);
+        .set("Authorization", `Bearer ${adminToken}`);
 
-      expect(firstRes.status).toBe(200);
+      expect(res.status).toBe(200);
+      expect(res.body.ticket.ownerId).toBe(adminUserId);
 
-      // Second IT Staff attempts to claim the same ticket concurrently
-      const secondRes = await request(app)
-        .post(`/api/tickets/${unassigned.id}/claim`)
-        .set("Authorization", `Bearer ${secondStaffToken}`);
-
-      expect(secondRes.status).toBe(409);
-      expect(secondRes.body.error).toBe("STATE_CONFLICT");
-
-      // Verify ownerId remains staffUserId (first claimant)
       const dbTicket = await prisma.ticket.findUnique({ where: { id: unassigned.id } });
-      expect(dbTicket?.ownerId).toBe(staffUserId);
+      expect(dbTicket?.ownerId).toBe(adminUserId);
+    });
+
+    it("handles concurrent claim requests atomically: exactly one succeeds with 200, second returns 409 STATE_CONFLICT", async () => {
+      const unassigned = await prisma.ticket.create({
+        data: {
+          ticketNumber: makeTestTicketNumber(),
+          requesterId: (await prisma.user.findUniqueOrThrow({ where: { email: "alice@example.com" } })).id,
+          categoryId: 1,
+          relatedSystemId: 1,
+          requestedPriority: "MEDIUM",
+          summary: "Unassigned ticket for testing concurrent claim race",
+          description: "Testing concurrent claim atomic handling.",
+          currentStatus: "NEW",
+          ownerId: null,
+        },
+      });
+
+      // Issue both claim requests concurrently using Promise.all
+      const [res1, res2] = await Promise.all([
+        request(app)
+          .post(`/api/tickets/${unassigned.id}/claim`)
+          .set("Authorization", `Bearer ${staffToken}`),
+        request(app)
+          .post(`/api/tickets/${unassigned.id}/claim`)
+          .set("Authorization", `Bearer ${secondStaffToken}`),
+      ]);
+
+      const sortedStatuses = [res1.status, res2.status].sort();
+      expect(sortedStatuses).toEqual([200, 409]);
+
+      const winningRes = res1.status === 200 ? res1 : res2;
+      const losingRes = res1.status === 409 ? res1 : res2;
+
+      expect(losingRes.body.error).toBe("STATE_CONFLICT");
+
+      // Verify DB ownerId matches the winning claimant's userId and remains unchanged by losing request
+      const winnerUserId = winningRes.body.ticket.ownerId;
+      expect([staffUserId, secondStaffUserId]).toContain(winnerUserId);
+
+      const dbTicket = await prisma.ticket.findUnique({ where: { id: unassigned.id } });
+      expect(dbTicket?.ownerId).toBe(winnerUserId);
     });
   });
 
@@ -191,6 +223,17 @@ describe("Issue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-deta
       expect(res.body.ticket.ownerId).toBe(secondStaffUserId);
     });
 
+    it("allows Administrator to reassign ticket to active IT Staff user", async () => {
+      const ticket = await prisma.ticket.findFirstOrThrow();
+      const res = await request(app)
+        .put(`/api/tickets/${ticket.id}/assign`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ ownerId: staffUserId });
+
+      expect(res.status).toBe(200);
+      expect(res.body.ticket.ownerId).toBe(staffUserId);
+    });
+
     it("rejects reassignment to invalid or Requester user with 400 Bad Request", async () => {
       const ticket = await prisma.ticket.findFirstOrThrow();
       const alice = await prisma.user.findUniqueOrThrow({ where: { email: "alice@example.com" } });
@@ -199,6 +242,19 @@ describe("Issue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-deta
         .put(`/api/tickets/${ticket.id}/assign`)
         .set("Authorization", `Bearer ${staffToken}`)
         .send({ ownerId: alice.id });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("INVALID_ASSIGNEE");
+    });
+
+    it("rejects reassignment to inactive IT Staff user with 400 Bad Request (INVALID_ASSIGNEE)", async () => {
+      const ticket = await prisma.ticket.findFirstOrThrow();
+      const inactiveStaff = await prisma.user.findUniqueOrThrow({ where: { email: "inactive.staff@toktick.it" } });
+
+      const res = await request(app)
+        .put(`/api/tickets/${ticket.id}/assign`)
+        .set("Authorization", `Bearer ${staffToken}`)
+        .send({ ownerId: inactiveStaff.id });
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe("INVALID_ASSIGNEE");
@@ -347,6 +403,70 @@ describe("Issue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-deta
         .send({ status: "OPEN" });
 
       expect(res.status).toBe(403);
+    });
+  });
+
+  describe("Public Comments & Internal Notes RBAC Matrix (Administrator & Requester Restrictions / BR-04)", () => {
+    it("allows Administrator to view and post public comments", async () => {
+      const ticket = await prisma.ticket.findFirstOrThrow();
+
+      const postRes = await request(app)
+        .post(`/api/tickets/${ticket.id}/comments`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ content: "Administrator public comment test content" });
+
+      expect([200, 201]).toContain(postRes.status);
+
+      const getRes = await request(app)
+        .get(`/api/tickets/${ticket.id}/comments`)
+        .set("Authorization", `Bearer ${adminToken}`);
+
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.comments).toBeDefined();
+      expect(getRes.body.comments.some((c: any) => c.content === "Administrator public comment test content")).toBe(true);
+    });
+
+    it("allows Administrator to view and post internal notes", async () => {
+      const ticket = await prisma.ticket.findFirstOrThrow();
+
+      const postRes = await request(app)
+        .post(`/api/tickets/${ticket.id}/notes`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ content: "Administrator internal note test content" });
+
+      expect([200, 201]).toContain(postRes.status);
+
+      const getRes = await request(app)
+        .get(`/api/tickets/${ticket.id}/notes`)
+        .set("Authorization", `Bearer ${adminToken}`);
+
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.notes).toBeDefined();
+      expect(getRes.body.notes.some((n: any) => n.content === "Administrator internal note test content")).toBe(true);
+    });
+
+    it("denies Requester from fetching internal notes (403 Forbidden without note leakage)", async () => {
+      const ticket = await prisma.ticket.findFirstOrThrow();
+
+      const res = await request(app)
+        .get(`/api/tickets/${ticket.id}/notes`)
+        .set("Authorization", `Bearer ${aliceToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe("FORBIDDEN");
+      expect(res.body.notes).toBeUndefined();
+    });
+
+    it("denies Requester from posting internal note (403 Forbidden without note leakage)", async () => {
+      const ticket = await prisma.ticket.findFirstOrThrow();
+
+      const res = await request(app)
+        .post(`/api/tickets/${ticket.id}/notes`)
+        .set("Authorization", `Bearer ${aliceToken}`)
+        .send({ content: "Unauthorized requester note post attempt" });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe("FORBIDDEN");
     });
   });
 });
