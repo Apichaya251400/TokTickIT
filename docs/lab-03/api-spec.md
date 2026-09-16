@@ -155,6 +155,9 @@
   - `owner` (string, optional): Ownership filter (`all`, `my_queue`, `unassigned`).
   - `sortBy` (string, optional, default `createdAt`): Sort field (`createdAt`, `itPriority`, `updatedAt`, `ticketNumber`).
   - `sortDir` (string, optional, default `desc`): `asc` or `desc`.
+  - **Sorting Behavior & Deterministic Tie-Breaker**:
+    - Default sorting is `createdAt DESC`, followed by `id DESC` as a deterministic secondary tie-breaker.
+    - `sortBy=itPriority` follows semantic rank order (`URGENT` > `HIGH` > `MEDIUM` > `LOW` when `sortDir=desc`, reversed when `sortDir=asc`) rather than raw string alphabetical order.
   - `page` (integer, optional, default `1`): Page number (1-indexed).
   - `limit` (integer, optional, default `10`): Items per page (max 50).
 - **Response `200 OK`**:

@@ -208,6 +208,46 @@ export async function fetchMyTickets(
   }
 
   const queryString = searchParams.toString();
+  const url = `${API_URL}/api/tickets/my-tickets${queryString ? `?${queryString}` : ""}`;
+
+  const res = await fetchWithAuth(url);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export interface QueueQueryParams {
+  q?: string;
+  status?: string;
+  requestedPriority?: string;
+  itPriority?: string;
+  owner?: "all" | "my_queue" | "unassigned";
+  sortBy?: "createdAt" | "itPriority" | "updatedAt" | "ticketNumber";
+  sortDir?: "asc" | "desc";
+  page?: number;
+  limit?: number;
+}
+
+export async function fetchQueueTickets(
+  params?: QueueQueryParams
+): Promise<any> {
+  const searchParams = new URLSearchParams();
+
+  if (params) {
+    if (params.q && params.q.trim()) searchParams.set("q", params.q.trim());
+    if (params.status) searchParams.set("status", params.status);
+    if (params.requestedPriority) searchParams.set("requestedPriority", params.requestedPriority);
+    if (params.itPriority) searchParams.set("itPriority", params.itPriority);
+    if (params.owner) searchParams.set("owner", params.owner);
+    if (params.sortBy) searchParams.set("sortBy", params.sortBy);
+    if (params.sortDir) searchParams.set("sortDir", params.sortDir);
+    if (params.page) searchParams.set("page", String(params.page));
+    if (params.limit) searchParams.set("limit", String(params.limit));
+  }
+
+  const queryString = searchParams.toString();
   const url = `${API_URL}/api/tickets${queryString ? `?${queryString}` : ""}`;
 
   const res = await fetchWithAuth(url);
