@@ -185,6 +185,17 @@ describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", (
       expect(numbers).toEqual(sorted);
     });
 
+    it("sorts by ticketNumber desc", async () => {
+      const res = await request(app)
+        .get("/api/tickets?sortBy=ticketNumber&sortDir=desc")
+        .set("Authorization", `Bearer ${staffToken}`);
+
+      expect(res.status).toBe(200);
+      const numbers = res.body.data.map((t: any) => t.ticketNumber);
+      const sorted = [...numbers].sort().reverse();
+      expect(numbers).toEqual(sorted);
+    });
+
     it("sorts by createdAt desc (newest first)", async () => {
       const res = await request(app)
         .get("/api/tickets?sortBy=createdAt&sortDir=desc")
@@ -197,6 +208,42 @@ describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", (
       }
     });
 
+    it("sorts by createdAt asc (oldest first)", async () => {
+      const res = await request(app)
+        .get("/api/tickets?sortBy=createdAt&sortDir=asc")
+        .set("Authorization", `Bearer ${staffToken}`);
+
+      expect(res.status).toBe(200);
+      const dates = res.body.data.map((t: any) => new Date(t.createdAt).getTime());
+      for (let i = 0; i < dates.length - 1; i++) {
+        expect(dates[i]).toBeLessThanOrEqual(dates[i + 1]);
+      }
+    });
+
+    it("sorts by updatedAt desc (recently updated first)", async () => {
+      const res = await request(app)
+        .get("/api/tickets?sortBy=updatedAt&sortDir=desc")
+        .set("Authorization", `Bearer ${staffToken}`);
+
+      expect(res.status).toBe(200);
+      const dates = res.body.data.map((t: any) => new Date(t.updatedAt).getTime());
+      for (let i = 0; i < dates.length - 1; i++) {
+        expect(dates[i]).toBeGreaterThanOrEqual(dates[i + 1]);
+      }
+    });
+
+    it("sorts by updatedAt asc (least recently updated first)", async () => {
+      const res = await request(app)
+        .get("/api/tickets?sortBy=updatedAt&sortDir=asc")
+        .set("Authorization", `Bearer ${staffToken}`);
+
+      expect(res.status).toBe(200);
+      const dates = res.body.data.map((t: any) => new Date(t.updatedAt).getTime());
+      for (let i = 0; i < dates.length - 1; i++) {
+        expect(dates[i]).toBeLessThanOrEqual(dates[i + 1]);
+      }
+    });
+
     it("sorts by itPriority desc (URGENT > HIGH > MEDIUM > LOW)", async () => {
       const res = await request(app)
         .get("/api/tickets?sortBy=itPriority&sortDir=desc")
@@ -206,6 +253,18 @@ describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", (
       const ranks = res.body.data.map((t: any) => PRIORITY_RANK[t.itPriority] || 0);
       for (let i = 0; i < ranks.length - 1; i++) {
         expect(ranks[i]).toBeGreaterThanOrEqual(ranks[i + 1]);
+      }
+    });
+
+    it("sorts by itPriority asc (LOW < MEDIUM < HIGH < URGENT)", async () => {
+      const res = await request(app)
+        .get("/api/tickets?sortBy=itPriority&sortDir=asc")
+        .set("Authorization", `Bearer ${staffToken}`);
+
+      expect(res.status).toBe(200);
+      const ranks = res.body.data.map((t: any) => PRIORITY_RANK[t.itPriority] || 0);
+      for (let i = 0; i < ranks.length - 1; i++) {
+        expect(ranks[i]).toBeLessThanOrEqual(ranks[i + 1]);
       }
     });
   });
@@ -295,13 +354,24 @@ describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", (
       expect(res.body.error.code).toBe("INVALID_QUERY_PARAMETER");
     });
 
-    it("rejects invalid limit parameter (> 50)", async () => {
-      const res = await request(app)
+    it("rejects invalid limit parameter (< 1, > 50, or non-numeric)", async () => {
+      const belowMin = await request(app)
+        .get("/api/tickets?limit=0")
+        .set("Authorization", `Bearer ${staffToken}`);
+      expect(belowMin.status).toBe(400);
+      expect(belowMin.body.error.code).toBe("INVALID_QUERY_PARAMETER");
+
+      const aboveMax = await request(app)
         .get("/api/tickets?limit=100")
         .set("Authorization", `Bearer ${staffToken}`);
+      expect(aboveMax.status).toBe(400);
+      expect(aboveMax.body.error.code).toBe("INVALID_QUERY_PARAMETER");
 
-      expect(res.status).toBe(400);
-      expect(res.body.error.code).toBe("INVALID_QUERY_PARAMETER");
+      const nonNumeric = await request(app)
+        .get("/api/tickets?limit=abc")
+        .set("Authorization", `Bearer ${staffToken}`);
+      expect(nonNumeric.status).toBe(400);
+      expect(nonNumeric.body.error.code).toBe("INVALID_QUERY_PARAMETER");
     });
 
     it("rejects invalid page parameter (< 1 or non-numeric)", async () => {
