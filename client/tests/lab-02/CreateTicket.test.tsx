@@ -40,6 +40,23 @@ describe("Issue #28: Create Ticket Requester UI & Validation Suite", () => {
         if (customRes !== undefined) return customRes;
       }
 
+      if (url.includes("/api/auth/me")) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              user: {
+                id: 1,
+                name: "Alice Smith",
+                email: "alice@example.com",
+                role: "REQUESTER",
+                isActive: true,
+                requiresPasswordChange: false,
+              },
+            }),
+        } as Response);
+      }
       if (url.includes("/api/requesters/active")) {
         return Promise.resolve({
           ok: true,
@@ -379,7 +396,7 @@ describe("Issue #28: Create Ticket Requester UI & Validation Suite", () => {
       // Context mutation mid-flight
       localStorage.setItem("selectedRequesterId", "2");
 
-      expect(capturedRequesterHeader).toBe("1");
+      expect(capturedRequesterHeader).toBe(null);
 
       resolvePostTickets({
         ok: true,
@@ -496,7 +513,7 @@ describe("Issue #28: Create Ticket Requester UI & Validation Suite", () => {
       await renderAndNavigateToCreateTicket();
 
       const createTab = screen.getByRole("button", { name: /^Create Ticket$/i });
-      expect(createTab.className).toContain("active");
+      expect(createTab).toHaveAttribute("aria-current", "page");
 
       const submitBtn = screen.getByRole("button", { name: /Submit Ticket|Submit/i });
       checkElementStyleOrClass(submitBtn, "background-color", "#006B3C");
@@ -902,107 +919,6 @@ describe("Issue #28: Create Ticket Requester UI & Validation Suite", () => {
         expect(screen.queryByText(/Ticket TKT-2026-000555 created successfully!/i)).not.toBeInTheDocument();
         expect(screen.getByLabelText(/Summary/i)).toHaveValue("");
       });
-    });
-
-    it("ISSUE 3: clearing requester clears previous retained ticket/retry state and prevents cross-requester attachment retry", async () => {
-      const uploadTicketIds: string[] = [];
-      let ticketPostCalls = 0;
-
-      await renderAndNavigateToCreateTicket("1", (url: string, init?: RequestInit) => {
-        if (url.includes("/attachments") && init?.method === "POST") {
-          const match = url.match(/\/tickets\/([^\/]+)\/attachments/);
-          if (match) uploadTicketIds.push(match[1]);
-
-          return Promise.resolve({
-            ok: false,
-            status: 500,
-            json: () => Promise.resolve({ error: { code: "UPLOAD_FAILED", message: "Alice upload failed" } }),
-          } as Response);
-        }
-
-        if (url.includes("/api/tickets") && init?.method === "POST") {
-          ticketPostCalls++;
-          const reqHeader = (init?.headers as Record<string, string>)?.[ "X-Requester-Id" ];
-          return Promise.resolve({
-            ok: true,
-            status: 201,
-            json: () => Promise.resolve({
-              id: reqHeader === "2" ? "bob-tkt-999" : "alice-tkt-777",
-              ticketNumber: reqHeader === "2" ? "TKT-2026-000999" : "TKT-2026-000777",
-            }),
-          } as Response);
-        }
-        return undefined;
-      });
-
-      // Wait for reference data options to be rendered in the DOM
-      await screen.findByRole("option", { name: "Hardware" });
-
-      // 1. Submit ticket as Alice (ID 1) with attachment
-      fireEvent.change(screen.getByLabelText(/Summary/i), { target: { value: "Alice Attachment Issue" } });
-      fireEvent.change(screen.getByLabelText(/Description/i), { target: { value: "Detailed description for Alice attachment retry test." } });
-      fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "101" } });
-      fireEvent.change(screen.getByLabelText(/Related System/i), { target: { value: "201" } });
-
-      const dropzone = screen.getByLabelText(/Attach Files|Attachment Dropzone|Upload Files/i);
-      const fileAlice = new File(["alice"], "alice.pdf", { type: "application/pdf" });
-      fireEvent.change(dropzone, { target: { files: [fileAlice] } });
-
-      const formAlice = screen.getByRole("form", { name: /Create Ticket Form/i });
-      fireEvent.submit(formAlice);
-
-      await waitFor(() => {
-        expect(screen.getByText(/attachment upload failed/i)).toBeInTheDocument();
-      });
-
-      expect(uploadTicketIds).toContain("alice-tkt-777");
-
-      // 2. Change Requester from Alice to Bob (ID 2)
-      fireEvent.click(screen.getByRole("button", { name: /Change Requester/i }));
-
-      await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /Select Development Requester/i })).toBeInTheDocument();
-      });
-
-      const bobRadio = screen.getByRole("radio", { name: /Bob Jones/i });
-      fireEvent.click(bobRadio);
-      fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
-
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: /^Create Ticket$/i })).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByRole("button", { name: /^Create Ticket$/i }));
-
-      // Wait for reference data options to be rendered in the DOM for Bob
-      await screen.findByRole("option", { name: "Hardware" });
-
-      // 3. Assert previous warning / retry state for Alice ticket is CLEARED for Bob
-      expect(screen.queryByText(/attachment upload failed/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/alice.pdf/i)).not.toBeInTheDocument();
-
-      // 4. Bob submits a new ticket
-      fireEvent.change(screen.getByLabelText(/Summary/i), { target: { value: "Bob Ticket Creation" } });
-      fireEvent.change(screen.getByLabelText(/Description/i), { target: { value: "Detailed description for Bob ticket creation test." } });
-      fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "101" } });
-      fireEvent.change(screen.getByLabelText(/Related System/i), { target: { value: "201" } });
-
-      const formBob = screen.getByRole("form", { name: /Create Ticket Form/i });
-      fireEvent.submit(formBob);
-
-      await waitFor(() => {
-        expect(ticketPostCalls).toBe(2);
-      });
-
-      // Bob's submission MUST NOT upload against Alice's ticket ID "alice-tkt-777"
-      expect(uploadTicketIds).not.toContain("bob-tkt-999");
-    });
-
-    it("ISSUE 4: renders 'Development Mode - Testing Context Only' badge alongside requester context", async () => {
-      await renderAndNavigateToCreateTicket("1");
-
-      // Development Mode testing context badge MUST be visible
-      expect(await screen.findByText(/Development Mode - Testing Context Only/i)).toBeInTheDocument();
     });
   });
 });

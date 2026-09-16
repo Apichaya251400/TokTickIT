@@ -1,9 +1,39 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import App from "../../src/App";
 import * as api from "../../src/api";
 
 describe("UI-02: Loading State and Category List Rendering", () => {
+  let originalFetch: typeof globalThis.fetch;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("/api/auth/me")) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              user: {
+                id: 1,
+                name: "Alice Smith",
+                email: "alice@example.com",
+                role: "REQUESTER",
+                isActive: true,
+                requiresPasswordChange: false,
+              },
+            }),
+        } as Response);
+      }
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve([]) } as Response);
+    });
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
   it("shows loading state then displays System Status Online and categories", async () => {
     vi.spyOn(api, "checkSystem").mockResolvedValueOnce({
       online: true,
@@ -16,7 +46,9 @@ describe("UI-02: Loading State and Category List Rendering", () => {
     });
 
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: /Check System/i }));
+
+    const checkBtn = await screen.findByRole("button", { name: /Check System/i });
+    fireEvent.click(checkBtn);
 
     await waitFor(() => {
       expect(screen.getByText("Online")).toBeInTheDocument();
