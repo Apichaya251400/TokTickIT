@@ -40,7 +40,7 @@ describe("Issue 6: Requester Regression & Ownership Isolation API Tests (API-REQ
 
     // 2. Alice requests her own tickets
     const myTicketsRes = await request(app)
-      .get("/api/tickets")
+      .get("/api/tickets/my-tickets")
       .set("Authorization", `Bearer ${aliceToken}`);
 
     expect(myTicketsRes.status).toBe(200);

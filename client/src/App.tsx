@@ -21,6 +21,7 @@ import Login from "./components/Login";
 import ChangePassword from "./components/ChangePassword";
 import AppHeader, { NavTab } from "./components/AppHeader";
 import PublicComments from "./components/PublicComments";
+import StaffTicketQueue from "./components/StaffTicketQueue";
 
 type UiState = "idle" | "loading" | "success" | "error";
 
@@ -672,15 +673,13 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-      {/* Staff Queue Placeholder */}
-      {activeTab === "staff-queue" && (
+      {/* IT Staff Ticket Queue */}
+      {activeTab === "staff-queue" && !selectedTicketId && (
         <section className="mb-5">
-          <div className="card shadow-sm p-4 bg-light border-0">
-            <h2 className="h5 fw-bold text-success mb-2">IT Staff Queue</h2>
-            <p className="text-muted mb-0">
-              Welcome, <strong>{currentUser.name}</strong>. The IT Staff ticket triage & queue view will be available in Sprint 4.
-            </p>
-          </div>
+          <StaffTicketQueue
+            currentUser={currentUser}
+            onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+          />
         </section>
       )}
 

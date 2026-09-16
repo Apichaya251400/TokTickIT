@@ -59,7 +59,7 @@ describe("Issue 4: Authorization Matrix & Resource Ownership Isolation API Tests
 
     // 2. Requester accessing ticket list -> 200 OK
     const resReqList = await request(app)
-      .get("/api/tickets")
+      .get("/api/tickets/my-tickets")
       .set("Authorization", `Bearer ${aliceToken}`);
     expect(resReqList.status).toBe(200);
   });
