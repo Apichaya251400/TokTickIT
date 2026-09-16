@@ -304,33 +304,45 @@ export async function seedDatabase() {
 
     // Seed sample Attachment on Ticket 1 & Ticket 2
     if (t.ticketNumber === "TKT-2026-000001") {
-      const existingAttachments = await prisma.attachment.findMany({ where: { ticketId: ticketRecord.id } });
-      if (existingAttachments.length === 0) {
-        await prisma.attachment.create({
-          data: {
-            ticketId: ticketRecord.id,
-            fileName: "error_screenshot.png",
-            fileSize: 1048576,
-            mimeType: "image/png",
-            filePath: "/uploads/error_screenshot.png",
-          },
-        });
-      }
+      await prisma.attachment.upsert({
+        where: { id: "att-lab2-000001" },
+        update: {
+          ticketId: ticketRecord.id,
+          fileName: "error_screenshot.png",
+          fileSize: 1048576,
+          mimeType: "image/png",
+          filePath: "/uploads/error_screenshot.png",
+        },
+        create: {
+          id: "att-lab2-000001",
+          ticketId: ticketRecord.id,
+          fileName: "error_screenshot.png",
+          fileSize: 1048576,
+          mimeType: "image/png",
+          filePath: "/uploads/error_screenshot.png",
+        },
+      });
     }
 
     if (t.ticketNumber === "TKT-2026-000002") {
-      const existingAttachments = await prisma.attachment.findMany({ where: { ticketId: ticketRecord.id } });
-      if (existingAttachments.length === 0) {
-        await prisma.attachment.create({
-          data: {
-            ticketId: ticketRecord.id,
-            fileName: "wifi_diagnostics_log.txt",
-            fileSize: 2048,
-            mimeType: "text/plain",
-            filePath: "/uploads/wifi_diagnostics_log.txt",
-          },
-        });
-      }
+      await prisma.attachment.upsert({
+        where: { id: "att-lab2-000002" },
+        update: {
+          ticketId: ticketRecord.id,
+          fileName: "wifi_diagnostics_log.txt",
+          fileSize: 2048,
+          mimeType: "text/plain",
+          filePath: "/uploads/wifi_diagnostics_log.txt",
+        },
+        create: {
+          id: "att-lab2-000002",
+          ticketId: ticketRecord.id,
+          fileName: "wifi_diagnostics_log.txt",
+          fileSize: 2048,
+          mimeType: "text/plain",
+          filePath: "/uploads/wifi_diagnostics_log.txt",
+        },
+      });
 
       // Seed sample Public Comment on Ticket 2
       const existingComments = await prisma.publicComment.findMany({ where: { ticketId: ticketRecord.id } });

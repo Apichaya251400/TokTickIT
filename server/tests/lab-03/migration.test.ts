@@ -115,25 +115,35 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     expect(statuses.has("REOPENED")).toBe(true);
     expect(statuses.has("CANCELLED")).toBe(true);
 
-    // 1. Explicitly verify preservation of pre-existing Lab 2 Attachments linked to Lab 2 Tickets
+    // 1. Explicitly verify preservation of pre-existing Lab 2 Attachments linked to Lab 2 Tickets by exact ID
     const ticket1 = tickets.find((t) => t.ticketNumber === "TKT-2026-000001");
     expect(ticket1).toBeDefined();
-    expect(ticket1!.attachments.length).toBeGreaterThanOrEqual(1);
 
-    const lab2Attachment1 = ticket1!.attachments.find((a) => a.fileName === "error_screenshot.png");
+    const lab2Attachment1 = await prisma.attachment.findUnique({
+      where: {
+        id: "att-lab2-000001",
+      },
+    });
+
     expect(lab2Attachment1).toBeDefined();
     expect(lab2Attachment1!.ticketId).toBe(ticket1!.id);
+    expect(lab2Attachment1!.fileName).toBe("error_screenshot.png");
     expect(lab2Attachment1!.fileSize).toBe(1048576);
     expect(lab2Attachment1!.mimeType).toBe("image/png");
     expect(lab2Attachment1!.filePath).toBe("/uploads/error_screenshot.png");
 
     const ticket2 = tickets.find((t) => t.ticketNumber === "TKT-2026-000002");
     expect(ticket2).toBeDefined();
-    expect(ticket2!.attachments.length).toBeGreaterThanOrEqual(1);
 
-    const lab2Attachment2 = ticket2!.attachments.find((a) => a.fileName === "wifi_diagnostics_log.txt");
+    const lab2Attachment2 = await prisma.attachment.findUnique({
+      where: {
+        id: "att-lab2-000002",
+      },
+    });
+
     expect(lab2Attachment2).toBeDefined();
     expect(lab2Attachment2!.ticketId).toBe(ticket2!.id);
+    expect(lab2Attachment2!.fileName).toBe("wifi_diagnostics_log.txt");
     expect(lab2Attachment2!.fileSize).toBe(2048);
     expect(lab2Attachment2!.mimeType).toBe("text/plain");
     expect(lab2Attachment2!.filePath).toBe("/uploads/wifi_diagnostics_log.txt");
