@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { getPrisma } from "../../src/prisma.js";
 import { seedDatabase } from "../../prisma/seed.js";
 
@@ -7,6 +7,10 @@ const DEFAULT_INITIAL_PASSWORD = "InitialPassword123!";
 
 describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
   const prisma = getPrisma();
+
+  beforeEach(async () => {
+    await seedDatabase();
+  });
 
   it("API-MIG-01: Verifies User model schema evolution, Role enum, and initial password bcrypt verification", async () => {
     // 1. Verify User model query returns migrated records with valid Role enum
@@ -61,6 +65,11 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     const countTickets1 = await prisma.ticket.count();
     const countAttachments1 = await prisma.attachment.count();
 
+    const ticketsBefore = await prisma.ticket.findMany({
+      select: { id: true, ticketNumber: true, currentStatus: true },
+      orderBy: { ticketNumber: "asc" },
+    });
+
     // Execute seed run 2 (idempotency check)
     await seedDatabase();
 
@@ -70,12 +79,18 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     const countTickets2 = await prisma.ticket.count();
     const countAttachments2 = await prisma.attachment.count();
 
-    // Verify empirical equality (zero duplicate records generated)
+    const ticketsAfter = await prisma.ticket.findMany({
+      select: { id: true, ticketNumber: true, currentStatus: true },
+      orderBy: { ticketNumber: "asc" },
+    });
+
+    // Verify empirical equality (zero duplicate records generated and identical content preserved)
     expect(countUsers2).toBe(countUsers1);
     expect(countCategories2).toBe(countCategories1);
     expect(countSystems2).toBe(countSystems1);
     expect(countTickets2).toBe(countTickets1);
     expect(countAttachments2).toBe(countAttachments1);
+    expect(ticketsAfter).toEqual(ticketsBefore);
 
     // Verify required active/inactive users per role
     const requesters = await prisma.user.findMany({ where: { role: "REQUESTER" } });
@@ -169,6 +184,71 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
         expect(ticket.owner?.id).toBe(ticket.ownerId);
       }
     }
+  });
+
+  it("API-MIG-04: Demonstrates pre-existing data preservation across seed migration flow", async () => {
+    // 1. Create a pre-existing custom ticket & attachment prior to running seed migration
+    const alice = await prisma.user.findUniqueOrThrow({ where: { email: "alice@example.com" } });
+    const category = await prisma.category.findFirstOrThrow();
+    const system = await prisma.relatedSystem.findFirstOrThrow();
+
+    const customTicketNumber = "TKT-2026-999999";
+    const customAttachmentId = "att-lab2-custom-999";
+
+    const customTicket = await prisma.ticket.upsert({
+      where: { ticketNumber: customTicketNumber },
+      update: {},
+      create: {
+        ticketNumber: customTicketNumber,
+        requesterId: alice.id,
+        categoryId: category.id,
+        relatedSystemId: system.id,
+        summary: "Custom pre-existing Lab 2 test ticket for migration verification",
+        description: "Testing that custom existing tickets and attachments survive seedDatabase execution.",
+        requestedPriority: "MEDIUM",
+        currentStatus: "NEW",
+        attachments: {
+          connectOrCreate: {
+            where: { id: customAttachmentId },
+            create: {
+              id: customAttachmentId,
+              fileName: "custom_pre_existing_doc.pdf",
+              fileSize: 4096,
+              mimeType: "application/pdf",
+              filePath: "/uploads/custom_pre_existing_doc.pdf",
+            },
+          },
+        },
+      },
+      include: { attachments: true },
+    });
+
+    expect(customTicket.id).toBeDefined();
+    expect(customTicket.attachments.length).toBe(1);
+
+    // 2. Re-run seed database (simulating upgrade / re-seeding execution)
+    await seedDatabase();
+
+    // 3. Verify that custom pre-existing Ticket & Attachment are preserved intact with original IDs and relations
+    const preservedTicket = await prisma.ticket.findUnique({
+      where: { ticketNumber: customTicketNumber },
+      include: { attachments: true, requester: true },
+    });
+
+    expect(preservedTicket).toBeDefined();
+    expect(preservedTicket!.id).toBe(customTicket.id);
+    expect(preservedTicket!.summary).toBe("Custom pre-existing Lab 2 test ticket for migration verification");
+    expect(preservedTicket!.requester.email).toBe("alice@example.com");
+
+    const preservedAttachment = await prisma.attachment.findUnique({
+      where: { id: customAttachmentId },
+      include: { ticket: true },
+    });
+
+    expect(preservedAttachment).toBeDefined();
+    expect(preservedAttachment!.id).toBe(customAttachmentId);
+    expect(preservedAttachment!.fileName).toBe("custom_pre_existing_doc.pdf");
+    expect(preservedAttachment!.ticketId).toBe(customTicket.id);
   });
 });
 

@@ -1,6 +1,8 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { getPrisma } from "./prisma.js";
+import { authRouter } from "./routes/auth.routes.js";
 import { ticketRouter } from "./routes/ticket.routes.js";
 
 // The Express app is exported separately from app.listen() (see index.ts) so
@@ -9,6 +11,9 @@ export const app = express();
 
 app.use(cors());          // already wired: lets the Vite dev server call this API
 app.use(express.json());
+app.use(cookieParser());
+
+app.use("/api/auth", authRouter);
 
 // ---------------------------------------------------------------------------
 // Issue 2 — API health check

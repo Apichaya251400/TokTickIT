@@ -147,8 +147,10 @@ export async function seedDatabase() {
       where: { email: u.email },
       update: {
         name: u.name,
+        passwordHash,
         role: u.role,
         isActive: u.isActive,
+        requiresPasswordChange: u.requiresPasswordChange,
       },
       create: {
         name: u.name,
@@ -312,6 +314,8 @@ export async function seedDatabase() {
           fileSize: 1048576,
           mimeType: "image/png",
           filePath: "/uploads/error_screenshot.png",
+          removedAt: null,
+          removalReason: null,
         },
         create: {
           id: "att-lab2-000001",
@@ -333,6 +337,8 @@ export async function seedDatabase() {
           fileSize: 2048,
           mimeType: "text/plain",
           filePath: "/uploads/wifi_diagnostics_log.txt",
+          removedAt: null,
+          removalReason: null,
         },
         create: {
           id: "att-lab2-000002",

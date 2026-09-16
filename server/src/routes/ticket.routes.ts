@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { getPrisma } from "../prisma.js";
-import { requesterContextMiddleware, AuthenticatedRequesterRequest } from "../middleware/requesterContext.js";
+import { authenticateToken, requireRole, requireTicketOwnership, requireAttachmentOwnership, AuthenticatedRequest } from "../middleware/auth.js";
 import { validateSummary, validateDescription, validateFileSize, sanitizeFileName } from "../utils/validation.js";
 import { generateTicketNumber, getNextTicketSequence } from "../utils/ticketNumber.js";
 import { RequestedPriority } from "@prisma/client";
@@ -49,7 +49,7 @@ interface ParsedMultipartFile {
   size: number;
 }
 
-function parseMultipartForm(req: AuthenticatedRequesterRequest): Promise<ParsedMultipartFile | null> {
+function parseMultipartForm(req: AuthenticatedRequest): Promise<ParsedMultipartFile | null> {
   return new Promise((resolve, reject) => {
     const contentType = req.headers["content-type"] || "";
     const match = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
@@ -114,8 +114,9 @@ const ALLOWED_PRIORITIES = new Set(["LOW", "MEDIUM", "HIGH", "URGENT"]);
 // POST /api/tickets - Create a new IT support ticket
 ticketRouter.post(
   "/tickets",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  authenticateToken,
+  requireRole("REQUESTER"),
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const { categoryId, relatedSystemId, requestedPriority, summary, description } = req.body || {};
 
     const validationDetails: Array<{ field: string; message: string }> = [];
@@ -175,7 +176,7 @@ ticketRouter.post(
       return;
     }
 
-    const requesterId = req.requesterId!;
+    const requesterId = req.user!.id;
 
     // Duplicate submission check for in-flight requests during active processing (BR-14 / AC-20 / API-13)
     const duplicateKey = `${requesterId}:${parsedCatId}:${parsedSysId}:${requestedPriority}:${cleanSummary}:${cleanDescription}`;
@@ -268,8 +269,9 @@ const ALLOWED_STATUSES = new Set(["NEW"]);
 // GET /api/tickets - Retrieve paginated list of owned tickets (Issue #27)
 ticketRouter.get(
   "/tickets",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  authenticateToken,
+  requireRole("REQUESTER"),
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const {
       search,
       categoryId,
@@ -502,8 +504,10 @@ ticketRouter.get(
 // GET /api/tickets/:id - Retrieve owned ticket details with attachments (Issue #25)
 ticketRouter.get(
   "/tickets/:id",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  authenticateToken,
+  requireRole("REQUESTER", "IT_STAFF", "ADMINISTRATOR"),
+  requireTicketOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const ticketId = req.params.id;
 
     if (!UUID_REGEX.test(ticketId)) {
@@ -516,14 +520,15 @@ ticketRouter.get(
       return;
     }
 
-    const requesterId = req.requesterId!;
+    const requesterId = req.user!.id;
 
     try {
       const prisma = getPrisma();
+      const isRequester = req.user?.role === "REQUESTER";
       const ticket = await prisma.ticket.findFirst({
         where: {
           id: ticketId,
-          requesterId, // Enforces ownership strictly at the database query level
+          ...(isRequester ? { requesterId } : {}), // Requester ownership isolation
         },
         include: {
           requester: {
@@ -619,8 +624,10 @@ ticketRouter.get(
 // POST /api/tickets/:id/attachments - Upload attachment to ticket (Issue #26)
 ticketRouter.post(
   "/tickets/:id/attachments",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  authenticateToken,
+  requireRole("REQUESTER"),
+  requireTicketOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const ticketId = req.params.id;
 
     if (!UUID_REGEX.test(ticketId)) {
@@ -633,7 +640,7 @@ ticketRouter.post(
       return;
     }
 
-    const requesterId = req.requesterId!;
+    const requesterId = req.user!.id;
     const prisma = getPrisma();
 
     // Verify ticket existence AND requester ownership directly in DB query
@@ -779,30 +786,37 @@ ticketRouter.post(
 // GET /api/attachments/:id/download - Download attachment binary stream (Issue #26)
 ticketRouter.get(
   "/attachments/:id/download",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  authenticateToken,
+  requireRole("REQUESTER", "IT_STAFF", "ADMINISTRATOR"),
+  requireAttachmentOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const attachmentId = req.params.id;
 
-    if (!UUID_REGEX.test(attachmentId)) {
+    if (!attachmentId || typeof attachmentId !== "string" || attachmentId.trim() === "") {
       res.status(400).json({
         error: {
           code: "INVALID_ATTACHMENT_ID",
-          message: "Attachment ID must be a valid UUID.",
+          message: "Attachment ID is required.",
         },
       });
       return;
     }
 
-    const requesterId = req.requesterId!;
+    const requesterId = req.user!.id;
     const prisma = getPrisma();
+    const isRequester = req.user?.role === "REQUESTER";
 
     // Verify attachment existence AND ticket ownership directly in DB query
     const attachment = await prisma.attachment.findFirst({
       where: {
         id: attachmentId,
-        ticket: {
-          requesterId, // Ticket ownership filter
-        },
+        ...(isRequester
+          ? {
+              ticket: {
+                requesterId, // Ticket ownership filter
+              },
+            }
+          : {}),
       },
     });
 
@@ -848,21 +862,23 @@ ticketRouter.get(
 // DELETE /api/attachments/:id - Soft remove attachment with removalReason (Issue #26)
 ticketRouter.delete(
   "/attachments/:id",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  authenticateToken,
+  requireRole("REQUESTER"),
+  requireAttachmentOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const attachmentId = req.params.id;
 
-    if (!UUID_REGEX.test(attachmentId)) {
+    if (!attachmentId || typeof attachmentId !== "string" || attachmentId.trim() === "") {
       res.status(400).json({
         error: {
           code: "INVALID_ATTACHMENT_ID",
-          message: "Attachment ID must be a valid UUID.",
+          message: "Attachment ID is required.",
         },
       });
       return;
     }
 
-    const requesterId = req.requesterId!;
+    const requesterId = req.user!.id;
     const prisma = getPrisma();
 
     // Verify attachment existence AND ticket ownership directly in DB query
