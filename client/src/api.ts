@@ -300,3 +300,60 @@ export async function softRemoveAttachment(
 
   return res.json();
 }
+
+export interface PublicComment {
+  id: string;
+  ticketId: string;
+  authorId: number;
+  content: string;
+  createdAt: string;
+  author?: {
+    id: number;
+    name: string;
+    role: Role;
+  };
+}
+
+export async function fetchTicketComments(ticketId: string): Promise<{ comments: PublicComment[] }> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/comments`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function postTicketComment(ticketId: string, content: string): Promise<PublicComment> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/comments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function indicateResolveApi(ticketId: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/resolve-indicator`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function requestReopenApi(ticketId: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/reopen-request`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}

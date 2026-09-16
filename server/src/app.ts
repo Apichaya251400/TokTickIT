@@ -50,12 +50,13 @@ app.get("/api/categories", async (_req: Request, res: Response) => {
   }
 });
 
-// GET /api/requesters/active - Returns active Development Requesters
+// GET /api/requesters/active - Returns active Requesters (Sprint 3 User model)
 app.get("/api/requesters/active", async (_req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
-    const requesters = await prisma.requesterUser.findMany({
+    const requesters = await prisma.user.findMany({
       where: {
+        role: "REQUESTER",
         isActive: true,
       },
       select: {
