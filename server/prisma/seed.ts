@@ -147,8 +147,10 @@ export async function seedDatabase() {
       where: { email: u.email },
       update: {
         name: u.name,
+        passwordHash,
         role: u.role,
         isActive: u.isActive,
+        requiresPasswordChange: u.requiresPasswordChange,
       },
       create: {
         name: u.name,

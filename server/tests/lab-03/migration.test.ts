@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { getPrisma } from "../../src/prisma.js";
 import { seedDatabase } from "../../prisma/seed.js";
 
@@ -7,6 +7,10 @@ const DEFAULT_INITIAL_PASSWORD = "InitialPassword123!";
 
 describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
   const prisma = getPrisma();
+
+  beforeEach(async () => {
+    await seedDatabase();
+  });
 
   it("API-MIG-01: Verifies User model schema evolution, Role enum, and initial password bcrypt verification", async () => {
     // 1. Verify User model query returns migrated records with valid Role enum
