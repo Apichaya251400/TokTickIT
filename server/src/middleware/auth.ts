@@ -125,3 +125,115 @@ export function requireRole(...permittedRoles: Role[]) {
     next();
   };
 }
+
+/**
+ * Ticket Ownership Isolation Middleware (FR-06 / BR-03 / BR-15):
+ * - If authenticated user is a REQUESTER, verifies that the target ticket belongs to req.user.id
+ * - Rejects access with 403 Forbidden if the Requester does not own the ticket
+ * - IT_STAFF and ADMINISTRATOR roles bypass requester ownership checks per Authorization Matrix
+ */
+export async function requireTicketOwnership(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Authentication required" });
+      return;
+    }
+
+    // IT_STAFF and ADMINISTRATOR bypass requester ownership checks
+    if (req.user.role !== "REQUESTER") {
+      next();
+      return;
+    }
+
+    const ticketId = req.params.id || req.params.ticketId || req.body?.ticketId;
+    if (!ticketId) {
+      next();
+      return;
+    }
+
+    const prisma = getPrisma();
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: String(ticketId) },
+      select: { requesterId: true },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: "NOT_FOUND",
+        message: "Ticket not found",
+      });
+      return;
+    }
+
+    if (ticket.requesterId !== req.user.id) {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied: You do not own this ticket",
+      });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal ownership verification error" });
+  }
+}
+
+/**
+ * Attachment Ownership Isolation Middleware (FR-06 / BR-03 / BR-15):
+ * - If authenticated user is a REQUESTER, verifies that the target attachment belongs to a ticket owned by req.user.id
+ * - Rejects access with 403 Forbidden if the Requester does not own the attachment
+ */
+export async function requireAttachmentOwnership(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Authentication required" });
+      return;
+    }
+
+    if (req.user.role !== "REQUESTER") {
+      next();
+      return;
+    }
+
+    const attachmentId = req.params.id || req.params.attachmentId;
+    if (!attachmentId) {
+      next();
+      return;
+    }
+
+    const prisma = getPrisma();
+    const attachment = await prisma.attachment.findUnique({
+      where: { id: String(attachmentId) },
+      include: { ticket: { select: { requesterId: true } } },
+    });
+
+    if (!attachment) {
+      res.status(404).json({
+        error: "NOT_FOUND",
+        message: "Attachment not found",
+      });
+      return;
+    }
+
+    if (attachment.ticket.requesterId !== req.user.id) {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied: You do not own this attachment",
+      });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    res.status(500).json({ error: "SERVER_ERROR", message: "Internal attachment ownership verification error" });
+  }
+}

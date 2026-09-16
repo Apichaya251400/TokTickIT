@@ -1,7 +1,16 @@
 import jwt from "jsonwebtoken";
 import { Role } from "@prisma/client";
 
-const JWT_SECRET = process.env.JWT_SECRET || "toktickit-secret-key-sprint-3";
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "test") {
+      return "toktickit-secret-key-sprint-3";
+    }
+    throw new Error("JWT_SECRET environment variable is required and missing");
+  }
+  return secret;
+}
 
 export interface TokenPayload {
   userId: number;
@@ -14,7 +23,7 @@ export interface TokenPayload {
 const revokedTokens = new Set<string>();
 
 export function signToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "15m" });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: "15m" });
 }
 
 export function verifyToken(token: string): TokenPayload | null {
@@ -22,7 +31,7 @@ export function verifyToken(token: string): TokenPayload | null {
     if (isTokenRevoked(token)) {
       return null;
     }
-    const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
+    const decoded = jwt.verify(token, getJwtSecret()) as TokenPayload;
     return decoded;
   } catch (error) {
     return null;
