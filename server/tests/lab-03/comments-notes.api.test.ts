@@ -139,4 +139,46 @@ describe("Issue 6: Public Comments & Internal Notes API Tests (API-NOTE-01, API-
       .set("Authorization", `Bearer ${aliceToken}`);
     expect(commentsRes.body.comments.some((c: any) => c.content.includes("indicated that the problem appears resolved"))).toBe(true);
   });
+
+  it("API-OPS-04: Requester reopen request signalling without status mutation (FR-13, BR-05)", async () => {
+    // 1. Set ticket status to RESOLVED
+    await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { currentStatus: "RESOLVED" },
+    });
+
+    // 2. Alice (owner) calls reopen-request endpoint
+    const reopenRes = await request(app)
+      .post(`/api/tickets/${ticketId}/reopen-request`)
+      .set("Authorization", `Bearer ${aliceToken}`);
+
+    expect(reopenRes.status).toBe(200);
+    expect(reopenRes.body.ticket.requesterReopenRequestedAt).toBeDefined();
+    expect(reopenRes.body.ticket.currentStatus).toBe("RESOLVED");
+
+    // Verify public system comment was created
+    const commentsRes = await request(app)
+      .get(`/api/tickets/${ticketId}/comments`)
+      .set("Authorization", `Bearer ${aliceToken}`);
+    expect(
+      commentsRes.body.comments.some((c: any) =>
+        c.content.includes("requested to reopen the ticket")
+      )
+    ).toBe(true);
+
+    // 3. Verify non-owner Requester receives 403 Forbidden
+    await prisma.user.update({
+      where: { email: "bob@example.com" },
+      data: { requiresPasswordChange: false },
+    });
+    const bob = await prisma.user.findUniqueOrThrow({ where: { email: "bob@example.com" } });
+    const bobToken = signToken({ userId: bob.id, email: bob.email, role: bob.role, requiresPasswordChange: false });
+
+    const bobReopenRes = await request(app)
+      .post(`/api/tickets/${ticketId}/reopen-request`)
+      .set("Authorization", `Bearer ${bobToken}`);
+
+    expect(bobReopenRes.status).toBe(403);
+  });
 });
+
