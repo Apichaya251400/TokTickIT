@@ -106,6 +106,7 @@ The stakeholder requires TokTickIT to transition from a development prototype us
 - **BR-13**: `GET /api/auth/me` returns the current authenticated user's state. Auth middleware verifies `isActive` and `role` against the database on every protected request (rather than solely relying on static JWT payload claims), ensuring account deactivation or role modification by an Administrator takes effect immediately on the target user's next API request verification per BR-13.
 - **BR-14**: Invalid query parameters (e.g. invalid status enum or sort field) MUST be handled gracefully by defaulting to standard defaults (`createdAt desc`, page 1) or returning `400 Bad Request` with safe validation message.
 - **BR-15**: All Lab 2 Ticket and Attachment API contracts MUST continue to function seamlessly using the authenticated session identity, completely eliminating reliance on client-supplied `X-Requester-Id` headers.
+- **BR-16**: Concurrent operations targeting the same ticket resource (such as two IT Staff members attempting `POST /api/tickets/:id/claim` simultaneously, or simultaneous status transition attempts) MUST be evaluated atomically. The first request to process succeeds (`200 OK`) and mutates resource state; subsequent conflicting requests MUST be rejected with `409 Conflict` without data corruption or partial state updates.
 
 ### Operation-level Authorization Matrix
 

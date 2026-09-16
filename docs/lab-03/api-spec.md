@@ -227,6 +227,13 @@
   }
 }
 ```
+- **Response `409 Conflict`** (Concurrent Claim Conflict / BR-16):
+```json
+{
+  "error": "STATE_CONFLICT",
+  "message": "Ticket has already been claimed by another IT Staff member"
+}
+```
 
 ---
 
@@ -299,6 +306,13 @@
 {
   "error": "INVALID_TRANSITION",
   "message": "Transition from NEW to RESOLVED is not allowed by the Status Transition Matrix"
+}
+```
+- **Response `409 Conflict`** (Concurrent Status Transition Conflict / BR-16):
+```json
+{
+  "error": "STATE_CONFLICT",
+  "message": "Ticket status has been modified by a concurrent operation"
 }
 ```
 
