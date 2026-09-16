@@ -15,7 +15,7 @@ CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "passwordHash" TEXT NOT NULL DEFAULT '$2a$10$wE8wJ7L2Qn6LqE2e6f4O2u1Z1d4K3j8L5M6N7O8P9Q0R1S2T3U4V5',
+    "passwordHash" TEXT NOT NULL DEFAULT '$2b$10$VJNWp7veSHTPSoaaN.0iP.ogFXBNH/zuKsCiwx1d8OFo2In4Ddy8i',
     "role" "Role" NOT NULL DEFAULT 'REQUESTER',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "requiresPasswordChange" BOOLEAN NOT NULL DEFAULT true,
@@ -27,9 +27,9 @@ CREATE TABLE "User" (
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
--- Migrate existing RequesterUser records to User
-INSERT INTO "User" ("id", "name", "email", "isActive", "createdAt", "role", "requiresPasswordChange")
-SELECT "id", "name", "email", "isActive", "createdAt", 'REQUESTER'::"Role", true
+-- Migrate existing RequesterUser records to User setting initial password hash for InitialPassword123!
+INSERT INTO "User" ("id", "name", "email", "passwordHash", "isActive", "createdAt", "role", "requiresPasswordChange")
+SELECT "id", "name", "email", '$2b$10$VJNWp7veSHTPSoaaN.0iP.ogFXBNH/zuKsCiwx1d8OFo2In4Ddy8i', "isActive", "createdAt", 'REQUESTER'::"Role", true
 FROM "RequesterUser"
 ON CONFLICT ("email") DO NOTHING;
 
