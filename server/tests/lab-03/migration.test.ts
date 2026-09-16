@@ -174,5 +174,65 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
       }
     }
   });
+
+  it("API-MIG-04: Demonstrates pre-existing data preservation across seed migration flow", async () => {
+    // 1. Create a pre-existing custom ticket & attachment prior to running seed migration
+    const alice = await prisma.user.findUniqueOrThrow({ where: { email: "alice@example.com" } });
+    const category = await prisma.category.findFirstOrThrow();
+    const system = await prisma.relatedSystem.findFirstOrThrow();
+
+    const customTicketNumber = "TKT-2026-999999";
+    const customAttachmentId = "att-lab2-custom-999";
+
+    const customTicket = await prisma.ticket.create({
+      data: {
+        ticketNumber: customTicketNumber,
+        requesterId: alice.id,
+        categoryId: category.id,
+        relatedSystemId: system.id,
+        summary: "Custom pre-existing Lab 2 test ticket for migration verification",
+        description: "Testing that custom existing tickets and attachments survive seedDatabase execution.",
+        requestedPriority: "MEDIUM",
+        currentStatus: "NEW",
+        attachments: {
+          create: {
+            id: customAttachmentId,
+            fileName: "custom_pre_existing_doc.pdf",
+            fileSize: 4096,
+            mimeType: "application/pdf",
+            filePath: "/uploads/custom_pre_existing_doc.pdf",
+          },
+        },
+      },
+      include: { attachments: true },
+    });
+
+    expect(customTicket.id).toBeDefined();
+    expect(customTicket.attachments.length).toBe(1);
+
+    // 2. Re-run seed database (simulating upgrade / re-seeding execution)
+    await seedDatabase();
+
+    // 3. Verify that custom pre-existing Ticket & Attachment are preserved intact with original IDs and relations
+    const preservedTicket = await prisma.ticket.findUnique({
+      where: { ticketNumber: customTicketNumber },
+      include: { attachments: true, requester: true },
+    });
+
+    expect(preservedTicket).toBeDefined();
+    expect(preservedTicket!.id).toBe(customTicket.id);
+    expect(preservedTicket!.summary).toBe("Custom pre-existing Lab 2 test ticket for migration verification");
+    expect(preservedTicket!.requester.email).toBe("alice@example.com");
+
+    const preservedAttachment = await prisma.attachment.findUnique({
+      where: { id: customAttachmentId },
+      include: { ticket: true },
+    });
+
+    expect(preservedAttachment).toBeDefined();
+    expect(preservedAttachment!.id).toBe(customAttachmentId);
+    expect(preservedAttachment!.fileName).toBe("custom_pre_existing_doc.pdf");
+    expect(preservedAttachment!.ticketId).toBe(customTicket.id);
+  });
 });
 
