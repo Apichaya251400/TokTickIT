@@ -14,10 +14,10 @@ import {
   uploadAttachment,
   downloadAttachment,
   softRemoveAttachment,
-} from "./api.js";
-import Login from "./components/Login.js";
-import ChangePassword from "./components/ChangePassword.js";
-import AppHeader, { NavTab } from "./components/AppHeader.js";
+} from "./api";
+import Login from "./components/Login";
+import ChangePassword from "./components/ChangePassword";
+import AppHeader, { NavTab } from "./components/AppHeader";
 
 type UiState = "idle" | "loading" | "success" | "error";
 

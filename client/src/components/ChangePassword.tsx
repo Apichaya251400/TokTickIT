@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { changePasswordApi, User } from "../api.js";
+import { changePasswordApi, User } from "../api";
 
 interface ChangePasswordProps {
   user: User;

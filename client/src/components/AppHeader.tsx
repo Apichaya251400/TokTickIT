@@ -1,5 +1,5 @@
 import React from "react";
-import { User, logoutApi } from "../api.js";
+import { User, logoutApi } from "../api";
 
 export type NavTab = "my-tickets" | "create-ticket" | "staff-queue" | "user-management";
 

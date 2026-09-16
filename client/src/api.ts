@@ -167,18 +167,6 @@ export async function fetchRelatedSystems(): Promise<RelatedSystem[]> {
   return res.json();
 }
 
-export function getSelectedRequesterId(): string | null {
-  return localStorage.getItem("selectedRequesterId");
-}
-
-export function setSelectedRequesterId(id: string | null): void {
-  if (id) {
-    localStorage.setItem("selectedRequesterId", id);
-  } else {
-    localStorage.removeItem("selectedRequesterId");
-  }
-}
-
 export async function fetchWithAuth(
   url: string,
   options: RequestInit = {}
@@ -201,9 +189,6 @@ export async function fetchWithAuth(
 
   return fetch(url, { ...options, headers, credentials: "include" });
 }
-
-// Alias for Lab 2 backwards compatibility
-export const fetchWithRequesterContext = fetchWithAuth;
 
 export async function fetchMyTickets(
   params?: TicketQueryParams
