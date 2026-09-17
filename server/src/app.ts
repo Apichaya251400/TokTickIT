@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import { getPrisma } from "./prisma.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { ticketRouter } from "./routes/ticket.routes.js";
+import { adminRouter } from "./routes/admin.routes.js";
 
 // The Express app is exported separately from app.listen() (see index.ts) so
 // Supertest can import `app` without opening a port. Do not merge these files.
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
+app.use("/api/admin", adminRouter);
 
 // ---------------------------------------------------------------------------
 // Issue 2 — API health check
