@@ -140,11 +140,6 @@ export async function seedDatabase() {
     },
   ];
 
-  const seededEmails = usersData.map((u) => u.email);
-  await prisma.user.deleteMany({
-    where: { email: { notIn: seededEmails } },
-  });
-
   const seededUsers: Record<string, number> = {};
 
   for (const u of usersData) {
