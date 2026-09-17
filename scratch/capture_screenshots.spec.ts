@@ -46,7 +46,7 @@ test.describe("Visual QA Screenshot Capture Suite (21 Screenshots)", () => {
 
       await page.screenshot({
         path: path.join(artifactsBase, "authentication", `login-${vp.name}.png`),
-        fullPage: true,
+        fullPage: false,
       });
     });
   }
@@ -81,7 +81,7 @@ test.describe("Visual QA Screenshot Capture Suite (21 Screenshots)", () => {
 
         await page.screenshot({
           path: path.join(artifactsBase, "authentication", `password-change-${vp.name}.png`),
-          fullPage: true,
+          fullPage: false,
         });
       } finally {
         // Restore DB state completely
@@ -96,48 +96,80 @@ test.describe("Visual QA Screenshot Capture Suite (21 Screenshots)", () => {
     });
   }
 
-  // Helper for IT Staff Login
-  async function loginAsStaff(page: any) {
-    await prisma.user.updateMany({
-      where: { email: "john.staff@toktick.it" },
-      data: { requiresPasswordChange: false },
-    });
-    await page.goto("/");
-    await page.evaluate(() => localStorage.clear());
-    await page.goto("/");
-    await page.fill("#login-email", "john.staff@toktick.it");
-    await page.fill("#login-password", "InitialPassword123!");
-    await page.click("button[type='submit']");
-    await expect(page.getByRole("heading", { name: /IT Staff Ticket Queue/i })).toBeVisible();
+  // Helper for IT Staff Context with Deterministic DB Cleanup
+  async function withStaffContext(page: any, action: () => Promise<void>) {
+    const staffEmail = "john.staff@toktick.it";
+    const originalUser = await prisma.user.findUnique({ where: { email: staffEmail } });
+    if (!originalUser) throw new Error("Staff user not found");
+
+    try {
+      await prisma.user.update({
+        where: { email: staffEmail },
+        data: { requiresPasswordChange: false },
+      });
+      await page.goto("/");
+      await page.evaluate(() => localStorage.clear());
+      await page.goto("/");
+      await page.fill("#login-email", staffEmail);
+      await page.fill("#login-password", "InitialPassword123!");
+      await page.click("button[type='submit']");
+      await expect(page.getByRole("heading", { name: /IT Staff Ticket Queue/i })).toBeVisible();
+
+      await action();
+    } finally {
+      await prisma.user.update({
+        where: { email: staffEmail },
+        data: {
+          requiresPasswordChange: originalUser.requiresPasswordChange,
+          passwordHash: originalUser.passwordHash,
+        },
+      });
+    }
   }
 
-  // Helper for Admin Login
-  async function loginAsAdmin(page: any) {
-    await prisma.user.updateMany({
-      where: { email: "admin@toktick.it" },
-      data: { requiresPasswordChange: false },
-    });
-    await page.goto("/");
-    await page.evaluate(() => localStorage.clear());
-    await page.goto("/");
-    await page.fill("#login-email", "admin@toktick.it");
-    await page.fill("#login-password", "InitialPassword123!");
-    await page.click("button[type='submit']");
-    await expect(page.getByRole("heading", { name: /User Management/i })).toBeVisible();
+  // Helper for Admin Context with Deterministic DB Cleanup
+  async function withAdminContext(page: any, action: () => Promise<void>) {
+    const adminEmail = "admin@toktick.it";
+    const originalUser = await prisma.user.findUnique({ where: { email: adminEmail } });
+    if (!originalUser) throw new Error("Admin user not found");
+
+    try {
+      await prisma.user.update({
+        where: { email: adminEmail },
+        data: { requiresPasswordChange: false },
+      });
+      await page.goto("/");
+      await page.evaluate(() => localStorage.clear());
+      await page.goto("/");
+      await page.fill("#login-email", adminEmail);
+      await page.fill("#login-password", "InitialPassword123!");
+      await page.click("button[type='submit']");
+      await expect(page.getByRole("heading", { name: /User Management/i })).toBeVisible();
+
+      await action();
+    } finally {
+      await prisma.user.update({
+        where: { email: adminEmail },
+        data: {
+          requiresPasswordChange: originalUser.requiresPasswordChange,
+          passwordHash: originalUser.passwordHash,
+        },
+      });
+    }
   }
 
   // 3. Staff Ticket Queue Screen (3 viewports)
   for (const vp of viewports) {
     test(`Capture IT Staff Ticket Queue - ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await loginAsStaff(page);
+      await withStaffContext(page, async () => {
+        // UI Assertion
+        await expect(page.getByRole("heading", { name: /IT Staff Ticket Queue/i })).toBeVisible();
 
-      // UI Assertion
-      await expect(page.getByRole("heading", { name: /IT Staff Ticket Queue/i })).toBeVisible();
-
-      await page.screenshot({
-        path: path.join(artifactsBase, "staff-queue", `queue-${vp.name}.png`),
-        fullPage: true,
+        await page.screenshot({
+          path: path.join(artifactsBase, "staff-queue", `queue-${vp.name}.png`),
+          fullPage: false,
+        });
       });
     });
   }
@@ -146,30 +178,30 @@ test.describe("Visual QA Screenshot Capture Suite (21 Screenshots)", () => {
   for (const vp of viewports) {
     test(`Capture Ticket Detail & Internal Notes - ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await loginAsStaff(page);
+      await withStaffContext(page, async () => {
+        // Click first visible ticket item in queue
+        const firstTicket = page.locator("[data-testid^='ticket-item-']:visible").first();
+        await expect(firstTicket).toBeVisible();
+        await firstTicket.click();
 
-      // Click first visible ticket item in queue
-      const firstTicket = page.locator("[data-testid^='ticket-item-']:visible").first();
-      await expect(firstTicket).toBeVisible();
-      await firstTicket.click();
+        // UI Assertion: Ticket Detail
+        await expect(page.getByText("Summary & Description")).toBeVisible();
 
-      // UI Assertion: Ticket Detail
-      await expect(page.getByText("Summary & Description")).toBeVisible();
+        // Screenshot 1: Public Comments Tab
+        await page.screenshot({
+          path: path.join(artifactsBase, "staff-ticket-detail", `ticket-detail-${vp.name}.png`),
+          fullPage: false,
+        });
 
-      // Screenshot 1: Public Comments Tab
-      await page.screenshot({
-        path: path.join(artifactsBase, "staff-ticket-detail", `ticket-detail-${vp.name}.png`),
-        fullPage: true,
-      });
+        // Switch to Internal Notes tab
+        await page.getByRole("button", { name: /Internal Notes/i }).click();
+        await expect(page.getByTestId("internal-notes-section")).toBeVisible();
 
-      // Switch to Internal Notes tab
-      await page.getByRole("button", { name: /Internal Notes/i }).click();
-      await expect(page.getByTestId("internal-notes-section")).toBeVisible();
-
-      // Screenshot 2: Internal Notes Tab
-      await page.screenshot({
-        path: path.join(artifactsBase, "staff-ticket-detail", `internal-notes-${vp.name}.png`),
-        fullPage: true,
+        // Screenshot 2: Internal Notes Tab
+        await page.screenshot({
+          path: path.join(artifactsBase, "staff-ticket-detail", `internal-notes-${vp.name}.png`),
+          fullPage: false,
+        });
       });
     });
   }
@@ -178,26 +210,26 @@ test.describe("Visual QA Screenshot Capture Suite (21 Screenshots)", () => {
   for (const vp of viewports) {
     test(`Capture User Management & Modal - ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await loginAsAdmin(page);
+      await withAdminContext(page, async () => {
+        // UI Assertion: User Table
+        await expect(page.getByRole("heading", { name: /User Management/i })).toBeVisible();
+        await expect(page.getByText("admin@toktick.it")).toBeVisible();
 
-      // UI Assertion: User Table
-      await expect(page.getByRole("heading", { name: /User Management/i })).toBeVisible();
-      await expect(page.getByText("admin@toktick.it")).toBeVisible();
+        // Screenshot 1: User Management Table
+        await page.screenshot({
+          path: path.join(artifactsBase, "user-management", `user-admin-${vp.name}.png`),
+          fullPage: false,
+        });
 
-      // Screenshot 1: User Management Table
-      await page.screenshot({
-        path: path.join(artifactsBase, "user-management", `user-admin-${vp.name}.png`),
-        fullPage: true,
-      });
+        // Open Create User Modal
+        await page.getByRole("button", { name: /Create New User/i }).click();
+        await expect(page.getByRole("heading", { name: /Create New User/i })).toBeVisible();
 
-      // Open Create User Modal
-      await page.getByRole("button", { name: /Create New User/i }).click();
-      await expect(page.getByRole("heading", { name: /Create New User/i })).toBeVisible();
-
-      // Screenshot 2: Create User Modal
-      await page.screenshot({
-        path: path.join(artifactsBase, "user-management", `create-user-modal-${vp.name}.png`),
-        fullPage: true,
+        // Screenshot 2: Create User Modal
+        await page.screenshot({
+          path: path.join(artifactsBase, "user-management", `create-user-modal-${vp.name}.png`),
+          fullPage: false,
+        });
       });
     });
   }
