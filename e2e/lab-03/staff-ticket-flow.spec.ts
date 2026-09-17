@@ -53,33 +53,35 @@ test.describe("E2E-02: Staff Ticket Flow (Lab 3)", () => {
       unassignedTab.click(),
     ]);
 
-    // 2. Select first ticket to view details
+    // 2. Select first unassigned ticket to view details
     await page.locator("table tbody tr").first().click();
     await expect(page.getByTestId("staff-ticket-detail")).toBeVisible();
 
-    // 3. Claim ticket if claim button is available
+    // 3. Claim ticket unconditionally
     const claimBtn = page.getByTestId("claim-ticket-btn");
-    if (await claimBtn.isVisible()) {
-      await Promise.all([
-        page.waitForResponse((res) => res.url().includes("/claim")),
-        claimBtn.click(),
-      ]);
-      await expect(page.getByText(/John Staff/i)).toBeVisible();
-    }
+    await expect(claimBtn).toBeVisible();
+    await expect(claimBtn).toBeEnabled();
+    await Promise.all([
+      page.waitForResponse((res) => res.url().includes("/claim")),
+      claimBtn.click(),
+    ]);
+    await expect(page.getByText(/John Staff/i).first()).toBeVisible();
 
-    // 4. IT Priority Change
+    // 4. IT Priority Change unconditionally
     const prioritySelect = page.getByTestId("it-priority-select");
+    await expect(prioritySelect).toBeVisible();
     await prioritySelect.selectOption("HIGH");
-    const savePriorityBtn = page.getByTestId("update-priority-btn");
-    if (await savePriorityBtn.isEnabled()) {
-      await Promise.all([
-        page.waitForResponse((res) => res.url().includes("/priority")),
-        savePriorityBtn.click(),
-      ]);
-      await expect(page.getByText(/HIGH/i).first()).toBeVisible();
-    }
 
-    // 5. Post Internal Note (Private to Staff/Admin)
+    const savePriorityBtn = page.getByTestId("update-priority-btn");
+    await expect(savePriorityBtn).toBeVisible();
+    await expect(savePriorityBtn).toBeEnabled();
+    await Promise.all([
+      page.waitForResponse((res) => res.url().includes("/priority")),
+      savePriorityBtn.click(),
+    ]);
+    await expect(page.getByText(/HIGH/i).first()).toBeVisible();
+
+    // 5. Post Internal Note unconditionally
     const notesTab = page.getByRole("button", { name: /Internal Notes/i });
     await notesTab.click();
     await expect(page.getByTestId("internal-notes-section")).toBeVisible();
@@ -89,6 +91,8 @@ test.describe("E2E-02: Staff Ticket Flow (Lab 3)", () => {
     await noteTextarea.fill(uniqueNote);
 
     const postNoteBtn = page.getByTestId("post-internal-note-btn");
+    await expect(postNoteBtn).toBeVisible();
+    await expect(postNoteBtn).toBeEnabled();
     await Promise.all([
       page.waitForResponse((res) => res.url().includes("/notes")),
       postNoteBtn.click(),
@@ -96,17 +100,14 @@ test.describe("E2E-02: Staff Ticket Flow (Lab 3)", () => {
 
     await expect(page.getByText(uniqueNote)).toBeVisible();
 
-    // 6. Status Update Transition
-    const openBtn = page.getByTestId("status-transition-btn-OPEN");
-    const inProgressBtn = page.getByTestId("status-transition-btn-IN_PROGRESS");
-    const transitionBtn = (await openBtn.isVisible()) ? openBtn : ((await inProgressBtn.isVisible()) ? inProgressBtn : null);
-
-    if (transitionBtn) {
-      await Promise.all([
-        page.waitForResponse((res) => res.url().includes("/status")),
-        transitionBtn.click(),
-      ]);
-    }
+    // 6. Status Update Transition unconditionally
+    const transitionBtn = page.locator("[data-testid^='status-transition-btn-']").first();
+    await expect(transitionBtn).toBeVisible();
+    await expect(transitionBtn).toBeEnabled();
+    await Promise.all([
+      page.waitForResponse((res) => res.url().includes("/status")),
+      transitionBtn.click(),
+    ]);
 
     // Return to Queue
     await page.getByTestId("back-to-queue-btn").click();

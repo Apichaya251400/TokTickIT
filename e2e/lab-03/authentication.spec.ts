@@ -74,17 +74,15 @@ test.describe("E2E-01: Authentication Workflow (Lab 3)", () => {
     await page.getByRole("button", { name: /Sign In/i }).click();
     await loginResPromise;
 
-    if (await page.getByRole("heading", { name: /Mandatory Password Change/i }).isVisible()) {
-      await expect(page.getByRole("heading", { name: /Mandatory Password Change/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Mandatory Password Change/i })).toBeVisible();
 
-      await page.locator("#current-password").fill("InitialPassword123!");
-      await page.locator("#new-password").fill("InitialPassword123!");
-      await page.locator("#confirm-password").fill("InitialPassword123!");
+    await page.locator("#current-password").fill("InitialPassword123!");
+    await page.locator("#new-password").fill("InitialPassword123!");
+    await page.locator("#confirm-password").fill("InitialPassword123!");
 
-      const changeResPromise = page.waitForResponse((res) => res.url().includes("/api/auth/change-password"));
-      await page.getByRole("button", { name: /Update Password & Continue/i }).click();
-      await changeResPromise;
-    }
+    const changeResPromise = page.waitForResponse((res) => res.url().includes("/api/auth/change-password"));
+    await page.getByRole("button", { name: /Update Password & Continue/i }).click();
+    await changeResPromise;
 
     await expect(page.getByText("Sarah Staff").first()).toBeVisible();
   });
