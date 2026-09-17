@@ -127,11 +127,11 @@
 
 ## 4. Visual Inspection Checklist
 
-- [ ] **Design System Consistency**: Colors, typography, spacing, and buttons match Zen Green design tokens.
-- [ ] **Role-Based Navigation**: Authenticated user sees ONLY permitted navigation destinations.
-- [ ] **Badge Styling**: Status, Priority, and Role badges use correct colors and contrast.
-- [ ] **Editable vs Read-only Fields**: Clear visual distinction between editable dropdowns/inputs and read-only text fields.
-- [ ] **Comment & Note Distinction**: Public Comments and Internal Notes are visually distinct (Green vs Amber warning style).
-- [ ] **Responsive Behavior**: All major screens tested and readable on Desktop (1920x1080), Tablet (768x1024), and Mobile (375x812) viewports without horizontal overflow.
-- [ ] **Form Validation Placement**: Error messages appear directly under corresponding inputs with red text and accessible ARIA attributes.
-- [ ] **Focus & Accessibility**: Form inputs show visible focus outlines and support keyboard navigation (`Tab`, `Enter`, `Escape`).
+- [x] **Design System Consistency**: Colors, typography, spacing, and buttons match Zen Green design tokens.
+- [x] **Role-Based Navigation**: Authenticated user sees ONLY permitted navigation destinations.
+- [x] **Badge Styling**: Status, Priority, and Role badges use correct colors and contrast.
+- [x] **Editable vs Read-only Fields**: Clear visual distinction between editable dropdowns/inputs and read-only text fields.
+- [x] **Comment & Note Distinction**: Public Comments and Internal Notes are visually distinct (Green vs Amber warning style).
+- [x] **Responsive Behavior**: All major screens tested and readable on Desktop (1920x1080), Tablet (768x1024), and Mobile (375x812) viewports without horizontal overflow.
+- [x] **Form Validation Placement**: Error messages appear directly under corresponding inputs with red text and accessible ARIA attributes.
+- [x] **Focus & Accessibility**: Form inputs show visible focus outlines and support keyboard navigation (`Tab`, `Enter`, `Escape`).
