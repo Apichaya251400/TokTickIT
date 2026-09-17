@@ -1,4 +1,19 @@
 import { test, expect, Page } from "@playwright/test";
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+
+const prisma = new PrismaClient();
+
+async function resetSarahStaff() {
+  const hash = bcrypt.hashSync("InitialPassword123!", 10);
+  await prisma.user.updateMany({
+    where: { email: "sarah.staff@toktick.it" },
+    data: {
+      requiresPasswordChange: true,
+      passwordHash: hash,
+    },
+  });
+}
 
 async function loginAsUser(page: Page, email: string, password = "InitialPassword123!") {
   await page.goto("/");
@@ -67,6 +82,8 @@ test.describe("E2E-01: Authentication Workflow (Lab 3)", () => {
   });
 
   test("AC-AUTH-03: Mandatory Password Change flow on initial password", async ({ page }) => {
+    await resetSarahStaff();
+
     await page.locator("#login-email").fill("sarah.staff@toktick.it");
     await page.locator("#login-password").fill("InitialPassword123!");
 

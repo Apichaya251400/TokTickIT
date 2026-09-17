@@ -119,37 +119,61 @@ test.describe("E2E-03: User Administration & Safety Guards (Lab 3)", () => {
   test("AC-ADMIN-05: Last Active Administrator Protection Safety Guard", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "User Management" })).toBeVisible();
 
-    // 1. Deactivate Secondary Admin (admin2@toktick.it) so admin@toktick.it becomes the sole active Administrator
     const searchInput = page.getByTestId("admin-user-search-input");
-    await searchInput.fill("admin2@toktick.it");
 
-    const editSecondaryBtn = page.getByRole("button", { name: /Edit/i }).first();
-    await editSecondaryBtn.click();
-    await expect(page.getByTestId("edit-user-modal")).toBeVisible();
+    try {
+      // 1. Deactivate Secondary Admin (admin2@toktick.it) so admin@toktick.it becomes the sole active Administrator
+      await searchInput.fill("admin2@toktick.it");
 
-    const activeSwitch = page.getByTestId("user-form-active");
-    await activeSwitch.uncheck();
+      const editSecondaryBtn = page.getByRole("button", { name: /Edit/i }).first();
+      await editSecondaryBtn.click();
+      await expect(page.getByTestId("edit-user-modal")).toBeVisible();
 
-    await Promise.all([
-      page.waitForResponse((res) => res.url().includes("/api/admin/users/") && res.status() === 200),
-      page.getByTestId("submit-user-btn").click(),
-    ]);
-    await expect(page.getByTestId("admin-success-alert")).toBeVisible();
+      const activeSwitch = page.getByTestId("user-form-active");
+      await activeSwitch.uncheck();
 
-    // 2. Try to demote admin@toktick.it (the last remaining active Administrator) to IT_STAFF
-    await searchInput.fill("admin@toktick.it");
+      await Promise.all([
+        page.waitForResponse((res) => res.url().includes("/api/admin/users/") && res.status() === 200),
+        page.getByTestId("submit-user-btn").click(),
+      ]);
+      await expect(page.getByTestId("admin-success-alert")).toBeVisible();
 
-    const editPrimaryBtn = page.getByRole("button", { name: /Edit/i }).first();
-    await editPrimaryBtn.click();
-    await expect(page.getByTestId("edit-user-modal")).toBeVisible();
+      // 2. Try to demote admin@toktick.it (the last remaining active Administrator) to IT_STAFF
+      await searchInput.fill("admin@toktick.it");
 
-    await page.getByTestId("user-form-role").selectOption("IT_STAFF");
+      const editPrimaryBtn = page.getByRole("button", { name: /Edit/i }).first();
+      await editPrimaryBtn.click();
+      await expect(page.getByTestId("edit-user-modal")).toBeVisible();
 
-    await Promise.all([
-      page.waitForResponse((res) => res.url().includes("/api/admin/users/") && res.status() === 400),
-      page.getByTestId("submit-user-btn").click(),
-    ]);
+      await page.getByTestId("user-form-role").selectOption("IT_STAFF");
 
-    await expect(page.getByTestId("admin-error-alert")).toContainText("Administrators cannot deactivate their own account or deactivate the last active Administrator");
+      await Promise.all([
+        page.waitForResponse((res) => res.url().includes("/api/admin/users/") && res.status() === 400),
+        page.getByTestId("submit-user-btn").click(),
+      ]);
+
+      await expect(page.getByTestId("admin-error-alert")).toContainText("Administrators cannot deactivate their own account or deactivate the last active Administrator");
+    } finally {
+      // Restore shared DB state: Reactivate admin2@toktick.it so subsequent test runs do not fail
+      try {
+        await page.getByTestId("admin-user-search-input").fill("admin2@toktick.it");
+        const editSecondaryBtn = page.getByRole("button", { name: /Edit/i }).first();
+        if (await editSecondaryBtn.isVisible()) {
+          await editSecondaryBtn.click();
+          await expect(page.getByTestId("edit-user-modal")).toBeVisible();
+
+          const activeSwitch = page.getByTestId("user-form-active");
+          await activeSwitch.check();
+
+          await Promise.all([
+            page.waitForResponse((res) => res.url().includes("/api/admin/users/") && res.status() === 200),
+            page.getByTestId("submit-user-btn").click(),
+          ]);
+          await expect(page.getByTestId("admin-success-alert")).toBeVisible();
+        }
+      } catch {
+        // Ignored: best effort DB state restoration
+      }
+    }
   });
 });
