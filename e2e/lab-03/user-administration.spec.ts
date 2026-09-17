@@ -1,4 +1,7 @@
 import { test, expect, Page } from "@playwright/test";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 async function loginAsAdmin(page: Page) {
   await page.goto("/");
@@ -25,6 +28,10 @@ async function loginAsAdmin(page: Page) {
 }
 
 test.describe("E2E-03: User Administration & Safety Guards (Lab 3)", () => {
+  test.afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
   });
@@ -114,5 +121,74 @@ test.describe("E2E-03: User Administration & Safety Guards (Lab 3)", () => {
     ]);
 
     await expect(page.getByTestId("admin-error-alert")).toContainText("Administrators cannot deactivate their own account");
+  });
+
+  test("AC-ADMIN-05: Last Active Administrator Protection Safety Guard", async ({ page, browser }) => {
+    await expect(page.getByRole("heading", { name: "User Management" })).toBeVisible();
+
+    // 1. Ensure both admin@toktick.it and admin2@toktick.it are active Administrators in DB
+    await prisma.user.updateMany({
+      where: { email: { in: ["admin@toktick.it", "admin2@toktick.it"] } },
+      data: { role: "ADMINISTRATOR", isActive: true, requiresPasswordChange: false },
+    });
+
+    // 2. Open second browser context for Admin B (admin2@toktick.it)
+    const context2 = await browser.newContext();
+    const page2 = await context2.newPage();
+
+    try {
+      // Login Admin B on page2
+      await page2.goto("/");
+      await page2.evaluate(() => localStorage.clear());
+      await page2.goto("/");
+      await page2.fill("#login-email", "admin2@toktick.it");
+      await page2.fill("#login-password", "InitialPassword123!");
+      await Promise.all([
+        page2.waitForResponse((res) => res.url().includes("/api/auth/login")),
+        page2.click("button[type='submit']"),
+      ]);
+      await expect(page2.getByRole("heading", { name: "User Management" })).toBeVisible();
+
+      // Page 1 (Admin A): Open Edit modal for Admin B (admin2@toktick.it) and uncheck Active
+      const searchInput1 = page.getByTestId("admin-user-search-input");
+      await searchInput1.fill("admin2@toktick.it");
+      const editBtn1 = page.getByRole("button", { name: /Edit/i }).first();
+      await editBtn1.click();
+      await expect(page.getByTestId("edit-user-modal")).toBeVisible();
+      await page.getByTestId("user-form-active").uncheck();
+
+      // Page 2 (Admin B): Open Edit modal for Admin A (admin@toktick.it) and uncheck Active
+      const searchInput2 = page2.getByTestId("admin-user-search-input");
+      await searchInput2.fill("admin@toktick.it");
+      const editBtn2 = page2.getByRole("button", { name: /Edit/i }).first();
+      await editBtn2.click();
+      await expect(page2.getByTestId("edit-user-modal")).toBeVisible();
+      await page2.getByTestId("user-form-active").uncheck();
+
+      // Submit both deactivation forms simultaneously
+      const [res1, res2] = await Promise.all([
+        page.waitForResponse((res) => res.url().includes("/api/admin/users/")),
+        page2.waitForResponse((res) => res.url().includes("/api/admin/users/")),
+        page.getByTestId("submit-user-btn").click(),
+        page2.getByTestId("submit-user-btn").click(),
+      ]);
+
+      const statuses = [res1.status(), res2.status()];
+      // One request succeeds (200) and the concurrent request is rejected by Last Active Admin guard (400)
+      expect(statuses).toContain(400);
+
+      // Verify that at least one active Administrator remains in DB
+      const activeAdminCount = await prisma.user.count({
+        where: { role: "ADMINISTRATOR", isActive: true },
+      });
+      expect(activeAdminCount).toBeGreaterThanOrEqual(1);
+    } finally {
+      await context2.close();
+      // Restore DB state: reactivate both admin accounts
+      await prisma.user.updateMany({
+        where: { email: { in: ["admin@toktick.it", "admin2@toktick.it"] } },
+        data: { role: "ADMINISTRATOR", isActive: true },
+      });
+    }
   });
 });
