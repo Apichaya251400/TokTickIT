@@ -164,25 +164,37 @@ describe("Issue 9: Administrator User Management & Safety Guards API Suite (user
       const invalidName = await request(app)
         .post("/api/admin/users")
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({ name: "", email: "valid@toktick.it", role: "IT_STAFF", initialPassword: "Password123!" });
+        .send({ name: "", email: "valid@toktick.it", role: "IT_STAFF", isActive: true, initialPassword: "Password123!" });
       expect(invalidName.status).toBe(400);
 
       const invalidEmail = await request(app)
         .post("/api/admin/users")
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({ name: "Valid Name", email: "not-an-email", role: "IT_STAFF", initialPassword: "Password123!" });
+        .send({ name: "Valid Name", email: "not-an-email", role: "IT_STAFF", isActive: true, initialPassword: "Password123!" });
       expect(invalidEmail.status).toBe(400);
+
+      const invalidEmailNoDomain = await request(app)
+        .post("/api/admin/users")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ name: "Valid Name", email: "abc@", role: "IT_STAFF", isActive: true, initialPassword: "Password123!" });
+      expect(invalidEmailNoDomain.status).toBe(400);
 
       const invalidRole = await request(app)
         .post("/api/admin/users")
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({ name: "Valid Name", email: "valid@toktick.it", role: "INVALID_ROLE", initialPassword: "Password123!" });
+        .send({ name: "Valid Name", email: "valid@toktick.it", role: "INVALID_ROLE", isActive: true, initialPassword: "Password123!" });
       expect(invalidRole.status).toBe(400);
+
+      const missingIsActive = await request(app)
+        .post("/api/admin/users")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ name: "Valid Name", email: "valid@toktick.it", role: "IT_STAFF", initialPassword: "Password123!" });
+      expect(missingIsActive.status).toBe(400);
 
       const shortPassword = await request(app)
         .post("/api/admin/users")
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({ name: "Valid Name", email: "valid@toktick.it", role: "IT_STAFF", initialPassword: "short" });
+        .send({ name: "Valid Name", email: "valid@toktick.it", role: "IT_STAFF", isActive: true, initialPassword: "short" });
       expect(shortPassword.status).toBe(400);
     });
 
@@ -271,9 +283,9 @@ describe("Issue 9: Administrator User Management & Safety Guards API Suite (user
     });
 
     it("prevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)", async () => {
-      // Deactivate secondary admin so only 1 active admin remains
-      await prisma.user.update({
-        where: { id: secondAdminUserId },
+      // Deactivate all secondary admins so only 1 active admin (adminUserId) remains in DB
+      await prisma.user.updateMany({
+        where: { role: "ADMINISTRATOR", id: { not: adminUserId } },
         data: { isActive: false },
       });
 
@@ -297,30 +309,51 @@ describe("Issue 9: Administrator User Management & Safety Guards API Suite (user
     });
 
     it("handles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0", async () => {
-      // Set DB so exactly 1 active admin remains (adminUserId)
+      // Ensure exactly 2 active Admins exist in DB: adminUserId and secondAdminUserId
+      await prisma.user.update({
+        where: { id: adminUserId },
+        data: { isActive: true, role: "ADMINISTRATOR" },
+      });
       await prisma.user.update({
         where: { id: secondAdminUserId },
+        data: { isActive: true, role: "ADMINISTRATOR" },
+      });
+
+      // Deactivate any other admins if present
+      await prisma.user.updateMany({
+        where: {
+          role: "ADMINISTRATOR",
+          id: { notIn: [adminUserId, secondAdminUserId] },
+        },
         data: { isActive: false },
       });
 
-      // Issue concurrent attempts to deactivate and demote the sole remaining active admin
+      const countBefore = await prisma.user.count({ where: { role: "ADMINISTRATOR", isActive: true } });
+      expect(countBefore).toBe(2);
+
+      const user1 = await prisma.user.findUnique({ where: { id: secondAdminUserId } });
+      const user2 = await prisma.user.findUnique({ where: { id: adminUserId } });
+
+      // Issue concurrent attempts: one deactivates secondAdminUserId, one demotes adminUserId to IT_STAFF
       const [res1, res2] = await Promise.all([
         request(app)
-          .put(`/api/admin/users/${adminUserId}`)
+          .put(`/api/admin/users/${secondAdminUserId}`)
           .set("Authorization", `Bearer ${adminToken}`)
-          .send({ name: "System Admin", email: "admin@toktick.it", role: "ADMINISTRATOR", isActive: false }),
+          .send({ name: user1?.name || "Second Admin", email: user1?.email || "admin2@toktick.it", role: "ADMINISTRATOR", isActive: false }),
         request(app)
           .put(`/api/admin/users/${adminUserId}`)
           .set("Authorization", `Bearer ${adminToken}`)
-          .send({ name: "System Admin", email: "admin@toktick.it", role: "REQUESTER", isActive: true }),
+          .send({ name: user2?.name || "System Admin", email: user2?.email || "admin1@toktick.it", role: "IT_STAFF", isActive: true }),
       ]);
 
-      expect(res1.status).toBe(400);
-      expect(res2.status).toBe(400);
+      const statuses = [res1.status, res2.status].sort((a, b) => a - b);
+      expect(statuses).toEqual([200, 400]);
 
-      const dbAdmin = await prisma.user.findUnique({ where: { id: adminUserId } });
-      expect(dbAdmin?.role).toBe("ADMINISTRATOR");
-      expect(dbAdmin?.isActive).toBe(true);
+      const failedRes = res1.status === 400 ? res1 : res2;
+      expect(failedRes.body.error).toBe("INVALID_ADMIN_ACTION");
+
+      const countAfter = await prisma.user.count({ where: { role: "ADMINISTRATOR", isActive: true } });
+      expect(countAfter).toBe(1);
     });
   });
 

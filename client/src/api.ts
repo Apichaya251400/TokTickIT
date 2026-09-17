@@ -505,6 +505,11 @@ export interface AdminUser {
   updatedAt?: string;
 }
 
+export interface AdminUserMutationResponse {
+  message: string;
+  user: AdminUser;
+}
+
 export async function fetchAdminUsers(search?: string, role?: string): Promise<{ users: AdminUser[] }> {
   const params = new URLSearchParams();
   if (search && search.trim()) params.set("q", search.trim());
@@ -525,7 +530,7 @@ export async function createAdminUser(data: {
   role: AdminUserRole;
   isActive: boolean;
   initialPassword: string;
-}): Promise<AdminUser> {
+}): Promise<AdminUserMutationResponse> {
   const res = await fetchWithAuth(`${API_URL}/api/admin/users`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -546,7 +551,7 @@ export async function updateAdminUser(
     role: AdminUserRole;
     isActive: boolean;
   }
-): Promise<AdminUser> {
+): Promise<AdminUserMutationResponse> {
   const res = await fetchWithAuth(`${API_URL}/api/admin/users/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -562,7 +567,7 @@ export async function updateAdminUser(
 export async function resetUserInitialPassword(
   id: number,
   initialPassword: string
-): Promise<{ message: string; user?: AdminUser }> {
+): Promise<AdminUserMutationResponse> {
   const res = await fetchWithAuth(`${API_URL}/api/admin/users/${id}/password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

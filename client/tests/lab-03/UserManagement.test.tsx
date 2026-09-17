@@ -131,12 +131,15 @@ describe("UserManagement Component Suite (UserManagement.test.tsx)", () => {
   it("opens Create User modal, submits valid new user payload, and refreshes directory", async () => {
     vi.mocked(api.fetchAdminUsers).mockResolvedValue({ users: sampleAdminUsers });
     vi.mocked(api.createAdminUser).mockResolvedValueOnce({
-      id: 10,
-      name: "Charlie New",
-      email: "charlie@example.com",
-      role: "IT_STAFF",
-      isActive: true,
-      requiresPasswordChange: true,
+      message: "User created successfully",
+      user: {
+        id: 10,
+        name: "Charlie New",
+        email: "charlie@example.com",
+        role: "IT_STAFF",
+        isActive: true,
+        requiresPasswordChange: true,
+      },
     });
 
     render(<UserManagement currentUser={mockAdminUser} />);
@@ -213,6 +216,7 @@ describe("UserManagement Component Suite (UserManagement.test.tsx)", () => {
     vi.mocked(api.fetchAdminUsers).mockResolvedValue({ users: sampleAdminUsers });
     vi.mocked(api.resetUserInitialPassword).mockResolvedValueOnce({
       message: "Initial password reset successfully",
+      user: sampleAdminUsers[0],
     });
 
     render(<UserManagement currentUser={mockAdminUser} />);
@@ -238,6 +242,142 @@ describe("UserManagement Component Suite (UserManagement.test.tsx)", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("admin-success-alert")).toBeInTheDocument();
+    });
+  });
+
+  it("validates invalid email format and short password in Create modal", async () => {
+    vi.mocked(api.fetchAdminUsers).mockResolvedValue({ users: sampleAdminUsers });
+
+    render(<UserManagement currentUser={mockAdminUser} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("admin-user-table")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("create-user-btn"));
+    expect(screen.getByTestId("create-user-modal")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId("user-form-name"), { target: { value: "Test User" } });
+    fireEvent.change(screen.getByTestId("user-form-email"), { target: { value: "invalid-email" } });
+    fireEvent.change(screen.getByTestId("user-form-password"), { target: { value: "Password123!" } });
+
+    const form = screen.getByTestId("create-user-modal").querySelector("form")!;
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("admin-error-alert")).toHaveTextContent("Please enter a valid email address.");
+    });
+
+    // Fix email, short password
+    fireEvent.change(screen.getByTestId("user-form-email"), { target: { value: "valid@toktick.it" } });
+    fireEvent.change(screen.getByTestId("user-form-password"), { target: { value: "short" } });
+
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("admin-error-alert")).toHaveTextContent("Initial password must be at least 8 characters.");
+    });
+  });
+
+  it("handles duplicate email error (409 DUPLICATE_EMAIL) in Create User modal", async () => {
+    vi.mocked(api.fetchAdminUsers).mockResolvedValue({ users: sampleAdminUsers });
+    vi.mocked(api.createAdminUser).mockRejectedValueOnce({
+      status: 409,
+      data: {
+        error: {
+          code: "DUPLICATE_EMAIL",
+          message: "A user with this email address already exists",
+        },
+      },
+    });
+
+    render(<UserManagement currentUser={mockAdminUser} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("admin-user-table")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("create-user-btn"));
+    fireEvent.change(screen.getByTestId("user-form-name"), { target: { value: "Duplicate User" } });
+    fireEvent.change(screen.getByTestId("user-form-email"), { target: { value: "alice@example.com" } });
+    fireEvent.change(screen.getByTestId("user-form-password"), { target: { value: "ValidPass123!" } });
+
+    fireEvent.click(screen.getByTestId("submit-user-btn"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("admin-error-alert")).toHaveTextContent("A user with this email address already exists");
+    });
+  });
+
+  it("edits user details successfully and displays success banner", async () => {
+    vi.mocked(api.fetchAdminUsers).mockResolvedValue({ users: sampleAdminUsers });
+    vi.mocked(api.updateAdminUser).mockResolvedValueOnce({
+      message: "User updated successfully",
+      user: {
+        id: 1,
+        name: "Alice Updated",
+        email: "alice@example.com",
+        role: "REQUESTER",
+        isActive: true,
+        requiresPasswordChange: false,
+      },
+    });
+
+    render(<UserManagement currentUser={mockAdminUser} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("admin-user-table")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("edit-user-btn-1"));
+    expect(screen.getByTestId("edit-user-modal")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId("user-form-name"), { target: { value: "Alice Updated" } });
+    fireEvent.click(screen.getByTestId("submit-user-btn"));
+
+    await waitFor(() => {
+      expect(api.updateAdminUser).toHaveBeenCalledWith(1, {
+        name: "Alice Updated",
+        email: "alice@example.com",
+        role: "REQUESTER",
+        isActive: true,
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("admin-success-alert")).toBeInTheDocument();
+    });
+  });
+
+  it("handles generic network / API fetch failure and displays error banner", async () => {
+    vi.mocked(api.fetchAdminUsers).mockRejectedValueOnce({
+      message: "Network connection failure",
+    });
+
+    render(<UserManagement currentUser={mockAdminUser} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("admin-error-alert")).toHaveTextContent("Network connection failure");
+    });
+  });
+
+  it("validates reset password length (< 8 chars)", async () => {
+    vi.mocked(api.fetchAdminUsers).mockResolvedValue({ users: sampleAdminUsers });
+
+    render(<UserManagement currentUser={mockAdminUser} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("admin-user-table")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("reset-password-btn-1"));
+    expect(screen.getByTestId("reset-password-modal")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId("reset-password-input"), { target: { value: "short" } });
+    fireEvent.click(screen.getByTestId("submit-reset-password-btn"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("admin-error-alert")).toHaveTextContent("New initial password must be at least 8 characters.");
     });
   });
 });

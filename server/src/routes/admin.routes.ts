@@ -58,6 +58,8 @@ adminRouter.get(
   }
 );
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // POST /api/admin/users - Create User (ADMINISTRATOR ONLY / FR-14)
 adminRouter.post(
   "/users",
@@ -72,13 +74,18 @@ adminRouter.post(
         return;
       }
 
-      if (!email || typeof email !== "string" || !email.includes("@")) {
+      if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
         res.status(400).json({ error: "VALIDATION_ERROR", message: "Valid email address is required" });
         return;
       }
 
       if (!role || !["REQUESTER", "IT_STAFF", "ADMINISTRATOR"].includes(role)) {
         res.status(400).json({ error: "VALIDATION_ERROR", message: "Invalid role specified" });
+        return;
+      }
+
+      if (typeof isActive !== "boolean") {
+        res.status(400).json({ error: "VALIDATION_ERROR", message: "isActive must be a boolean" });
         return;
       }
 
@@ -108,7 +115,7 @@ adminRouter.post(
           name: name.trim(),
           email: email.trim().toLowerCase(),
           role: role as Role,
-          isActive: typeof isActive === "boolean" ? isActive : true,
+          isActive,
           passwordHash,
           requiresPasswordChange: true,
         },
@@ -153,7 +160,7 @@ adminRouter.put(
         return;
       }
 
-      if (!email || typeof email !== "string" || !email.includes("@")) {
+      if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
         res.status(400).json({ error: "VALIDATION_ERROR", message: "Valid email address is required" });
         return;
       }
@@ -170,79 +177,91 @@ adminRouter.put(
 
       const prisma = getPrisma();
 
-      const targetUser = await prisma.user.findUnique({
-        where: { id: targetUserId },
-      });
-
-      if (!targetUser) {
-        res.status(404).json({ error: "NOT_FOUND", message: "User not found" });
-        return;
-      }
-
-      // Check self-deactivation guard
-      if (req.user!.id === targetUserId && isActive === false) {
-        res.status(400).json({
-          error: "INVALID_ADMIN_ACTION",
-          message: "Administrators cannot deactivate their own account or deactivate the last active Administrator",
+      const result = await prisma.$transaction(async (tx) => {
+        const targetUser = await tx.user.findUnique({
+          where: { id: targetUserId },
         });
-        return;
-      }
 
-      // Check duplicate email
-      if (email.trim().toLowerCase() !== targetUser.email.toLowerCase()) {
-        const existingEmail = await prisma.user.findUnique({
-          where: { email: email.trim().toLowerCase() },
-        });
-        if (existingEmail && existingEmail.id !== targetUserId) {
-          res.status(409).json({
-            error: "DUPLICATE_EMAIL",
-            message: "A user with this email address already exists",
-          });
-          return;
+        if (!targetUser) {
+          return { status: 404, payload: { error: "NOT_FOUND", message: "User not found" } };
         }
-      }
 
-      // Check Last Active Administrator protection
-      if (targetUser.role === "ADMINISTRATOR" && targetUser.isActive && (role !== "ADMINISTRATOR" || isActive === false)) {
-        const activeAdminCount = await prisma.user.count({
-          where: {
-            role: "ADMINISTRATOR",
+        // Check self-deactivation guard
+        if (req.user!.id === targetUserId && isActive === false) {
+          return {
+            status: 400,
+            payload: {
+              error: "INVALID_ADMIN_ACTION",
+              message: "Administrators cannot deactivate their own account or deactivate the last active Administrator",
+            },
+          };
+        }
+
+        // Check duplicate email
+        if (email.trim().toLowerCase() !== targetUser.email.toLowerCase()) {
+          const existingEmail = await tx.user.findUnique({
+            where: { email: email.trim().toLowerCase() },
+          });
+          if (existingEmail && existingEmail.id !== targetUserId) {
+            return {
+              status: 409,
+              payload: {
+                error: "DUPLICATE_EMAIL",
+                message: "A user with this email address already exists",
+              },
+            };
+          }
+        }
+
+        // Check Last Active Administrator protection atomically within transaction
+        if (targetUser.role === "ADMINISTRATOR" && targetUser.isActive && (role !== "ADMINISTRATOR" || isActive === false)) {
+          const activeAdminCount = await tx.user.count({
+            where: {
+              role: "ADMINISTRATOR",
+              isActive: true,
+            },
+          });
+
+          if (activeAdminCount <= 1) {
+            return {
+              status: 400,
+              payload: {
+                error: "INVALID_ADMIN_ACTION",
+                message: "Administrators cannot deactivate their own account or deactivate the last active Administrator",
+              },
+            };
+          }
+        }
+
+        const updatedUser = await tx.user.update({
+          where: { id: targetUserId },
+          data: {
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            role: role as Role,
+            isActive,
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
             isActive: true,
+            requiresPasswordChange: true,
+            createdAt: true,
           },
         });
 
-        if (activeAdminCount <= 1) {
-          res.status(400).json({
-            error: "INVALID_ADMIN_ACTION",
-            message: "Administrators cannot deactivate their own account or deactivate the last active Administrator",
-          });
-          return;
-        }
-      }
-
-      const updatedUser = await prisma.user.update({
-        where: { id: targetUserId },
-        data: {
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          role: role as Role,
-          isActive,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          isActive: true,
-          requiresPasswordChange: true,
-          createdAt: true,
-        },
+        return {
+          status: 200,
+          payload: {
+            message: "User updated successfully",
+            user: updatedUser,
+          },
+        };
       });
 
-      res.status(200).json({
-        message: "User updated successfully",
-        user: updatedUser,
-      });
+      res.status(result.status).json(result.payload);
     } catch (error) {
       res.status(500).json({ error: "SERVER_ERROR", message: "Failed to update user" });
     }

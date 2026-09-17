@@ -126,6 +126,8 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
     setModalSuccess(null);
   }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   async function handleCreateUser(e: React.FormEvent) {
     e.preventDefault();
     setModalError(null);
@@ -133,6 +135,16 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
 
     if (!formData.name.trim() || !formData.email.trim() || !formData.initialPassword.trim()) {
       setModalError("All fields including Initial Password are required.");
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(formData.email.trim())) {
+      setModalError("Please enter a valid email address.");
+      return;
+    }
+
+    if (formData.initialPassword.trim().length < 8) {
+      setModalError("Initial password must be at least 8 characters.");
       return;
     }
 
@@ -171,6 +183,11 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
       return;
     }
 
+    if (!EMAIL_REGEX.test(formData.email.trim())) {
+      setModalError("Please enter a valid email address.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await updateAdminUser(editingUser.id, {
@@ -200,8 +217,8 @@ export default function UserManagement({ currentUser }: UserManagementProps) {
     setModalError(null);
     setModalSuccess(null);
 
-    if (!resetPasswordInput.trim()) {
-      setModalError("New initial password cannot be empty.");
+    if (!resetPasswordInput.trim() || resetPasswordInput.trim().length < 8) {
+      setModalError("New initial password must be at least 8 characters.");
       return;
     }
 
