@@ -491,3 +491,100 @@ export async function fetchAssignees(): Promise<{ assignees: Array<{ id: number;
   }
   return res.json();
 }
+
+export type AdminUserRole = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  name: string;
+  role: AdminUserRole;
+  isActive: boolean;
+  requiresPasswordChange: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AdminUserMutationResponse {
+  message: string;
+  user: AdminUser;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+  user: {
+    id: number;
+    requiresPasswordChange: boolean;
+  };
+}
+
+export async function fetchAdminUsers(search?: string, role?: string): Promise<{ users: AdminUser[] }> {
+  const params = new URLSearchParams();
+  if (search && search.trim()) params.set("q", search.trim());
+  if (role && role.trim()) params.set("role", role.trim());
+  const queryString = params.toString();
+  const url = `${API_URL}/api/admin/users${queryString ? `?${queryString}` : ""}`;
+  const res = await fetchWithAuth(url);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function createAdminUser(data: {
+  name: string;
+  email: string;
+  role: AdminUserRole;
+  isActive: boolean;
+  initialPassword: string;
+}): Promise<AdminUserMutationResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/admin/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function updateAdminUser(
+  id: number,
+  data: {
+    name: string;
+    email: string;
+    role: AdminUserRole;
+    isActive: boolean;
+  }
+): Promise<AdminUserMutationResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/admin/users/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function resetUserInitialPassword(
+  id: number,
+  initialPassword: string
+): Promise<ResetPasswordResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/admin/users/${id}/password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ initialPassword }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+

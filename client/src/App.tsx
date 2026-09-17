@@ -23,6 +23,7 @@ import AppHeader, { NavTab } from "./components/AppHeader";
 import PublicComments from "./components/PublicComments";
 import StaffTicketQueue from "./components/StaffTicketQueue";
 import { StaffTicketDetail } from "./components/StaffTicketDetail";
+import UserManagement from "./components/UserManagement";
 
 type UiState = "idle" | "loading" | "success" | "error";
 
@@ -684,15 +685,10 @@ export default function App() {
         </section>
       )}
 
-      {/* User Management Placeholder */}
+      {/* User Management */}
       {activeTab === "user-management" && (
         <section className="mb-5">
-          <div className="card shadow-sm p-4 bg-light border-0">
-            <h2 className="h5 fw-bold text-success mb-2">User Management</h2>
-            <p className="text-muted mb-0">
-              Welcome, <strong>{currentUser.name}</strong>. Administrator user provisioning & role management will be available in Sprint 4.
-            </p>
-          </div>
+          <UserManagement currentUser={currentUser} />
         </section>
       )}
 
