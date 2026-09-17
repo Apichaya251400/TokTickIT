@@ -510,6 +510,14 @@ export interface AdminUserMutationResponse {
   user: AdminUser;
 }
 
+export interface ResetPasswordResponse {
+  message: string;
+  user: {
+    id: number;
+    requiresPasswordChange: boolean;
+  };
+}
+
 export async function fetchAdminUsers(search?: string, role?: string): Promise<{ users: AdminUser[] }> {
   const params = new URLSearchParams();
   if (search && search.trim()) params.set("q", search.trim());
@@ -567,7 +575,7 @@ export async function updateAdminUser(
 export async function resetUserInitialPassword(
   id: number,
   initialPassword: string
-): Promise<AdminUserMutationResponse> {
+): Promise<ResetPasswordResponse> {
   const res = await fetchWithAuth(`${API_URL}/api/admin/users/${id}/password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
