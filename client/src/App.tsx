@@ -22,6 +22,7 @@ import ChangePassword from "./components/ChangePassword";
 import AppHeader, { NavTab } from "./components/AppHeader";
 import PublicComments from "./components/PublicComments";
 import StaffTicketQueue from "./components/StaffTicketQueue";
+import { StaffTicketDetail } from "./components/StaffTicketDetail";
 
 type UiState = "idle" | "loading" | "success" | "error";
 
@@ -710,7 +711,18 @@ export default function App() {
       {/* VIEW 1: Ticket Detail View Screen */}
       {selectedTicketId && (
         <section className="mb-5">
-          <div className="d-flex justify-content-between align-items-center mb-4">
+          {currentUser.role === "IT_STAFF" || currentUser.role === "ADMINISTRATOR" ? (
+            <StaffTicketDetail
+              ticketId={selectedTicketId}
+              currentUser={currentUser}
+              onBack={() => setSelectedTicketId(null)}
+              onTicketUpdated={() => {
+                if (activeTab === "my-tickets") loadMyTickets();
+              }}
+            />
+          ) : (
+            <>
+              <div className="d-flex justify-content-between align-items-center mb-4">
             <h2 className="h4 fw-bold mb-0">
               Ticket Detail {detailTicket ? `— ${detailTicket.ticketNumber}` : ""}
             </h2>
@@ -958,6 +970,8 @@ export default function App() {
                 </div>
               </div>
             </div>
+          )}
+            </>
           )}
         </section>
       )}

@@ -397,3 +397,97 @@ export async function requestReopenApi(ticketId: string): Promise<any> {
   }
   return res.json();
 }
+
+export interface InternalNote {
+  id: string;
+  ticketId: string;
+  authorId: number;
+  content: string;
+  createdAt: string;
+  author?: {
+    id: number;
+    name: string;
+    role: Role;
+  };
+}
+
+export async function claimTicketApi(ticketId: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/claim`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function assignTicketApi(ticketId: string, ownerId: number): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/assign`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ownerId }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function updateItPriorityApi(ticketId: string, itPriority: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/priority`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itPriority }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function updateTicketStatusApi(ticketId: string, status: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/status`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function fetchInternalNotes(ticketId: string): Promise<{ notes: InternalNote[] }> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/notes`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function postInternalNote(ticketId: string, content: string): Promise<InternalNote> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/notes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function fetchAssignees(): Promise<{ assignees: Array<{ id: number; name: string; email: string; role: Role }> }> {
+  const res = await fetchWithAuth(`${API_URL}/api/users/assignees`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
