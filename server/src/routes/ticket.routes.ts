@@ -7,7 +7,7 @@ import { authenticateToken, requireRole, requireTicketOwnership, requireAttachme
 import { validateSummary, validateDescription, validateFileSize, sanitizeFileName } from "../utils/validation.js";
 import { generateTicketNumber, getNextTicketSequence } from "../utils/ticketNumber.js";
 import { sanitizeHtml } from "../utils/sanitizer.js";
-import { RequestedPriority } from "@prisma/client";
+import { Priority } from "@prisma/client";
 
 export const ticketRouter = Router();
 
@@ -227,7 +227,7 @@ ticketRouter.post(
           requesterId,
           categoryId: parsedCatId,
           relatedSystemId: parsedSysId,
-          requestedPriority: requestedPriority as RequestedPriority,
+          requestedPriority: requestedPriority as Priority,
           summary: cleanSummary!,
           description: cleanDescription!,
           currentStatus: "NEW",
@@ -282,23 +282,18 @@ const ALLOWED_SORT_ORDER = new Set(["asc", "desc"]);
 const ALLOWED_PAGE_SIZES = new Set([10, 20, 50]);
 const ALLOWED_STATUSES = new Set(["NEW"]);
 
-// GET /api/tickets/my-tickets - Retrieve paginated list of owned tickets for Requesters (Lab 2 continuity)
-ticketRouter.get(
-  "/tickets/my-tickets",
-  authenticateToken,
-  requireRole("REQUESTER"),
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    const {
-      search,
-      categoryId,
-      relatedSystemId,
-      requestedPriority,
-      currentStatus,
-      sortBy: sortByRaw,
-      sortOrder: sortOrderRaw,
-      page: pageRaw,
-      pageSize: pageSizeRaw,
-    } = req.query;
+export async function handleMyTickets(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const {
+    search,
+    categoryId,
+    relatedSystemId,
+    requestedPriority,
+    currentStatus,
+    sortBy: sortByRaw,
+    sortOrder: sortOrderRaw,
+    page: pageRaw,
+    pageSize: pageSizeRaw,
+  } = req.query;
 
     let page = 1;
     if (pageRaw !== undefined) {
@@ -420,7 +415,7 @@ ticketRouter.get(
       strStatus = s;
     }
 
-    const requesterId = req.requesterId!;
+    const requesterId = (req as any).requesterId!;
     const prisma = getPrisma();
 
     const where: any = { requesterId };
@@ -502,6 +497,12 @@ ticketRouter.get(
       });
     }
   }
+
+ticketRouter.get(
+  "/tickets/my-tickets",
+  authenticateToken,
+  requireRole("REQUESTER"),
+  handleMyTickets
 );
 
 const PRIORITY_RANK: Record<string, number> = {
@@ -511,12 +512,23 @@ const PRIORITY_RANK: Record<string, number> = {
   LOW: 1,
 };
 
-// GET /api/tickets - IT Staff Ticket Queue REST API (IT Staff Only / BR-04)
+// GET /api/tickets - Support ticket retrieval endpoint for Requesters (My Tickets) & IT Staff (Queue)
 ticketRouter.get(
   "/tickets",
   authenticateToken,
-  requireRole("IT_STAFF"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const isLegacyRequesterHeader = !req.headers.authorization && !req.cookies?.token && req.headers["x-requester-id"] !== undefined;
+    if (isLegacyRequesterHeader && req.user?.role === "REQUESTER") {
+      return handleMyTickets(req, res);
+    }
+    if (req.user?.role !== "IT_STAFF") {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied",
+      });
+      return;
+    }
+
     const {
       q,
       status,
@@ -640,7 +652,6 @@ ticketRouter.get(
         where.OR = [
           { ticketNumber: { contains: cleanQ, mode: "insensitive" } },
           { summary: { contains: cleanQ, mode: "insensitive" } },
-          { description: { contains: cleanQ, mode: "insensitive" } },
         ];
       }
     }
@@ -1157,7 +1168,7 @@ ticketRouter.put(
 
       const updated = await prisma.ticket.update({
         where: { id: ticketId },
-        data: { itPriority: itPriority as RequestedPriority },
+        data: { itPriority: itPriority as Priority },
       });
 
       res.status(200).json({

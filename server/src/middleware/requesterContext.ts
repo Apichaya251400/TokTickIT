@@ -42,7 +42,7 @@ export async function requesterContextMiddleware(
 
   try {
     const prisma = getPrisma();
-    const requester = await prisma.requesterUser.findUnique({
+    const requester = await prisma.user.findUnique({
       where: { id: parsedId },
     });
 
@@ -57,6 +57,7 @@ export async function requesterContextMiddleware(
     }
 
     req.requesterId = parsedId;
+    (req as any).user = requester;
     next();
   } catch (error) {
     res.status(500).json({

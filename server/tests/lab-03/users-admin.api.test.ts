@@ -301,7 +301,7 @@ describe("Issue 9: Administrator User Management & Safety Guards API Suite (user
         });
 
       expect(demoteRes.status).toBe(400);
-      expect(demoteRes.error.text || demoteRes.body.error).toContain("INVALID_ADMIN_ACTION");
+      expect((demoteRes.error as any)?.text || JSON.stringify(demoteRes.body)).toContain("INVALID_ADMIN_ACTION");
 
       const dbAdmin = await prisma.user.findUnique({ where: { id: adminUserId } });
       expect(dbAdmin?.role).toBe("ADMINISTRATOR");

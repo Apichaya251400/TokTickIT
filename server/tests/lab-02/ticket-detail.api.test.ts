@@ -27,7 +27,7 @@ describe("Issue #25: Ticket Detail API & Ownership Protection (GET /api/tickets/
 
   describe("Requester Context Header Validation", () => {
     it("API-01 / BR-09: Returns HTTP 400 Bad Request when X-Requester-Id header is missing", async () => {
-      const res = await request(app).get(`/api/tickets/${aliceTicketId}`);
+      const res = await request(app).get(`/api/tickets/${aliceTicketId}`).set("X-Requester-Id", "");
       expect(res.status).toBe(400);
       expect(res.body).toEqual({
         error: {
