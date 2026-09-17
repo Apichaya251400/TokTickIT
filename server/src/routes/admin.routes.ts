@@ -178,16 +178,13 @@ adminRouter.put(
       const prisma = getPrisma();
 
       const result = await prisma.$transaction(async (tx) => {
-        const targetUser = await tx.user.findUnique({
-          where: { id: targetUserId },
-        });
-
+        const targetUser = await tx.user.findUnique({ where: { id: targetUserId } });
         if (!targetUser) {
           return { status: 404, payload: { error: "NOT_FOUND", message: "User not found" } };
         }
 
-        // Check self-deactivation guard
-        if (req.user!.id === targetUserId && isActive === false) {
+        // Safety Guard 1: Prevent self-deactivation or self-demotion
+        if (targetUserId === req.user!.id && (role !== "ADMINISTRATOR" || isActive === false)) {
           return {
             status: 400,
             payload: {
@@ -197,24 +194,32 @@ adminRouter.put(
           };
         }
 
-        // Check duplicate email
+        // Check duplicate email (if changing email)
         if (email.trim().toLowerCase() !== targetUser.email.toLowerCase()) {
-          const existingEmail = await tx.user.findUnique({
+          const existingUser = await tx.user.findUnique({
             where: { email: email.trim().toLowerCase() },
           });
-          if (existingEmail && existingEmail.id !== targetUserId) {
+          if (existingUser) {
             return {
               status: 409,
-              payload: {
-                error: "DUPLICATE_EMAIL",
-                message: "A user with this email address already exists",
-              },
+              payload: { error: "DUPLICATE_EMAIL", message: "Email is already in use by another user" },
             };
           }
         }
 
         // Check Last Active Administrator protection atomically within transaction
         if (targetUser.role === "ADMINISTRATOR" && targetUser.isActive && (role !== "ADMINISTRATOR" || isActive === false)) {
+          // Lock all active Administrator rows to serialize concurrent active admin count & mutation checks
+          await tx.user.updateMany({
+            where: {
+              role: "ADMINISTRATOR",
+              isActive: true,
+            },
+            data: {
+              isActive: true,
+            },
+          });
+
           const activeAdminCount = await tx.user.count({
             where: {
               role: "ADMINISTRATOR",
