@@ -1,4 +1,7 @@
 import { test, expect, Page } from "@playwright/test";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 async function loginAsAdmin(page: Page) {
   await page.goto("/");
@@ -25,6 +28,10 @@ async function loginAsAdmin(page: Page) {
 }
 
 test.describe("E2E-03: User Administration & Safety Guards (Lab 3)", () => {
+  test.afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
   });
@@ -154,25 +161,14 @@ test.describe("E2E-03: User Administration & Safety Guards (Lab 3)", () => {
 
       await expect(page.getByTestId("admin-error-alert")).toContainText("Administrators cannot deactivate their own account or deactivate the last active Administrator");
     } finally {
-      // Restore shared DB state: Reactivate admin2@toktick.it so subsequent test runs do not fail
+      // Deterministically restore shared DB state via Prisma so subsequent test runs succeed
       try {
-        await page.getByTestId("admin-user-search-input").fill("admin2@toktick.it");
-        const editSecondaryBtn = page.getByRole("button", { name: /Edit/i }).first();
-        if (await editSecondaryBtn.isVisible()) {
-          await editSecondaryBtn.click();
-          await expect(page.getByTestId("edit-user-modal")).toBeVisible();
-
-          const activeSwitch = page.getByTestId("user-form-active");
-          await activeSwitch.check();
-
-          await Promise.all([
-            page.waitForResponse((res) => res.url().includes("/api/admin/users/") && res.status() === 200),
-            page.getByTestId("submit-user-btn").click(),
-          ]);
-          await expect(page.getByTestId("admin-success-alert")).toBeVisible();
-        }
-      } catch {
-        // Ignored: best effort DB state restoration
+        await prisma.user.updateMany({
+          where: { email: "admin2@toktick.it" },
+          data: { isActive: true },
+        });
+      } catch (err) {
+        console.error("Failed to restore admin2@toktick.it state:", err);
       }
     }
   });

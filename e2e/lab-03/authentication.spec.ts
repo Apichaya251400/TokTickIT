@@ -39,6 +39,10 @@ async function loginAsUser(page: Page, email: string, password = "InitialPasswor
 }
 
 test.describe("E2E-01: Authentication Workflow (Lab 3)", () => {
+  test.afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
     await page.evaluate(() => localStorage.clear());
