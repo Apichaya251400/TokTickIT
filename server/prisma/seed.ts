@@ -51,15 +51,15 @@ export async function seedDatabase() {
   const usersData = [
     // Requesters (>= 4 active, 1 inactive)
     {
-      name: "Requester User",
-      email: "requester@toktick.it",
+      name: "Alice Smith",
+      email: "alice@example.com",
       role: "REQUESTER" as const,
       isActive: true,
       requiresPasswordChange: true,
     },
     {
-      name: "Alice Smith",
-      email: "alice@example.com",
+      name: "Requester User",
+      email: "requester@toktick.it",
       role: "REQUESTER" as const,
       isActive: true,
       requiresPasswordChange: true,
@@ -79,17 +79,17 @@ export async function seedDatabase() {
       requiresPasswordChange: true,
     },
     {
-      name: "Diana Prince",
-      email: "diana@example.com",
-      role: "REQUESTER" as const,
-      isActive: true,
-      requiresPasswordChange: true,
-    },
-    {
       name: "Eve Adams",
       email: "eve@example.com",
       role: "REQUESTER" as const,
       isActive: false,
+      requiresPasswordChange: true,
+    },
+    {
+      name: "Diana Prince",
+      email: "diana@example.com",
+      role: "REQUESTER" as const,
+      isActive: true,
       requiresPasswordChange: true,
     },
 

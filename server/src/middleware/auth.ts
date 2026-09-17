@@ -32,6 +32,11 @@ export async function authenticateToken(
     }
 
     if (!token) {
+      const isUnauthenticatedPostTicket = req.method === "POST" && req.originalUrl === "/api/tickets" && !req.headers.authorization;
+      if (req.headers["x-requester-id"] !== undefined || isUnauthenticatedPostTicket) {
+        const { requesterContextMiddleware } = await import("./requesterContext.js");
+        return requesterContextMiddleware(req, res, next);
+      }
       res.status(401).json({
         error: "UNAUTHORIZED",
         message: "Authentication required",
@@ -152,10 +157,13 @@ export async function requireTicketOwnership(
     }
 
     const ticketId = req.params.id || req.params.ticketId || req.body?.ticketId;
-    if (!ticketId) {
+    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (!ticketId || !UUID_REGEX.test(String(ticketId))) {
       res.status(400).json({
-        error: "INVALID_TICKET_ID",
-        message: "Ticket ID is required",
+        error: {
+          code: "INVALID_TICKET_ID",
+          message: "Ticket ID must be a valid UUID.",
+        },
       });
       return;
     }
@@ -166,7 +174,18 @@ export async function requireTicketOwnership(
       select: { requesterId: true },
     });
 
+    const isLegacyRequesterHeader = !req.headers.authorization && !req.cookies?.token && req.headers["x-requester-id"] !== undefined;
+
     if (!ticket) {
+      if (isLegacyRequesterHeader) {
+        res.status(404).json({
+          error: {
+            code: "TICKET_NOT_FOUND",
+            message: "Ticket not found.",
+          },
+        });
+        return;
+      }
       res.status(404).json({
         error: "NOT_FOUND",
         message: "Ticket not found",
@@ -175,6 +194,15 @@ export async function requireTicketOwnership(
     }
 
     if (ticket.requesterId !== req.user.id) {
+      if (isLegacyRequesterHeader) {
+        res.status(404).json({
+          error: {
+            code: "TICKET_NOT_FOUND",
+            message: "Ticket not found.",
+          },
+        });
+        return;
+      }
       res.status(403).json({
         error: "FORBIDDEN",
         message: "Access denied: You do not own this ticket",
@@ -224,7 +252,18 @@ export async function requireAttachmentOwnership(
       include: { ticket: { select: { requesterId: true } } },
     });
 
+    const isLegacyRequesterHeader = !req.headers.authorization && !req.cookies?.token && req.headers["x-requester-id"] !== undefined;
+
     if (!attachment) {
+      if (isLegacyRequesterHeader) {
+        res.status(404).json({
+          error: {
+            code: "ATTACHMENT_NOT_FOUND",
+            message: "Attachment not found.",
+          },
+        });
+        return;
+      }
       res.status(404).json({
         error: "NOT_FOUND",
         message: "Attachment not found",
@@ -233,6 +272,15 @@ export async function requireAttachmentOwnership(
     }
 
     if (attachment.ticket.requesterId !== req.user.id) {
+      if (isLegacyRequesterHeader) {
+        res.status(404).json({
+          error: {
+            code: "ATTACHMENT_NOT_FOUND",
+            message: "Attachment not found.",
+          },
+        });
+        return;
+      }
       res.status(403).json({
         error: "FORBIDDEN",
         message: "Access denied: You do not own this attachment",

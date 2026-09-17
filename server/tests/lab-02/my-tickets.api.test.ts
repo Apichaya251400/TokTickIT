@@ -16,7 +16,7 @@ describe("Issue #27: My Tickets List API (GET /api/tickets)", () => {
 
   describe("Requester Context Header Validation", () => {
     it("API-01 / BR-09: Returns HTTP 400 Bad Request when X-Requester-Id header is missing", async () => {
-      const res = await request(app).get("/api/tickets");
+      const res = await request(app).get("/api/tickets").set("X-Requester-Id", "");
       expect(res.status).toBe(400);
       expect(res.body).toEqual({
         error: {

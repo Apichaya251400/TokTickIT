@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "path";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -12,13 +13,15 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "npm run dev --prefix server",
+      command: "npm run dev",
+      cwd: path.resolve(process.cwd(), "server"),
       url: "http://localhost:3000/api/health",
       reuseExistingServer: true,
       timeout: 120000,
     },
     {
-      command: "npm run dev --prefix client",
+      command: "npm run dev",
+      cwd: path.resolve(process.cwd(), "client"),
       url: "http://localhost:5173",
       reuseExistingServer: true,
       timeout: 120000,
