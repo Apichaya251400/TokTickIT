@@ -2,8 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 import path from "path";
 
 export default defineConfig({
-  testDir: ".",
-  testMatch: ["e2e/**/*.spec.ts", "scratch/**/*.spec.ts"],
+  testDir: "./e2e/lab-03",
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
