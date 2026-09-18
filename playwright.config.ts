@@ -2,7 +2,11 @@ import { defineConfig, devices } from "@playwright/test";
 import path from "path";
 
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: ".",
+  testMatch: process.argv.some((arg) => arg.includes("scratch"))
+    ? "scratch/**/*.spec.ts"
+    : ["e2e/**/*.spec.ts"],
+  testIgnore: ["**/lab-02/**"],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
