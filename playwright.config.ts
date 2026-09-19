@@ -1,7 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "path";
 
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: ".",
+  testMatch: process.argv.some((arg) => arg.includes("scratch"))
+    ? "scratch/**/*.spec.ts"
+    : ["e2e/**/*.spec.ts"],
+  testIgnore: ["**/lab-02/**"],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
@@ -12,13 +17,15 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "npm run dev --prefix server",
+      command: "npm run dev",
+      cwd: path.resolve(process.cwd(), "server"),
       url: "http://localhost:3000/api/health",
       reuseExistingServer: true,
       timeout: 120000,
     },
     {
-      command: "npm run dev --prefix client",
+      command: "npm run dev",
+      cwd: path.resolve(process.cwd(), "client"),
       url: "http://localhost:5173",
       reuseExistingServer: true,
       timeout: 120000,

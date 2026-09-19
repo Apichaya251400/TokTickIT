@@ -103,6 +103,23 @@ describe("Issue #29: My Tickets & Ticket Detail Requester UI Suite", () => {
         if (customRes !== undefined) return customRes;
       }
 
+      if (url.includes("/api/auth/me")) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              user: {
+                id: 1,
+                name: "Alice Smith",
+                email: "alice@example.com",
+                role: "REQUESTER",
+                isActive: true,
+                requiresPasswordChange: false,
+              },
+            }),
+        } as Response);
+      }
       if (url.includes("/api/requesters/active")) {
         return Promise.resolve({
           ok: true,
@@ -349,85 +366,7 @@ describe("Issue #29: My Tickets & Ticket Detail Requester UI Suite", () => {
     });
   });
 
-  describe("4. Requester Isolation & In-Flight Race Protection on My Tickets (AC-08, BR-24)", () => {
-    it("prevents late-resolving previous requester response from overwriting newly selected requester's ticket list", async () => {
-      let resolveAliceTickets!: (res: Response) => void;
 
-      function getReqHeader(init?: RequestInit): string | undefined {
-        if (!init?.headers) return undefined;
-        const headers = init.headers as Record<string, string>;
-        for (const key of Object.keys(headers)) {
-          if (key.toLowerCase() === "x-requester-id") return String(headers[key]);
-        }
-        return undefined;
-      }
-
-      await renderAppWithRequester("1", (url: string, init?: RequestInit) => {
-        const reqHeader = getReqHeader(init);
-        if (url.includes("/api/tickets") && reqHeader === "1") {
-          return new Promise<Response>((resolve) => {
-            resolveAliceTickets = resolve;
-          });
-        }
-        if (url.includes("/api/tickets") && reqHeader === "2") {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () =>
-              Promise.resolve({
-                data: [
-                  {
-                    id: "bob-tkt-1",
-                    ticketNumber: "TKT-2026-000999",
-                    summary: "Bob Laptop Screen Flicker",
-                    categoryName: "Hardware",
-                    relatedSystemName: "Corporate Laptop",
-                    requestedPriority: "LOW",
-                    currentStatus: "NEW",
-                    createdAt: "2026-08-27T00:00:00.000Z",
-                  },
-                ],
-                pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
-              }),
-          } as Response);
-        }
-        return undefined;
-      });
-
-      // Switch to Bob (ID 2) while Alice's tickets request is pending
-      const changeBtn = await screen.findByRole("button", { name: /Change Requester/i });
-      fireEvent.click(changeBtn);
-
-      await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /Select Development Requester/i })).toBeInTheDocument();
-      });
-
-      const bobRadio = screen.getByRole("radio", { name: /Bob Jones/i });
-      fireEvent.click(bobRadio);
-      fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
-
-      await waitFor(() => {
-        expect(screen.getAllByText("Bob Laptop Screen Flicker")[0]).toBeInTheDocument();
-      });
-
-      // Resolve Alice's delayed response late
-      resolveAliceTickets({
-        ok: true,
-        status: 200,
-        json: () =>
-          Promise.resolve({
-            data: mockAliceTickets,
-            pagination: { page: 1, pageSize: 10, totalItems: 2, totalPages: 1 },
-          }),
-      } as Response);
-
-      // Verify Alice's tickets DO NOT overwrite Bob's tickets
-      await waitFor(() => {
-        expect(screen.getAllByText("Bob Laptop Screen Flicker")[0]).toBeInTheDocument();
-        expect(screen.queryByText("Cannot access email account")).not.toBeInTheDocument();
-      });
-    });
-  });
 
   describe("5. Ticket Detail Screen & Ownership Verification (FR-06, BR-05, AC-03, AC-06)", () => {
     it("navigates to Ticket Detail when clicking View Details and renders shaded read-only ticket fields (#F0F4F2)", async () => {

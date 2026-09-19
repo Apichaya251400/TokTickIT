@@ -1,14 +1,29 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { getPrisma } from "./prisma.js";
+import { authRouter } from "./routes/auth.routes.js";
 import { ticketRouter } from "./routes/ticket.routes.js";
+import { adminRouter } from "./routes/admin.routes.js";
 
 // The Express app is exported separately from app.listen() (see index.ts) so
 // Supertest can import `app` without opening a port. Do not merge these files.
 export const app = express();
 
-app.use(cors());          // already wired: lets the Vite dev server call this API
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      return callback(null, origin);
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
+
+app.use("/api/auth", authRouter);
+app.use("/api/admin", adminRouter);
 
 // ---------------------------------------------------------------------------
 // Issue 2 — API health check
@@ -45,12 +60,13 @@ app.get("/api/categories", async (_req: Request, res: Response) => {
   }
 });
 
-// GET /api/requesters/active - Returns active Development Requesters
+// GET /api/requesters/active - Returns active Requesters (Sprint 3 User model)
 app.get("/api/requesters/active", async (_req: Request, res: Response) => {
   try {
     const prisma = getPrisma();
-    const requesters = await prisma.requesterUser.findMany({
+    const requesters = await prisma.user.findMany({
       where: {
+        role: "REQUESTER",
         isActive: true,
       },
       select: {

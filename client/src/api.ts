@@ -1,5 +1,24 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
+export type Role = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  isActive: boolean;
+  requiresPasswordChange: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token?: string;
+  message?: string;
+}
+
 export interface Category {
   id: number;
   name: string;
@@ -46,12 +65,12 @@ export interface TicketQueryParams {
 
 export async function checkSystem(): Promise<SystemStatus> {
   try {
-    const healthRes = await fetch(`${API_URL}/api/health`);
+    const healthRes = await fetch(`${API_URL}/api/health`, { credentials: "include" });
     if (!healthRes.ok) {
       throw new Error(`Server responded with status ${healthRes.status}`);
     }
 
-    const categoriesRes = await fetch(`${API_URL}/api/categories`);
+    const categoriesRes = await fetch(`${API_URL}/api/categories`, { credentials: "include" });
     if (!categoriesRes.ok) {
       throw new Error(`Server responded with status ${categoriesRes.status}`);
     }
@@ -63,8 +82,68 @@ export async function checkSystem(): Promise<SystemStatus> {
   }
 }
 
+export async function loginApi(email: string, password: string): Promise<AuthResponse> {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw { status: res.status, data };
+  }
+  return data;
+}
+
+export async function logoutApi(): Promise<any> {
+  const res = await fetch(`${API_URL}/api/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw { status: res.status, data };
+  }
+  return data;
+}
+
+export async function fetchCurrentUserApi(): Promise<AuthResponse> {
+  const res = await fetch(`${API_URL}/api/auth/me`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw { status: res.status, data };
+  }
+  return data;
+}
+
+export async function changePasswordApi(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<AuthResponse> {
+  const res = await fetch(`${API_URL}/api/auth/change-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw { status: res.status, data };
+  }
+  return data;
+}
+
 export async function fetchActiveRequesters(): Promise<Requester[]> {
-  const res = await fetch(`${API_URL}/api/requesters/active`);
+  const res = await fetch(`${API_URL}/api/requesters/active`, { credentials: "include" });
   if (!res.ok) {
     throw new Error("Unable to load requesters. Please check your connection and try again.");
   }
@@ -73,7 +152,7 @@ export async function fetchActiveRequesters(): Promise<Requester[]> {
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await fetch(`${API_URL}/api/categories`);
+  const res = await fetch(`${API_URL}/api/categories`, { credentials: "include" });
   if (!res.ok) {
     throw new Error("Unable to load categories.");
   }
@@ -81,31 +160,17 @@ export async function fetchCategories(): Promise<Category[]> {
 }
 
 export async function fetchRelatedSystems(): Promise<RelatedSystem[]> {
-  const res = await fetch(`${API_URL}/api/related-systems`);
+  const res = await fetch(`${API_URL}/api/related-systems`, { credentials: "include" });
   if (!res.ok) {
     throw new Error("Unable to load related systems.");
   }
   return res.json();
 }
 
-export function getSelectedRequesterId(): string | null {
-  return localStorage.getItem("selectedRequesterId");
-}
-
-export function setSelectedRequesterId(id: string | null): void {
-  if (id) {
-    localStorage.setItem("selectedRequesterId", id);
-  } else {
-    localStorage.removeItem("selectedRequesterId");
-  }
-}
-
-export async function fetchWithRequesterContext(
+export async function fetchWithAuth(
   url: string,
-  options: RequestInit = {},
-  explicitRequesterId?: string
+  options: RequestInit = {}
 ): Promise<Response> {
-  const requesterId = explicitRequesterId ?? getSelectedRequesterId();
   const headers: Record<string, string> = {};
 
   if (options.headers) {
@@ -122,16 +187,11 @@ export async function fetchWithRequesterContext(
     }
   }
 
-  if (requesterId) {
-    headers["X-Requester-Id"] = String(requesterId);
-  }
-
-  return fetch(url, { ...options, headers });
+  return fetch(url, { ...options, headers, credentials: "include" });
 }
 
 export async function fetchMyTickets(
-  params?: TicketQueryParams,
-  explicitRequesterId?: string
+  params?: TicketQueryParams
 ): Promise<any> {
   const searchParams = new URLSearchParams();
 
@@ -148,9 +208,49 @@ export async function fetchMyTickets(
   }
 
   const queryString = searchParams.toString();
+  const url = `${API_URL}/api/tickets/my-tickets${queryString ? `?${queryString}` : ""}`;
+
+  const res = await fetchWithAuth(url);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export interface QueueQueryParams {
+  q?: string;
+  status?: string;
+  requestedPriority?: string;
+  itPriority?: string;
+  owner?: "all" | "my_queue" | "unassigned";
+  sortBy?: "createdAt" | "itPriority" | "updatedAt" | "ticketNumber";
+  sortDir?: "asc" | "desc";
+  page?: number;
+  limit?: number;
+}
+
+export async function fetchQueueTickets(
+  params?: QueueQueryParams
+): Promise<any> {
+  const searchParams = new URLSearchParams();
+
+  if (params) {
+    if (params.q && params.q.trim()) searchParams.set("q", params.q.trim());
+    if (params.status) searchParams.set("status", params.status);
+    if (params.requestedPriority) searchParams.set("requestedPriority", params.requestedPriority);
+    if (params.itPriority) searchParams.set("itPriority", params.itPriority);
+    if (params.owner) searchParams.set("owner", params.owner);
+    if (params.sortBy) searchParams.set("sortBy", params.sortBy);
+    if (params.sortDir) searchParams.set("sortDir", params.sortDir);
+    if (params.page) searchParams.set("page", String(params.page));
+    if (params.limit) searchParams.set("limit", String(params.limit));
+  }
+
+  const queryString = searchParams.toString();
   const url = `${API_URL}/api/tickets${queryString ? `?${queryString}` : ""}`;
 
-  const res = await fetchWithRequesterContext(url, {}, explicitRequesterId);
+  const res = await fetchWithAuth(url);
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw { status: res.status, data: errorData };
@@ -158,8 +258,8 @@ export async function fetchMyTickets(
   return res.json();
 }
 
-export async function fetchTicketById(id: string, explicitRequesterId?: string): Promise<any> {
-  const res = await fetchWithRequesterContext(`${API_URL}/api/tickets/${id}`, {}, explicitRequesterId);
+export async function fetchTicketById(id: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${id}`);
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw { status: res.status, data: errorData };
@@ -167,8 +267,8 @@ export async function fetchTicketById(id: string, explicitRequesterId?: string):
   return res.json();
 }
 
-export async function createTicket(payload: CreateTicketPayload, explicitRequesterId?: string): Promise<any> {
-  const res = await fetchWithRequesterContext(
+export async function createTicket(payload: CreateTicketPayload): Promise<any> {
+  const res = await fetchWithAuth(
     `${API_URL}/api/tickets`,
     {
       method: "POST",
@@ -176,8 +276,7 @@ export async function createTicket(payload: CreateTicketPayload, explicitRequest
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    },
-    explicitRequesterId
+    }
   );
 
   if (!res.ok) {
@@ -188,17 +287,16 @@ export async function createTicket(payload: CreateTicketPayload, explicitRequest
   return res.json();
 }
 
-export async function uploadAttachment(ticketId: string, file: File, explicitRequesterId?: string): Promise<any> {
+export async function uploadAttachment(ticketId: string, file: File): Promise<any> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetchWithRequesterContext(
+  const res = await fetchWithAuth(
     `${API_URL}/api/tickets/${ticketId}/attachments`,
     {
       method: "POST",
       body: formData,
-    },
-    explicitRequesterId
+    }
   );
 
   if (!res.ok) {
@@ -209,12 +307,8 @@ export async function uploadAttachment(ticketId: string, file: File, explicitReq
   return res.json();
 }
 
-export async function downloadAttachment(attachmentId: string, explicitRequesterId?: string): Promise<Response> {
-  const res = await fetchWithRequesterContext(
-    `${API_URL}/api/attachments/${attachmentId}/download`,
-    {},
-    explicitRequesterId
-  );
+export async function downloadAttachment(attachmentId: string): Promise<Response> {
+  const res = await fetchWithAuth(`${API_URL}/api/attachments/${attachmentId}/download`);
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
@@ -226,10 +320,9 @@ export async function downloadAttachment(attachmentId: string, explicitRequester
 
 export async function softRemoveAttachment(
   attachmentId: string,
-  removalReason: string,
-  explicitRequesterId?: string
+  removalReason: string
 ): Promise<any> {
-  const res = await fetchWithRequesterContext(
+  const res = await fetchWithAuth(
     `${API_URL}/api/attachments/${attachmentId}`,
     {
       method: "DELETE",
@@ -237,8 +330,7 @@ export async function softRemoveAttachment(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ removalReason }),
-    },
-    explicitRequesterId
+    }
   );
 
   if (!res.ok) {
@@ -248,3 +340,251 @@ export async function softRemoveAttachment(
 
   return res.json();
 }
+
+export interface PublicComment {
+  id: string;
+  ticketId: string;
+  authorId: number;
+  content: string;
+  createdAt: string;
+  author?: {
+    id: number;
+    name: string;
+    role: Role;
+  };
+}
+
+export async function fetchTicketComments(ticketId: string): Promise<{ comments: PublicComment[] }> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/comments`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function postTicketComment(ticketId: string, content: string): Promise<PublicComment> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/comments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function indicateResolveApi(ticketId: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/resolve-indicator`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function requestReopenApi(ticketId: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/reopen-request`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export interface InternalNote {
+  id: string;
+  ticketId: string;
+  authorId: number;
+  content: string;
+  createdAt: string;
+  author?: {
+    id: number;
+    name: string;
+    role: Role;
+  };
+}
+
+export async function claimTicketApi(ticketId: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/claim`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function assignTicketApi(ticketId: string, ownerId: number): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/assign`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ownerId }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function updateItPriorityApi(ticketId: string, itPriority: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/priority`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itPriority }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function updateTicketStatusApi(ticketId: string, status: string): Promise<any> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/status`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function fetchInternalNotes(ticketId: string): Promise<{ notes: InternalNote[] }> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/notes`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function postInternalNote(ticketId: string, content: string): Promise<InternalNote> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/notes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function fetchAssignees(): Promise<{ assignees: Array<{ id: number; name: string; email: string; role: Role }> }> {
+  const res = await fetchWithAuth(`${API_URL}/api/users/assignees`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export type AdminUserRole = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  name: string;
+  role: AdminUserRole;
+  isActive: boolean;
+  requiresPasswordChange: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AdminUserMutationResponse {
+  message: string;
+  user: AdminUser;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+  user: {
+    id: number;
+    requiresPasswordChange: boolean;
+  };
+}
+
+export async function fetchAdminUsers(search?: string, role?: string): Promise<{ users: AdminUser[] }> {
+  const params = new URLSearchParams();
+  if (search && search.trim()) params.set("q", search.trim());
+  if (role && role.trim()) params.set("role", role.trim());
+  const queryString = params.toString();
+  const url = `${API_URL}/api/admin/users${queryString ? `?${queryString}` : ""}`;
+  const res = await fetchWithAuth(url);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function createAdminUser(data: {
+  name: string;
+  email: string;
+  role: AdminUserRole;
+  isActive: boolean;
+  initialPassword: string;
+}): Promise<AdminUserMutationResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/admin/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function updateAdminUser(
+  id: number,
+  data: {
+    name: string;
+    email: string;
+    role: AdminUserRole;
+    isActive: boolean;
+  }
+): Promise<AdminUserMutationResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/admin/users/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function resetUserInitialPassword(
+  id: number,
+  initialPassword: string
+): Promise<ResetPasswordResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/admin/users/${id}/password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ initialPassword }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+

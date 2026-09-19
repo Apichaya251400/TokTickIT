@@ -16,3 +16,7 @@ server/prisma/*.db
 # uploads
 uploads/
 server/uploads/
+
+# playwright
+test-results/
+playwright-report/

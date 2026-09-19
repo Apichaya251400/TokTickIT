@@ -3,10 +3,11 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { getPrisma } from "../prisma.js";
-import { requesterContextMiddleware, AuthenticatedRequesterRequest } from "../middleware/requesterContext.js";
+import { authenticateToken, requireRole, requireTicketOwnership, requireAttachmentOwnership, AuthenticatedRequest } from "../middleware/auth.js";
 import { validateSummary, validateDescription, validateFileSize, sanitizeFileName } from "../utils/validation.js";
 import { generateTicketNumber, getNextTicketSequence } from "../utils/ticketNumber.js";
-import { RequestedPriority } from "@prisma/client";
+import { sanitizeHtml } from "../utils/sanitizer.js";
+import { Priority } from "@prisma/client";
 
 export const ticketRouter = Router();
 
@@ -49,7 +50,7 @@ interface ParsedMultipartFile {
   size: number;
 }
 
-function parseMultipartForm(req: AuthenticatedRequesterRequest): Promise<ParsedMultipartFile | null> {
+function parseMultipartForm(req: AuthenticatedRequest): Promise<ParsedMultipartFile | null> {
   return new Promise((resolve, reject) => {
     const contentType = req.headers["content-type"] || "";
     const match = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
@@ -114,8 +115,9 @@ const ALLOWED_PRIORITIES = new Set(["LOW", "MEDIUM", "HIGH", "URGENT"]);
 // POST /api/tickets - Create a new IT support ticket
 ticketRouter.post(
   "/tickets",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  authenticateToken,
+  requireRole("REQUESTER"),
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const { categoryId, relatedSystemId, requestedPriority, summary, description } = req.body || {};
 
     const validationDetails: Array<{ field: string; message: string }> = [];
@@ -175,7 +177,7 @@ ticketRouter.post(
       return;
     }
 
-    const requesterId = req.requesterId!;
+    const requesterId = req.user!.id;
 
     // Duplicate submission check for in-flight requests during active processing (BR-14 / AC-20 / API-13)
     const duplicateKey = `${requesterId}:${parsedCatId}:${parsedSysId}:${requestedPriority}:${cleanSummary}:${cleanDescription}`;
@@ -225,7 +227,7 @@ ticketRouter.post(
           requesterId,
           categoryId: parsedCatId,
           relatedSystemId: parsedSysId,
-          requestedPriority: requestedPriority as RequestedPriority,
+          requestedPriority: requestedPriority as Priority,
           summary: cleanSummary!,
           description: cleanDescription!,
           currentStatus: "NEW",
@@ -260,29 +262,39 @@ ticketRouter.post(
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
+const QUEUE_ALLOWED_STATUSES = new Set([
+  "NEW",
+  "OPEN",
+  "IN_PROGRESS",
+  "WAITING_FOR_REQUESTER",
+  "RESOLVED",
+  "CLOSED",
+  "REOPENED",
+  "CANCELLED",
+]);
+const QUEUE_ALLOWED_PRIORITIES = new Set(["LOW", "MEDIUM", "HIGH", "URGENT"]);
+const QUEUE_ALLOWED_OWNERS = new Set(["all", "my_queue", "unassigned"]);
+const QUEUE_ALLOWED_SORT_BY = new Set(["createdAt", "itPriority", "updatedAt", "ticketNumber"]);
+const QUEUE_ALLOWED_SORT_DIR = new Set(["asc", "desc"]);
+
 const ALLOWED_SORT_BY = new Set(["createdAt", "updatedAt", "ticketNumber", "requestedPriority"]);
 const ALLOWED_SORT_ORDER = new Set(["asc", "desc"]);
 const ALLOWED_PAGE_SIZES = new Set([10, 20, 50]);
 const ALLOWED_STATUSES = new Set(["NEW"]);
 
-// GET /api/tickets - Retrieve paginated list of owned tickets (Issue #27)
-ticketRouter.get(
-  "/tickets",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
-    const {
-      search,
-      categoryId,
-      relatedSystemId,
-      requestedPriority,
-      currentStatus,
-      sortBy: sortByRaw,
-      sortOrder: sortOrderRaw,
-      page: pageRaw,
-      pageSize: pageSizeRaw,
-    } = req.query;
+export async function handleMyTickets(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const {
+    search,
+    categoryId,
+    relatedSystemId,
+    requestedPriority,
+    currentStatus,
+    sortBy: sortByRaw,
+    sortOrder: sortOrderRaw,
+    page: pageRaw,
+    pageSize: pageSizeRaw,
+  } = req.query;
 
-    // 1. Validate page (default 1, must be integer >= 1)
     let page = 1;
     if (pageRaw !== undefined) {
       const parsedPage = Number(pageRaw);
@@ -298,7 +310,6 @@ ticketRouter.get(
       page = parsedPage;
     }
 
-    // 2. Validate pageSize (default 10, must be 10, 20, 50)
     let pageSize = 10;
     if (pageSizeRaw !== undefined) {
       const parsedPageSize = Number(pageSizeRaw);
@@ -314,7 +325,6 @@ ticketRouter.get(
       pageSize = parsedPageSize;
     }
 
-    // 3. Validate sortBy (default createdAt)
     let sortBy = "createdAt";
     if (sortByRaw !== undefined) {
       const strSortBy = String(sortByRaw);
@@ -330,7 +340,6 @@ ticketRouter.get(
       sortBy = strSortBy;
     }
 
-    // 4. Validate sortOrder (default desc)
     let sortOrder: "asc" | "desc" = "desc";
     if (sortOrderRaw !== undefined) {
       const strSortOrder = String(sortOrderRaw);
@@ -346,7 +355,6 @@ ticketRouter.get(
       sortOrder = strSortOrder as "asc" | "desc";
     }
 
-    // 5. Validate categoryId (optional int > 0)
     let parsedCatId: number | undefined;
     if (categoryId !== undefined) {
       const numCatId = Number(categoryId);
@@ -362,7 +370,6 @@ ticketRouter.get(
       parsedCatId = numCatId;
     }
 
-    // 6. Validate relatedSystemId (optional int > 0)
     let parsedSysId: number | undefined;
     if (relatedSystemId !== undefined) {
       const numSysId = Number(relatedSystemId);
@@ -378,7 +385,6 @@ ticketRouter.get(
       parsedSysId = numSysId;
     }
 
-    // 7. Validate requestedPriority (optional enum)
     let strPriority: string | undefined;
     if (requestedPriority !== undefined) {
       const p = String(requestedPriority);
@@ -394,7 +400,6 @@ ticketRouter.get(
       strPriority = p;
     }
 
-    // 8. Validate currentStatus (optional enum)
     let strStatus: string | undefined;
     if (currentStatus !== undefined) {
       const s = String(currentStatus);
@@ -410,13 +415,10 @@ ticketRouter.get(
       strStatus = s;
     }
 
-    const requesterId = req.requesterId!;
+    const requesterId = (req as any).requesterId!;
     const prisma = getPrisma();
 
-    // Construct Prisma query where clause
-    const where: any = {
-      requesterId, // Scope strictly to requester context in DB query
-    };
+    const where: any = { requesterId };
 
     if (search !== undefined && typeof search === "string") {
       const cleanSearch = search.trim();
@@ -434,7 +436,6 @@ ticketRouter.get(
     if (strPriority !== undefined) where.requestedPriority = strPriority;
     if (strStatus !== undefined) where.currentStatus = strStatus;
 
-    // Construct Prisma orderBy array
     const orderBy: any[] = [];
     if (sortBy === "requestedPriority") {
       orderBy.push({ requestedPriority: sortOrder });
@@ -446,7 +447,6 @@ ticketRouter.get(
       orderBy.push({ createdAt: sortOrder });
     }
 
-    // Secondary sort strictly id DESC for deterministic pagination
     orderBy.push({ id: "desc" });
 
     const skip = (page - 1) * pageSize;
@@ -497,13 +497,278 @@ ticketRouter.get(
       });
     }
   }
+
+ticketRouter.get(
+  "/tickets/my-tickets",
+  authenticateToken,
+  requireRole("REQUESTER"),
+  handleMyTickets
+);
+
+const PRIORITY_RANK: Record<string, number> = {
+  URGENT: 4,
+  HIGH: 3,
+  MEDIUM: 2,
+  LOW: 1,
+};
+
+// GET /api/tickets - Support ticket retrieval endpoint for Requesters (My Tickets) & IT Staff (Queue)
+ticketRouter.get(
+  "/tickets",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const isLegacyRequesterHeader = !req.headers.authorization && !req.cookies?.token && req.headers["x-requester-id"] !== undefined;
+    if (isLegacyRequesterHeader && req.user?.role === "REQUESTER") {
+      return handleMyTickets(req, res);
+    }
+    if (req.user?.role !== "IT_STAFF") {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied",
+      });
+      return;
+    }
+
+    const {
+      q,
+      status,
+      requestedPriority,
+      itPriority,
+      owner,
+      sortBy: sortByRaw,
+      sortDir: sortDirRaw,
+      page: pageRaw,
+      limit: limitRaw,
+    } = req.query;
+
+    let page = 1;
+    if (pageRaw !== undefined) {
+      const parsedPage = Number(pageRaw);
+      if (!Number.isInteger(parsedPage) || parsedPage < 1 || String(pageRaw).trim() === "") {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid page parameter.",
+          },
+        });
+        return;
+      }
+      page = parsedPage;
+    }
+
+    let limit = 10;
+    if (limitRaw !== undefined) {
+      const parsedLimit = Number(limitRaw);
+      if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 50 || String(limitRaw).trim() === "") {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid limit parameter.",
+          },
+        });
+        return;
+      }
+      limit = parsedLimit;
+    }
+
+    if (status !== undefined && (typeof status !== "string" || !QUEUE_ALLOWED_STATUSES.has(status))) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_QUERY_PARAMETER",
+          message: "Invalid status filter.",
+        },
+      });
+      return;
+    }
+
+    if (requestedPriority !== undefined && (typeof requestedPriority !== "string" || !QUEUE_ALLOWED_PRIORITIES.has(requestedPriority))) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_QUERY_PARAMETER",
+          message: "Invalid requestedPriority filter.",
+        },
+      });
+      return;
+    }
+
+    if (itPriority !== undefined && (typeof itPriority !== "string" || !QUEUE_ALLOWED_PRIORITIES.has(itPriority))) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_QUERY_PARAMETER",
+          message: "Invalid itPriority filter.",
+        },
+      });
+      return;
+    }
+
+    let ownerFilter = "all";
+    if (owner !== undefined) {
+      if (typeof owner !== "string" || !QUEUE_ALLOWED_OWNERS.has(owner)) {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid owner filter.",
+          },
+        });
+        return;
+      }
+      ownerFilter = owner;
+    }
+
+    let sortBy = "createdAt";
+    if (sortByRaw !== undefined) {
+      if (typeof sortByRaw !== "string" || !QUEUE_ALLOWED_SORT_BY.has(sortByRaw)) {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid sortBy parameter.",
+          },
+        });
+        return;
+      }
+      sortBy = sortByRaw;
+    }
+
+    let sortDir: "asc" | "desc" = "desc";
+    if (sortDirRaw !== undefined) {
+      if (typeof sortDirRaw !== "string" || !QUEUE_ALLOWED_SORT_DIR.has(sortDirRaw)) {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid sortDir parameter.",
+          },
+        });
+        return;
+      }
+      sortDir = sortDirRaw as "asc" | "desc";
+    }
+
+    const prisma = getPrisma();
+    const where: any = {};
+
+    if (q !== undefined && typeof q === "string") {
+      const cleanQ = q.trim();
+      if (cleanQ.length > 0) {
+        where.OR = [
+          { ticketNumber: { contains: cleanQ, mode: "insensitive" } },
+          { summary: { contains: cleanQ, mode: "insensitive" } },
+        ];
+      }
+    }
+
+    if (status) where.currentStatus = status;
+    if (requestedPriority) where.requestedPriority = requestedPriority;
+    if (itPriority) where.itPriority = itPriority;
+
+    if (ownerFilter === "my_queue") {
+      where.ownerId = req.user!.id;
+    } else if (ownerFilter === "unassigned") {
+      where.ownerId = null;
+    }
+
+    const include = {
+      category: { select: { id: true, name: true } },
+      relatedSystem: { select: { id: true, name: true } },
+      requester: { select: { id: true, name: true, email: true } },
+      owner: { select: { id: true, name: true, email: true } },
+    };
+
+    try {
+      let tickets: any[] = [];
+      let total = 0;
+
+      if (sortBy === "itPriority") {
+        const allTickets = await prisma.ticket.findMany({
+          where,
+          include,
+        });
+        total = allTickets.length;
+
+        allTickets.sort((a, b) => {
+          const rankA = PRIORITY_RANK[a.itPriority || ""] || 0;
+          const rankB = PRIORITY_RANK[b.itPriority || ""] || 0;
+          if (rankA !== rankB) {
+            return sortDir === "desc" ? rankB - rankA : rankA - rankB;
+          }
+          const timeA = new Date(a.createdAt).getTime();
+          const timeB = new Date(b.createdAt).getTime();
+          if (timeA !== timeB) return timeB - timeA;
+          return b.id.localeCompare(a.id);
+        });
+
+        const skip = (page - 1) * limit;
+        tickets = allTickets.slice(skip, skip + limit);
+      } else {
+        const orderBy: any[] = [];
+        if (sortBy === "ticketNumber") {
+          orderBy.push({ ticketNumber: sortDir });
+        } else if (sortBy === "updatedAt") {
+          orderBy.push({ updatedAt: sortDir });
+        } else {
+          orderBy.push({ createdAt: sortDir });
+        }
+        orderBy.push({ id: "desc" });
+
+        const skip = (page - 1) * limit;
+        const take = limit;
+
+        const [dbTickets, dbTotal] = await Promise.all([
+          prisma.ticket.findMany({
+            where,
+            orderBy,
+            skip,
+            take,
+            include,
+          }),
+          prisma.ticket.count({ where }),
+        ]);
+
+        tickets = dbTickets;
+        total = dbTotal;
+      }
+
+      const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+
+      res.status(200).json({
+        data: tickets.map((t) => ({
+          id: t.id,
+          ticketNumber: t.ticketNumber,
+          summary: t.summary,
+          category: { id: t.category.id, name: t.category.name },
+          relatedSystem: { id: t.relatedSystem.id, name: t.relatedSystem.name },
+          requestedPriority: t.requestedPriority,
+          itPriority: t.itPriority,
+          currentStatus: t.currentStatus,
+          requester: { id: t.requester.id, name: t.requester.name, email: t.requester.email },
+          owner: t.owner ? { id: t.owner.id, name: t.owner.name, email: t.owner.email } : null,
+          createdAt: t.createdAt,
+          updatedAt: t.updatedAt,
+        })),
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve ticket queue.",
+        },
+      });
+    }
+  }
 );
 
 // GET /api/tickets/:id - Retrieve owned ticket details with attachments (Issue #25)
 ticketRouter.get(
   "/tickets/:id",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  authenticateToken,
+  requireRole("REQUESTER", "IT_STAFF", "ADMINISTRATOR"),
+  requireTicketOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const ticketId = req.params.id;
 
     if (!UUID_REGEX.test(ticketId)) {
@@ -516,17 +781,25 @@ ticketRouter.get(
       return;
     }
 
-    const requesterId = req.requesterId!;
+    const requesterId = req.user!.id;
 
     try {
       const prisma = getPrisma();
+      const isRequester = req.user?.role === "REQUESTER";
       const ticket = await prisma.ticket.findFirst({
         where: {
           id: ticketId,
-          requesterId, // Enforces ownership strictly at the database query level
+          ...(isRequester ? { requesterId } : {}), // Requester ownership isolation
         },
         include: {
           requester: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          owner: {
             select: {
               id: true,
               name: true,
@@ -580,6 +853,13 @@ ticketRouter.get(
           name: ticket.requester.name,
           email: ticket.requester.email,
         },
+        owner: ticket.owner
+          ? {
+              id: ticket.owner.id,
+              name: ticket.owner.name,
+              email: ticket.owner.email,
+            }
+          : null,
         category: {
           id: ticket.category.id,
           name: ticket.category.name,
@@ -589,9 +869,12 @@ ticketRouter.get(
           name: ticket.relatedSystem.name,
         },
         requestedPriority: ticket.requestedPriority,
+        itPriority: ticket.itPriority,
         currentStatus: ticket.currentStatus,
         summary: ticket.summary,
         description: ticket.description,
+        requesterResolvedIndicatedAt: ticket.requesterResolvedIndicatedAt,
+        requesterReopenRequestedAt: ticket.requesterReopenRequestedAt,
         createdAt: ticket.createdAt,
         updatedAt: ticket.updatedAt,
         attachments: ticket.attachments.map((att) => ({
@@ -616,11 +899,45 @@ ticketRouter.get(
   }
 );
 
-// POST /api/tickets/:id/attachments - Upload attachment to ticket (Issue #26)
+// GET /api/users/assignees - Retrieve active IT Staff and Administrator users for ticket assignment (FR-09)
+ticketRouter.get(
+  "/users/assignees",
+  authenticateToken,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const prisma = getPrisma();
+      const assignees = await prisma.user.findMany({
+        where: {
+          isActive: true,
+          role: { in: ["IT_STAFF", "ADMINISTRATOR"] },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+        orderBy: { name: "asc" },
+      });
+      res.status(200).json({ assignees });
+    } catch (error) {
+      res.status(500).json({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve assignees.",
+        },
+      });
+    }
+  }
+);
+
+// POST /api/tickets/:id/claim - Claim unassigned ticket ownership (Atomic & Concurrency-Safe / BR-16)
 ticketRouter.post(
-  "/tickets/:id/attachments",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  "/tickets/:id/claim",
+  authenticateToken,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const ticketId = req.params.id;
 
     if (!UUID_REGEX.test(ticketId)) {
@@ -633,7 +950,354 @@ ticketRouter.post(
       return;
     }
 
-    const requesterId = req.requesterId!;
+    const prisma = getPrisma();
+
+    try {
+      const existingTicket = await prisma.ticket.findUnique({
+        where: { id: ticketId },
+        include: {
+          owner: { select: { id: true, name: true, email: true } },
+        },
+      });
+
+      if (!existingTicket) {
+        res.status(404).json({
+          error: {
+            code: "TICKET_NOT_FOUND",
+            message: "Ticket not found.",
+          },
+        });
+        return;
+      }
+
+      // If already claimed by current user, return success idempotently
+      if (existingTicket.ownerId === req.user!.id) {
+        res.status(200).json({
+          message: "Ticket claimed successfully",
+          ticket: {
+            id: existingTicket.id,
+            ticketNumber: existingTicket.ticketNumber,
+            ownerId: existingTicket.ownerId,
+            owner: existingTicket.owner,
+          },
+        });
+        return;
+      }
+
+      // Atomic conditional update on ownerId IS NULL to prevent race conditions (BR-16)
+      const updateResult = await prisma.ticket.updateMany({
+        where: {
+          id: ticketId,
+          ownerId: null,
+        },
+        data: {
+          ownerId: req.user!.id,
+        },
+      });
+
+      if (updateResult.count === 0) {
+        res.status(409).json({
+          error: "STATE_CONFLICT",
+          message: "Ticket has already been claimed by another IT Staff member",
+        });
+        return;
+      }
+
+      const updated = await prisma.ticket.findUnique({
+        where: { id: ticketId },
+        include: {
+          owner: { select: { id: true, name: true, email: true } },
+        },
+      });
+
+      res.status(200).json({
+        message: "Ticket claimed successfully",
+        ticket: {
+          id: updated!.id,
+          ticketNumber: updated!.ticketNumber,
+          ownerId: updated!.ownerId,
+          owner: updated!.owner,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to claim ticket.",
+        },
+      });
+    }
+  }
+);
+
+// PUT /api/tickets/:id/assign - Reassign ticket ownership (FR-09)
+ticketRouter.put(
+  "/tickets/:id/assign",
+  authenticateToken,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+
+    if (!UUID_REGEX.test(ticketId)) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_TICKET_ID",
+          message: "Ticket ID must be a valid UUID.",
+        },
+      });
+      return;
+    }
+
+    const { ownerId } = req.body || {};
+    const parsedOwnerId = Number(ownerId);
+
+    if (!ownerId || !Number.isInteger(parsedOwnerId) || parsedOwnerId <= 0) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_ASSIGNEE",
+          message: "A valid positive integer ownerId is required.",
+        },
+      });
+      return;
+    }
+
+    const prisma = getPrisma();
+
+    try {
+      const targetUser = await prisma.user.findUnique({
+        where: { id: parsedOwnerId },
+      });
+
+      if (!targetUser || !targetUser.isActive || (targetUser.role !== "IT_STAFF" && targetUser.role !== "ADMINISTRATOR")) {
+        res.status(400).json({
+          error: {
+            code: "INVALID_ASSIGNEE",
+            message: "Target assignee must be an active IT Staff or Administrator user.",
+          },
+        });
+        return;
+      }
+
+      const ticket = await prisma.ticket.findUnique({
+        where: { id: ticketId },
+      });
+
+      if (!ticket) {
+        res.status(404).json({
+          error: {
+            code: "TICKET_NOT_FOUND",
+            message: "Ticket not found.",
+          },
+        });
+        return;
+      }
+
+      const updated = await prisma.ticket.update({
+        where: { id: ticketId },
+        data: { ownerId: targetUser.id },
+        include: {
+          owner: { select: { id: true, name: true, email: true } },
+        },
+      });
+
+      res.status(200).json({
+        message: "Ticket owner updated successfully",
+        ticket: {
+          id: updated.id,
+          ticketNumber: updated.ticketNumber,
+          ownerId: updated.ownerId,
+          owner: updated.owner,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to reassign ticket.",
+        },
+      });
+    }
+  }
+);
+
+// PUT /api/tickets/:id/priority - Update IT Priority (IT Staff Only / FR-10)
+ticketRouter.put(
+  "/tickets/:id/priority",
+  authenticateToken,
+  requireRole("IT_STAFF"),
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+
+    if (!UUID_REGEX.test(ticketId)) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_TICKET_ID",
+          message: "Ticket ID must be a valid UUID.",
+        },
+      });
+      return;
+    }
+
+    const { itPriority } = req.body || {};
+    if (!itPriority || typeof itPriority !== "string" || !ALLOWED_PRIORITIES.has(itPriority)) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_PRIORITY",
+          message: "itPriority must be one of LOW, MEDIUM, HIGH, URGENT.",
+        },
+      });
+      return;
+    }
+
+    const prisma = getPrisma();
+
+    try {
+      const ticket = await prisma.ticket.findUnique({
+        where: { id: ticketId },
+      });
+
+      if (!ticket) {
+        res.status(404).json({
+          error: {
+            code: "TICKET_NOT_FOUND",
+            message: "Ticket not found.",
+          },
+        });
+        return;
+      }
+
+      const updated = await prisma.ticket.update({
+        where: { id: ticketId },
+        data: { itPriority: itPriority as Priority },
+      });
+
+      res.status(200).json({
+        message: "IT priority updated successfully",
+        ticket: {
+          id: updated.id,
+          itPriority: updated.itPriority,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update IT priority.",
+        },
+      });
+    }
+  }
+);
+
+const PERMITTED_STATUS_TRANSITIONS: Record<string, string[]> = {
+  NEW: ["OPEN", "CANCELLED"],
+  OPEN: ["IN_PROGRESS", "CANCELLED"],
+  IN_PROGRESS: ["WAITING_FOR_REQUESTER", "RESOLVED", "CANCELLED"],
+  WAITING_FOR_REQUESTER: ["IN_PROGRESS", "RESOLVED", "CANCELLED"],
+  RESOLVED: ["CLOSED", "REOPENED"],
+  CLOSED: ["REOPENED"],
+  REOPENED: ["IN_PROGRESS", "CANCELLED"],
+  CANCELLED: [],
+};
+
+// PUT /api/tickets/:id/status - Perform Ticket Status Transition (IT Staff Only / Status Transition Matrix / FR-10)
+ticketRouter.put(
+  "/tickets/:id/status",
+  authenticateToken,
+  requireRole("IT_STAFF"),
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+
+    if (!UUID_REGEX.test(ticketId)) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_TICKET_ID",
+          message: "Ticket ID must be a valid UUID.",
+        },
+      });
+      return;
+    }
+
+    const { status } = req.body || {};
+    if (!status || typeof status !== "string" || !QUEUE_ALLOWED_STATUSES.has(status)) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_STATUS",
+          message: "Invalid target status parameter.",
+        },
+      });
+      return;
+    }
+
+    const prisma = getPrisma();
+
+    try {
+      const ticket = await prisma.ticket.findUnique({
+        where: { id: ticketId },
+      });
+
+      if (!ticket) {
+        res.status(404).json({
+          error: {
+            code: "TICKET_NOT_FOUND",
+            message: "Ticket not found.",
+          },
+        });
+        return;
+      }
+
+      const permittedNext = PERMITTED_STATUS_TRANSITIONS[ticket.currentStatus] || [];
+      if (!permittedNext.includes(status)) {
+        res.status(400).json({
+          error: "INVALID_TRANSITION",
+          message: `Transition from ${ticket.currentStatus} to ${status} is not allowed by the Status Transition Matrix`,
+        });
+        return;
+      }
+
+      const updated = await prisma.ticket.update({
+        where: { id: ticketId },
+        data: { currentStatus: status as any },
+      });
+
+      res.status(200).json({
+        message: "Ticket status updated successfully",
+        ticket: {
+          id: updated.id,
+          currentStatus: updated.currentStatus,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update ticket status.",
+        },
+      });
+    }
+  }
+);
+
+// POST /api/tickets/:id/attachments - Upload attachment to ticket (Issue #26)
+ticketRouter.post(
+  "/tickets/:id/attachments",
+  authenticateToken,
+  requireRole("REQUESTER"),
+  requireTicketOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+
+    if (!UUID_REGEX.test(ticketId)) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_TICKET_ID",
+          message: "Ticket ID must be a valid UUID.",
+        },
+      });
+      return;
+    }
+
+    const requesterId = req.user!.id;
     const prisma = getPrisma();
 
     // Verify ticket existence AND requester ownership directly in DB query
@@ -779,30 +1443,37 @@ ticketRouter.post(
 // GET /api/attachments/:id/download - Download attachment binary stream (Issue #26)
 ticketRouter.get(
   "/attachments/:id/download",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  authenticateToken,
+  requireRole("REQUESTER", "IT_STAFF", "ADMINISTRATOR"),
+  requireAttachmentOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const attachmentId = req.params.id;
 
-    if (!UUID_REGEX.test(attachmentId)) {
+    if (!attachmentId || typeof attachmentId !== "string" || attachmentId.trim() === "") {
       res.status(400).json({
         error: {
           code: "INVALID_ATTACHMENT_ID",
-          message: "Attachment ID must be a valid UUID.",
+          message: "Attachment ID is required.",
         },
       });
       return;
     }
 
-    const requesterId = req.requesterId!;
+    const requesterId = req.user!.id;
     const prisma = getPrisma();
+    const isRequester = req.user?.role === "REQUESTER";
 
     // Verify attachment existence AND ticket ownership directly in DB query
     const attachment = await prisma.attachment.findFirst({
       where: {
         id: attachmentId,
-        ticket: {
-          requesterId, // Ticket ownership filter
-        },
+        ...(isRequester
+          ? {
+              ticket: {
+                requesterId, // Ticket ownership filter
+              },
+            }
+          : {}),
       },
     });
 
@@ -848,21 +1519,23 @@ ticketRouter.get(
 // DELETE /api/attachments/:id - Soft remove attachment with removalReason (Issue #26)
 ticketRouter.delete(
   "/attachments/:id",
-  requesterContextMiddleware,
-  async (req: AuthenticatedRequesterRequest, res: Response): Promise<void> => {
+  authenticateToken,
+  requireRole("REQUESTER"),
+  requireAttachmentOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const attachmentId = req.params.id;
 
-    if (!UUID_REGEX.test(attachmentId)) {
+    if (!attachmentId || typeof attachmentId !== "string" || attachmentId.trim() === "") {
       res.status(400).json({
         error: {
           code: "INVALID_ATTACHMENT_ID",
-          message: "Attachment ID must be a valid UUID.",
+          message: "Attachment ID is required.",
         },
       });
       return;
     }
 
-    const requesterId = req.requesterId!;
+    const requesterId = req.user!.id;
     const prisma = getPrisma();
 
     // Verify attachment existence AND ticket ownership directly in DB query
@@ -924,5 +1597,339 @@ ticketRouter.delete(
       removalReason: updated.removalReason,
       isRemoved: true,
     });
+  }
+);
+
+// POST /api/tickets/:id/resolve-indicator - Requester "Problem Appears Resolved" (FR-13, BR-05)
+ticketRouter.post(
+  "/tickets/:id/resolve-indicator",
+  authenticateToken,
+  requireRole("REQUESTER"),
+  requireTicketOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+    const prisma = getPrisma();
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    if (ticket.currentStatus !== "IN_PROGRESS" && ticket.currentStatus !== "WAITING_FOR_REQUESTER") {
+      res.status(400).json({
+        error: "INVALID_STATE",
+        message: "This action is not available for the current ticket status",
+      });
+      return;
+    }
+
+    const now = new Date();
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { requesterResolvedIndicatedAt: now },
+    });
+
+    await prisma.publicComment.create({
+      data: {
+        ticketId,
+        authorId: req.user!.id,
+        content: "Requester indicated that the problem appears resolved.",
+      },
+    });
+
+    res.status(200).json({
+      message: "Requester indicated that the problem appears resolved. IT Staff will review for formal resolution.",
+      ticket: {
+        id: updatedTicket.id,
+        currentStatus: updatedTicket.currentStatus,
+        requesterResolvedIndicatedAt: updatedTicket.requesterResolvedIndicatedAt,
+      },
+    });
+  }
+);
+
+// POST /api/tickets/:id/reopen-request - Requester Reopen Request (FR-13, BR-05)
+ticketRouter.post(
+  "/tickets/:id/reopen-request",
+  authenticateToken,
+  requireRole("REQUESTER"),
+  requireTicketOwnership,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+    const prisma = getPrisma();
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    if (ticket.currentStatus !== "RESOLVED" && ticket.currentStatus !== "CLOSED") {
+      res.status(400).json({
+        error: "INVALID_STATE",
+        message: "This action is not available for the current ticket status",
+      });
+      return;
+    }
+
+    const now = new Date();
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { requesterReopenRequestedAt: now },
+    });
+
+    await prisma.publicComment.create({
+      data: {
+        ticketId,
+        authorId: req.user!.id,
+        content: "Requester requested to reopen the ticket.",
+      },
+    });
+
+    res.status(200).json({
+      message: "Reopen request recorded. IT Staff will review the ticket.",
+      ticket: {
+        id: updatedTicket.id,
+        currentStatus: updatedTicket.currentStatus,
+        requesterReopenRequestedAt: updatedTicket.requesterReopenRequestedAt,
+      },
+    });
+  }
+);
+
+// GET /api/tickets/:id/comments - Retrieve Public Comments (FR-11, BR-04)
+ticketRouter.get(
+  "/tickets/:id/comments",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+    const prisma = getPrisma();
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    if (req.user!.role === "REQUESTER" && ticket.requesterId !== req.user!.id) {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied",
+      });
+      return;
+    }
+
+    const comments = await prisma.publicComment.findMany({
+      where: { ticketId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        author: {
+          select: { id: true, name: true, role: true },
+        },
+      },
+    });
+
+    res.status(200).json({ comments });
+  }
+);
+
+// POST /api/tickets/:id/comments - Post Public Comment (FR-11, BR-04, BR-11)
+ticketRouter.post(
+  "/tickets/:id/comments",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const ticketId = req.params.id;
+    const { content } = req.body || {};
+
+    if (!content || typeof content !== "string" || content.trim() === "") {
+      res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Comment content cannot be empty or whitespace-only",
+      });
+      return;
+    }
+
+    const cleanContent = content.trim();
+    if (cleanContent.length > 2000) {
+      res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Comment content cannot exceed 2000 characters",
+      });
+      return;
+    }
+
+    const prisma = getPrisma();
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    if (req.user!.role === "REQUESTER" && ticket.requesterId !== req.user!.id) {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied",
+      });
+      return;
+    }
+
+    const sanitizedContent = sanitizeHtml(cleanContent);
+    const created = await prisma.publicComment.create({
+      data: {
+        ticketId,
+        authorId: req.user!.id,
+        content: sanitizedContent,
+      },
+      include: {
+        author: {
+          select: { id: true, name: true, role: true },
+        },
+      },
+    });
+
+    res.status(201).json(created);
+  }
+);
+
+// GET /api/tickets/:id/notes - Retrieve Internal Notes (Role Restricted: IT_STAFF, ADMINISTRATOR ONLY / BR-04)
+ticketRouter.get(
+  "/tickets/:id/notes",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    if (req.user!.role === "REQUESTER") {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied",
+      });
+      return;
+    }
+
+    const ticketId = req.params.id;
+    const prisma = getPrisma();
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    const notes = await prisma.internalNote.findMany({
+      where: { ticketId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        author: {
+          select: { id: true, name: true, role: true },
+        },
+      },
+    });
+
+    res.status(200).json({ notes });
+  }
+);
+
+// POST /api/tickets/:id/notes - Post Internal Note (Role Restricted: IT_STAFF, ADMINISTRATOR ONLY / BR-04, BR-11)
+ticketRouter.post(
+  "/tickets/:id/notes",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    if (req.user!.role === "REQUESTER") {
+      res.status(403).json({
+        error: "FORBIDDEN",
+        message: "Access denied",
+      });
+      return;
+    }
+
+    const ticketId = req.params.id;
+    const { content } = req.body || {};
+
+    if (!content || typeof content !== "string" || content.trim() === "") {
+      res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Note content cannot be empty or whitespace-only",
+      });
+      return;
+    }
+
+    const cleanContent = content.trim();
+    if (cleanContent.length > 2000) {
+      res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Note content cannot exceed 2000 characters",
+      });
+      return;
+    }
+
+    const prisma = getPrisma();
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: {
+          code: "TICKET_NOT_FOUND",
+          message: "Ticket not found",
+        },
+      });
+      return;
+    }
+
+    const sanitizedContent = sanitizeHtml(cleanContent);
+    const created = await prisma.internalNote.create({
+      data: {
+        ticketId,
+        authorId: req.user!.id,
+        content: sanitizedContent,
+      },
+      include: {
+        author: {
+          select: { id: true, name: true, role: true },
+        },
+      },
+    });
+
+    res.status(201).json(created);
   }
 );

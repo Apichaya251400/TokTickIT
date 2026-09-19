@@ -1,6 +1,4 @@
-// Prisma schema — datasource and generator are pre-wired.
-// Your DATABASE_URL lives in server/.env (copy it from .env.example).
-
+// Prisma schema for TokTickIT (Lab 3 Sprint 3)
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,7 +8,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum RequestedPriority {
+enum Role {
+  REQUESTER
+  IT_STAFF
+  ADMINISTRATOR
+}
+
+enum Priority {
   LOW
   MEDIUM
   HIGH
@@ -19,18 +23,29 @@ enum RequestedPriority {
 
 enum CurrentStatus {
   NEW
+  OPEN
   IN_PROGRESS
+  WAITING_FOR_REQUESTER
   RESOLVED
   CLOSED
+  REOPENED
+  CANCELLED
 }
 
-model RequesterUser {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  tickets   Ticket[]
+model User {
+  id                     Int      @id @default(autoincrement())
+  name                   String
+  email                  String   @unique
+  passwordHash           String
+  role                   Role     @default(REQUESTER)
+  isActive               Boolean  @default(true)
+  requiresPasswordChange Boolean  @default(true)
+  createdAt              DateTime @default(now())
+
+  requestedTickets Ticket[]        @relation("TicketRequester")
+  ownedTickets     Ticket[]        @relation("TicketOwner")
+  comments         PublicComment[]
+  notes            InternalNote[]
 }
 
 model Category {
@@ -50,26 +65,59 @@ model RelatedSystem {
 }
 
 model Ticket {
-  id                String            @id @default(uuid())
-  ticketNumber      String            @unique
-  requesterId       Int
-  categoryId        Int
-  relatedSystemId   Int
-  summary           String
-  description       String            @db.Text
-  requestedPriority RequestedPriority
-  itPriority        RequestedPriority?
-  currentStatus     CurrentStatus     @default(NEW)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id                           String          @id @default(uuid())
+  ticketNumber                 String          @unique
+  requesterId                  Int
+  ownerId                      Int?
+  categoryId                   Int
+  relatedSystemId              Int
+  summary                      String
+  description                  String          @db.Text
+  requestedPriority            Priority
+  itPriority                   Priority?
+  currentStatus                CurrentStatus   @default(NEW)
+  requesterResolvedIndicatedAt DateTime?
+  requesterReopenRequestedAt   DateTime?
+  createdAt                    DateTime        @default(now())
+  updatedAt                    DateTime        @updatedAt
 
-  requester     RequesterUser @relation(fields: [requesterId], references: [id])
-  category      Category      @relation(fields: [categoryId], references: [id])
-  relatedSystem RelatedSystem @relation(fields: [relatedSystemId], references: [id])
+  requester     User            @relation("TicketRequester", fields: [requesterId], references: [id])
+  owner         User?           @relation("TicketOwner", fields: [ownerId], references: [id])
+  category      Category        @relation(fields: [categoryId], references: [id])
+  relatedSystem RelatedSystem   @relation(fields: [relatedSystemId], references: [id])
+  comments      PublicComment[]
+  notes         InternalNote[]
   attachments   Attachment[]
 
   @@index([requesterId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([requesterId, currentStatus])
+  @@index([ownerId, currentStatus])
+}
+
+model PublicComment {
+  id        String   @id @default(uuid())
+  ticketId  String
+  authorId  Int
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId, createdAt(sort: Asc)])
+}
+
+model InternalNote {
+  id        String   @id @default(uuid())
+  ticketId  String
+  authorId  Int
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId, createdAt(sort: Asc)])
 }
 
 model Attachment {
