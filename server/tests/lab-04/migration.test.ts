@@ -21,18 +21,42 @@ describe("LAB4-03 / TEST-DB-02: Migration & Backfill Data Preservation", () => {
     expect(admin).not.toBeNull();
   });
 
-  it("preserves all Lab 1–3 tickets, comments, notes, and attachments intact", async () => {
-    const ticketCount = await prisma.ticket.count();
-    expect(ticketCount).toBeGreaterThanOrEqual(8);
+  it("preserves exact snapshot count across Lab 1–3 entity tables post-migration", async () => {
+    const snapshotsBefore = {
+      users: await prisma.user.count(),
+      categories: await prisma.category.count(),
+      systems: await prisma.relatedSystem.count(),
+      tickets: await prisma.ticket.count(),
+      comments: await prisma.publicComment.count(),
+      notes: await prisma.internalNote.count(),
+      attachments: await prisma.attachment.count(),
+    };
 
-    const commentCount = await prisma.publicComment.count();
-    expect(commentCount).toBeGreaterThanOrEqual(1);
+    // Assert baseline presence requirements
+    expect(snapshotsBefore.users).toBeGreaterThanOrEqual(10);
+    expect(snapshotsBefore.categories).toBeGreaterThanOrEqual(4);
+    expect(snapshotsBefore.systems).toBeGreaterThanOrEqual(7);
+    expect(snapshotsBefore.tickets).toBeGreaterThanOrEqual(8);
+    expect(snapshotsBefore.comments).toBeGreaterThanOrEqual(1);
+    expect(snapshotsBefore.notes).toBeGreaterThanOrEqual(1);
+    expect(snapshotsBefore.attachments).toBeGreaterThanOrEqual(2);
 
-    const noteCount = await prisma.internalNote.count();
-    expect(noteCount).toBeGreaterThanOrEqual(1);
+    // Query extended schema fields (e.g. resolutionNote and actionsTaken) on tickets
+    const tickets = await prisma.ticket.findMany({ include: { actionsTaken: true } });
+    expect(tickets.length).toBe(snapshotsBefore.tickets);
 
-    const attachmentCount = await prisma.attachment.count();
-    expect(attachmentCount).toBeGreaterThanOrEqual(2);
+    // Re-verify snapshot after reading/verifying schema model extensions
+    const snapshotsAfter = {
+      users: await prisma.user.count(),
+      categories: await prisma.category.count(),
+      systems: await prisma.relatedSystem.count(),
+      tickets: await prisma.ticket.count(),
+      comments: await prisma.publicComment.count(),
+      notes: await prisma.internalNote.count(),
+      attachments: await prisma.attachment.count(),
+    };
+
+    expect(snapshotsAfter).toEqual(snapshotsBefore);
   });
 
   it("ensures legacy Lab 1–3 tickets without actions remain valid with 0 ActionTaken records", async () => {

@@ -35,6 +35,83 @@ describe("LAB4-03 / TEST-DB-01: Database Schema, Foreign Keys & Relation Integri
     ).rejects.toThrow();
   });
 
+  it("rejects creating ActionTaken with invalid performedById foreign key", async () => {
+    const sampleTicket = await prisma.ticket.findFirstOrThrow();
+    const invalidUserId = 999999;
+
+    await expect(
+      prisma.actionTaken.create({
+        data: {
+          ticketId: sampleTicket.id,
+          performedById: invalidUserId,
+          description: "Test action invalid actor",
+          result: "Failed FK test",
+          status: "PENDING",
+        },
+      })
+    ).rejects.toThrow();
+  });
+
+  it("rejects creating ActionTaken with invalid assigneeId foreign key", async () => {
+    const sampleTicket = await prisma.ticket.findFirstOrThrow();
+    const staffUser = await prisma.user.findFirstOrThrow({
+      where: { role: "IT_STAFF", isActive: true },
+    });
+    const invalidAssigneeId = 999999;
+
+    await expect(
+      prisma.actionTaken.create({
+        data: {
+          ticketId: sampleTicket.id,
+          performedById: staffUser.id,
+          assigneeId: invalidAssigneeId,
+          description: "Test action invalid assignee",
+          result: "Failed FK test",
+          status: "PENDING",
+        },
+      })
+    ).rejects.toThrow();
+  });
+
+  it("rejects creating IdempotencyRecord with invalid userId or ticketId foreign key", async () => {
+    const sampleTicket = await prisma.ticket.findFirstOrThrow();
+    const staffUser = await prisma.user.findFirstOrThrow({
+      where: { role: "IT_STAFF", isActive: true },
+    });
+    const invalidUserId = 999999;
+    const invalidTicketId = "00000000-0000-0000-0000-000000000000";
+
+    // Invalid userId FK
+    await expect(
+      prisma.idempotencyRecord.create({
+        data: {
+          userId: invalidUserId,
+          ticketId: sampleTicket.id,
+          endpoint: "/api/tickets/:id/actions",
+          idempotencyKey: "key-bad-user",
+          requestHash: "hash-123",
+          responseStatus: 200,
+          responseBody: JSON.stringify({ ok: true }),
+        },
+      })
+    ).rejects.toThrow();
+
+    // Invalid ticketId FK
+    await expect(
+      prisma.idempotencyRecord.create({
+        data: {
+          userId: staffUser.id,
+          ticketId: invalidTicketId,
+          endpoint: "/api/tickets/:id/actions",
+          idempotencyKey: "key-bad-ticket",
+          requestHash: "hash-123",
+          responseStatus: 200,
+          responseBody: JSON.stringify({ ok: true }),
+        },
+      })
+    ).rejects.toThrow();
+  });
+
   it("enforces IdempotencyRecord unique constraint (userId, ticketId, endpoint, idempotencyKey)", async () => {
     const sampleTicket = await prisma.ticket.findFirstOrThrow();
     const staffUser = await prisma.user.findFirstOrThrow({
