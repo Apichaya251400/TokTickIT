@@ -42,10 +42,13 @@ model User {
   requiresPasswordChange Boolean  @default(true)
   createdAt              DateTime @default(now())
 
-  requestedTickets Ticket[]        @relation("TicketRequester")
-  ownedTickets     Ticket[]        @relation("TicketOwner")
-  comments         PublicComment[]
-  notes            InternalNote[]
+  requestedTickets   Ticket[]            @relation("TicketRequester")
+  ownedTickets       Ticket[]            @relation("TicketOwner")
+  comments           PublicComment[]
+  notes              InternalNote[]
+  actionsPerformed   ActionTaken[]       @relation("PerformedActions")
+  actionsAssigned    ActionTaken[]       @relation("AssignedActions")
+  idempotencyRecords IdempotencyRecord[]
 }
 
 model Category {
@@ -78,16 +81,19 @@ model Ticket {
   currentStatus                CurrentStatus   @default(NEW)
   requesterResolvedIndicatedAt DateTime?
   requesterReopenRequestedAt   DateTime?
+  resolutionNote               String?         @db.Text
   createdAt                    DateTime        @default(now())
   updatedAt                    DateTime        @updatedAt
 
-  requester     User            @relation("TicketRequester", fields: [requesterId], references: [id])
-  owner         User?           @relation("TicketOwner", fields: [ownerId], references: [id])
-  category      Category        @relation(fields: [categoryId], references: [id])
-  relatedSystem RelatedSystem   @relation(fields: [relatedSystemId], references: [id])
-  comments      PublicComment[]
-  notes         InternalNote[]
-  attachments   Attachment[]
+  requester          User                @relation("TicketRequester", fields: [requesterId], references: [id])
+  owner              User?               @relation("TicketOwner", fields: [ownerId], references: [id])
+  category           Category            @relation(fields: [categoryId], references: [id])
+  relatedSystem      RelatedSystem       @relation(fields: [relatedSystemId], references: [id])
+  comments           PublicComment[]
+  notes              InternalNote[]
+  attachments        Attachment[]
+  actionsTaken       ActionTaken[]
+  idempotencyRecords IdempotencyRecord[]
 
   @@index([requesterId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([requesterId, currentStatus])
@@ -133,3 +139,51 @@ model Attachment {
 
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 }
+
+enum ActionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model ActionTaken {
+  id               String       @id @default(uuid())
+  ticketId         String
+  performedById    Int
+  assigneeId       Int?
+  description      String       @db.Text
+  result           String       @db.Text
+  status           ActionStatus @default(PENDING)
+  followUpRequired Boolean      @default(false)
+  followUpNote     String?      @db.Text
+  attachmentNotes  String?      @db.Text
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  ticket      Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  performedBy User   @relation("PerformedActions", fields: [performedById], references: [id])
+  assignee    User?  @relation("AssignedActions", fields: [assigneeId], references: [id])
+
+  @@index([ticketId, createdAt(sort: Asc)])
+  @@index([performedById, createdAt(sort: Desc)])
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(uuid())
+  userId         Int
+  ticketId       String
+  endpoint       String
+  idempotencyKey String
+  requestHash    String
+  responseStatus Int
+  responseBody   String   @db.Text
+  createdAt      DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ticketId, endpoint, idempotencyKey])
+  @@index([userId, ticketId, endpoint, idempotencyKey])
+}
+
