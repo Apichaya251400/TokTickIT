@@ -44,9 +44,6 @@ CREATE INDEX "ActionTaken_ticketId_createdAt_idx" ON "ActionTaken"("ticketId", "
 CREATE INDEX "ActionTaken_performedById_createdAt_idx" ON "ActionTaken"("performedById", "createdAt" DESC);
 
 -- CreateIndex
-CREATE INDEX "IdempotencyRecord_userId_ticketId_endpoint_idempotencyKey_idx" ON "IdempotencyRecord"("userId", "ticketId", "endpoint", "idempotencyKey");
-
--- CreateIndex
 CREATE UNIQUE INDEX "IdempotencyRecord_userId_ticketId_endpoint_idempotencyKey_key" ON "IdempotencyRecord"("userId", "ticketId", "endpoint", "idempotencyKey");
 
 -- AddForeignKey

@@ -184,6 +184,5 @@ model IdempotencyRecord {
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@unique([userId, ticketId, endpoint, idempotencyKey])
-  @@index([userId, ticketId, endpoint, idempotencyKey])
 }
 
