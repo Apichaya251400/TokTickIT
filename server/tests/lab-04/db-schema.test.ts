@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, afterAll } from "vitest";
 import { getPrisma } from "../../src/prisma.js";
 
 describe("LAB4-03 / TEST-DB-01: Database Schema, Foreign Keys & Relation Integrity", () => {
