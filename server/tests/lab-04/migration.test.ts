@@ -70,9 +70,13 @@ describe("LAB4-03 / TEST-DB-02: Migration & Backfill Data Preservation", () => {
         DO $$ 
         BEGIN
           EXECUTE '${sanitizedStmt}';
-        EXCEPTION WHEN OTHERS THEN
-          -- Ignore duplicate object/column/table/index/constraint errors during idempotent SQL migration replay
-          NULL;
+        EXCEPTION
+          WHEN duplicate_object OR duplicate_column OR duplicate_table THEN
+            -- Ignore only expected duplicate errors when replaying an already-applied migration.
+            NULL;
+          WHEN OTHERS THEN
+            -- Unexpected migration errors must fail the test.
+            RAISE;
         END $$;
       `);
     }
