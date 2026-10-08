@@ -377,7 +377,96 @@ export async function seedDatabase() {
   }
 
   console.log("Seeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.");
-  console.log("Sprint 3 Seed completed cleanly!");
+
+  // 5. Seed Actions Taken (0, 1, and multiple Actions Taken scenarios across tickets)
+  const ticket2 = await prisma.ticket.findUniqueOrThrow({ where: { ticketNumber: "TKT-2026-000002" } });
+  const ticket3 = await prisma.ticket.findUniqueOrThrow({ where: { ticketNumber: "TKT-2026-000003" } });
+  const ticket5 = await prisma.ticket.findUniqueOrThrow({ where: { ticketNumber: "TKT-2026-000005" } });
+  const ticket7 = await prisma.ticket.findUniqueOrThrow({ where: { ticketNumber: "TKT-2026-000007" } });
+
+  const sampleActions = [
+    {
+      id: "act-seed-000001",
+      ticketId: ticket2.id,
+      performedById: staffId,
+      assigneeId: johnStaffId,
+      description: "Replaced faulty wireless access point antenna on Library 3rd floor.",
+      result: "Signal strength restored to -45dBm.",
+      status: "COMPLETED" as const,
+      followUpRequired: true,
+      followUpNote: "Perform 24-hour signal stability monitoring.",
+      attachmentNotes: "See wifi_diagnostics_log.txt attached.",
+    },
+    {
+      id: "act-seed-000002",
+      ticketId: ticket2.id,
+      performedById: sarahStaffId,
+      assigneeId: johnStaffId,
+      description: "Configured VLAN channel 6 interference suppression.",
+      result: "Channel noise reduced by 12dB.",
+      status: "PENDING" as const,
+      followUpRequired: false,
+      followUpNote: null,
+      attachmentNotes: null,
+    },
+    {
+      id: "act-seed-000003",
+      ticketId: ticket3.id,
+      performedById: staffId,
+      assigneeId: null,
+      description: "Increased department email mailbox quota to 50GB.",
+      result: "User mailbox capacity updated and verified.",
+      status: "COMPLETED" as const,
+      followUpRequired: false,
+      followUpNote: null,
+      attachmentNotes: null,
+    },
+    {
+      id: "act-seed-000004",
+      ticketId: ticket5.id,
+      performedById: sarahStaffId,
+      assigneeId: sarahStaffId,
+      description: "Analyzed grade export SQL query plan for course over 200 students.",
+      result: "Identified missing index on student_course_enrollments table.",
+      status: "PENDING" as const,
+      followUpRequired: true,
+      followUpNote: "Awaiting instructor sample CSV dataset to test query fix.",
+      attachmentNotes: "SQL trace log attached.",
+    },
+    {
+      id: "act-seed-000005",
+      ticketId: ticket7.id,
+      performedById: johnStaffId,
+      assigneeId: staffId,
+      description: "Inspected VPN gateway authentication log after OS update.",
+      result: "MFA handshake timeout identified.",
+      status: "IN_PROGRESS" as const,
+      followUpRequired: false,
+      followUpNote: null,
+      attachmentNotes: null,
+    },
+  ];
+
+  for (const act of sampleActions) {
+    await prisma.actionTaken.upsert({
+      where: { id: act.id },
+      update: {
+        ticketId: act.ticketId,
+        performedById: act.performedById,
+        assigneeId: act.assigneeId,
+        description: act.description,
+        result: act.result,
+        status: act.status,
+        followUpRequired: act.followUpRequired,
+        followUpNote: act.followUpNote,
+        attachmentNotes: act.attachmentNotes,
+      },
+      create: act,
+    });
+  }
+
+  console.log("Seeded Actions Taken (0, 1, and multiple action scenarios) successfully.");
+  console.log("Sprint 4 Idempotent Database Seed completed cleanly!");
 }
 
 if (process.argv[1]?.endsWith("seed.ts")) {
