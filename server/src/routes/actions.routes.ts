@@ -156,6 +156,17 @@ actionsRouter.post(
 
     const { description, result, assigneeId, followUpRequired, followUpNote, attachmentNotes } = req.body || {};
 
+    // Validate followUpRequired type (MUST FIX 2: Strict boolean check)
+    if (followUpRequired !== undefined && typeof followUpRequired !== "boolean") {
+      res.status(400).json({
+        error: {
+          code: "BAD_REQUEST",
+          message: "followUpRequired must be a boolean.",
+        },
+      });
+      return;
+    }
+
     // Validate description (1-2000 chars trimmed)
     const cleanDescription = typeof description === "string" ? description.trim() : "";
     if (cleanDescription.length < 1 || cleanDescription.length > 2000) {
@@ -201,31 +212,6 @@ actionsRouter.post(
     try {
       const prisma = getPrisma();
 
-      // Check parent Ticket existence & terminal state
-      const ticket = await prisma.ticket.findUnique({
-        where: { id: ticketId },
-      });
-
-      if (!ticket) {
-        res.status(404).json({
-          error: {
-            code: "NOT_FOUND",
-            message: "Ticket not found.",
-          },
-        });
-        return;
-      }
-
-      if (ticket.currentStatus === "CANCELLED") {
-        res.status(400).json({
-          error: {
-            code: "TICKET_TERMINAL",
-            message: "Cannot perform actions on a cancelled ticket.",
-          },
-        });
-        return;
-      }
-
       // Validate assigneeId (if provided)
       let parsedAssigneeId: number | null = null;
       if (assigneeId !== undefined && assigneeId !== null && String(assigneeId).trim() !== "") {
@@ -265,7 +251,7 @@ actionsRouter.post(
       const endpoint = "/api/tickets/:id/actions";
       const userId = req.user!.id;
 
-      // Check existing IdempotencyRecord
+      // Fast-path check for existing IdempotencyRecord
       const existingRecord = await prisma.idempotencyRecord.findUnique({
         where: {
           userId_ticketId_endpoint_idempotencyKey: {
@@ -292,15 +278,46 @@ actionsRouter.post(
         }
       }
 
-      // Atomic creation of ActionTaken & IdempotencyRecord inside transaction
+      // Atomic creation with FOR UPDATE row locking on parent Ticket inside transaction (MUST FIX 1)
       let createdResponsePayload: any = null;
 
       try {
         await prisma.$transaction(async (tx) => {
-          // Re-verify non-terminal ticket status inside transaction
-          const txTicket = await tx.ticket.findUnique({ where: { id: ticketId } });
-          if (txTicket?.currentStatus === "CANCELLED") {
+          // Lock parent Ticket row to eliminate status mutation race conditions
+          const [lockedTicket] = await tx.$queryRaw<Array<{ id: string; currentStatus: string }>>`
+            SELECT id, "currentStatus"
+            FROM "Ticket"
+            WHERE id = ${ticketId}
+            FOR UPDATE
+          `;
+
+          if (!lockedTicket) {
+            throw new Error("NOT_FOUND");
+          }
+
+          if (lockedTicket.currentStatus === "CANCELLED") {
             throw new Error("TICKET_TERMINAL");
+          }
+
+          // Re-verify idempotency record inside transaction lock
+          const txIdempotencyRecord = await tx.idempotencyRecord.findUnique({
+            where: {
+              userId_ticketId_endpoint_idempotencyKey: {
+                userId,
+                ticketId,
+                endpoint,
+                idempotencyKey: String(idempotencyKey),
+              },
+            },
+          });
+
+          if (txIdempotencyRecord) {
+            if (txIdempotencyRecord.requestHash === currentHash) {
+              createdResponsePayload = JSON.parse(txIdempotencyRecord.responseBody);
+              return;
+            } else {
+              throw new Error("IDEMPOTENCY_KEY_REUSED");
+            }
           }
 
           const newAction = await tx.actionTaken.create({
@@ -338,11 +355,31 @@ actionsRouter.post(
 
         res.status(201).json(createdResponsePayload);
       } catch (txError: any) {
+        if (txError.message === "NOT_FOUND") {
+          res.status(404).json({
+            error: {
+              code: "NOT_FOUND",
+              message: "Ticket not found.",
+            },
+          });
+          return;
+        }
+
         if (txError.message === "TICKET_TERMINAL") {
           res.status(400).json({
             error: {
               code: "TICKET_TERMINAL",
               message: "Cannot perform actions on a cancelled ticket.",
+            },
+          });
+          return;
+        }
+
+        if (txError.message === "IDEMPOTENCY_KEY_REUSED") {
+          res.status(409).json({
+            error: {
+              code: "IDEMPOTENCY_KEY_REUSED",
+              message: "Idempotency-Key has already been used with a different request payload.",
             },
           });
           return;
@@ -445,38 +482,22 @@ actionsRouter.put(
       return;
     }
 
+    // Validate followUpRequired type (MUST FIX 2)
+    if (followUpRequired !== undefined && typeof followUpRequired !== "boolean") {
+      res.status(400).json({
+        error: {
+          code: "BAD_REQUEST",
+          message: "followUpRequired must be a boolean.",
+        },
+      });
+      return;
+    }
+
     try {
       const prisma = getPrisma();
 
-      // Check existing ActionTaken & parent Ticket state
-      const existingAction = await prisma.actionTaken.findUnique({
-        where: { id: actionId },
-        include: { ticket: true },
-      });
-
-      if (!existingAction) {
-        res.status(404).json({
-          error: {
-            code: "NOT_FOUND",
-            message: "Action Taken not found.",
-          },
-        });
-        return;
-      }
-
-      if (existingAction.ticket.currentStatus === "CANCELLED") {
-        res.status(400).json({
-          error: {
-            code: "TICKET_TERMINAL",
-            message: "Cannot edit actions on a cancelled ticket.",
-          },
-        });
-        return;
-      }
-
-      const updateData: any = {};
-
       // Validate description if provided
+      const updateData: any = {};
       if (description !== undefined) {
         const cleanDesc = typeof description === "string" ? description.trim() : "";
         if (cleanDesc.length < 1 || cleanDesc.length > 2000) {
@@ -504,33 +525,6 @@ actionsRouter.put(
           return;
         }
         updateData.result = cleanRes;
-      }
-
-      // Validate followUpRequired & followUpNote
-      const effectiveFollowUpRequired = followUpRequired !== undefined ? Boolean(followUpRequired) : existingAction.followUpRequired;
-      let effectiveFollowUpNote = followUpNote !== undefined ? (typeof followUpNote === "string" ? followUpNote.trim() : null) : existingAction.followUpNote;
-
-      if (effectiveFollowUpRequired) {
-        if (!effectiveFollowUpNote || effectiveFollowUpNote.length < 1 || effectiveFollowUpNote.length > 1000) {
-          res.status(400).json({
-            error: {
-              code: "BAD_REQUEST",
-              message: "Follow-up note is required when followUpRequired is true.",
-            },
-          });
-          return;
-        }
-      } else {
-        if (followUpRequired !== undefined && !effectiveFollowUpRequired) {
-          effectiveFollowUpNote = null;
-        }
-      }
-
-      if (followUpRequired !== undefined) updateData.followUpRequired = effectiveFollowUpRequired;
-      if (followUpNote !== undefined || followUpRequired !== undefined) updateData.followUpNote = effectiveFollowUpNote;
-
-      if (attachmentNotes !== undefined) {
-        updateData.attachmentNotes = typeof attachmentNotes === "string" ? attachmentNotes.trim() : null;
       }
 
       // Validate assigneeId if provided
@@ -566,34 +560,120 @@ actionsRouter.put(
         }
       }
 
-      // Atomic conditional update checking updatedAt timestamp (optimistic concurrency)
-      const updateResult = await prisma.actionTaken.updateMany({
-        where: {
-          id: actionId,
-          updatedAt: expectedDate,
-        },
-        data: updateData,
-      });
+      let updatedActionPayload: any = null;
 
-      if (updateResult.count === 0) {
-        res.status(409).json({
-          error: {
-            code: "STALE_UPDATE",
-            message: "Action content was updated concurrently by another user. Please refresh and try again.",
-          },
+      try {
+        await prisma.$transaction(async (tx) => {
+          // Look up existing ActionTaken inside transaction
+          const existingAction = await tx.actionTaken.findUnique({
+            where: { id: actionId },
+          });
+
+          if (!existingAction) {
+            throw new Error("NOT_FOUND");
+          }
+
+          // Lock parent Ticket row with FOR UPDATE (MUST FIX 1)
+          const [lockedTicket] = await tx.$queryRaw<Array<{ id: string; currentStatus: string }>>`
+            SELECT id, "currentStatus"
+            FROM "Ticket"
+            WHERE id = ${existingAction.ticketId}
+            FOR UPDATE
+          `;
+
+          if (!lockedTicket || lockedTicket.currentStatus === "CANCELLED") {
+            throw new Error("TICKET_TERMINAL");
+          }
+
+          // Validate followUpRequired & followUpNote against existing state
+          const effectiveFollowUpRequired = followUpRequired !== undefined ? Boolean(followUpRequired) : existingAction.followUpRequired;
+          let effectiveFollowUpNote = followUpNote !== undefined ? (typeof followUpNote === "string" ? followUpNote.trim() : null) : existingAction.followUpNote;
+
+          if (effectiveFollowUpRequired) {
+            if (!effectiveFollowUpNote || effectiveFollowUpNote.length < 1 || effectiveFollowUpNote.length > 1000) {
+              throw new Error("INVALID_FOLLOWUP_NOTE");
+            }
+          } else {
+            if (followUpRequired !== undefined && !effectiveFollowUpRequired) {
+              effectiveFollowUpNote = null;
+            }
+          }
+
+          if (followUpRequired !== undefined) updateData.followUpRequired = effectiveFollowUpRequired;
+          if (followUpNote !== undefined || followUpRequired !== undefined) updateData.followUpNote = effectiveFollowUpNote;
+
+          if (attachmentNotes !== undefined) {
+            updateData.attachmentNotes = typeof attachmentNotes === "string" ? attachmentNotes.trim() : null;
+          }
+
+          // Atomic conditional update checking updatedAt timestamp (optimistic concurrency)
+          const updateResult = await tx.actionTaken.updateMany({
+            where: {
+              id: actionId,
+              updatedAt: expectedDate,
+            },
+            data: updateData,
+          });
+
+          if (updateResult.count === 0) {
+            throw new Error("STALE_UPDATE");
+          }
+
+          const updatedAction = await tx.actionTaken.findUniqueOrThrow({
+            where: { id: actionId },
+            include: {
+              performedBy: { select: { id: true, name: true, role: true } },
+              assignee: { select: { id: true, name: true, role: true } },
+            },
+          });
+
+          updatedActionPayload = formatActionResponse(updatedAction);
         });
-        return;
+
+        res.status(200).json(updatedActionPayload);
+      } catch (txError: any) {
+        if (txError.message === "NOT_FOUND") {
+          res.status(404).json({
+            error: {
+              code: "NOT_FOUND",
+              message: "Action Taken not found.",
+            },
+          });
+          return;
+        }
+
+        if (txError.message === "TICKET_TERMINAL") {
+          res.status(400).json({
+            error: {
+              code: "TICKET_TERMINAL",
+              message: "Cannot edit actions on a cancelled ticket.",
+            },
+          });
+          return;
+        }
+
+        if (txError.message === "INVALID_FOLLOWUP_NOTE") {
+          res.status(400).json({
+            error: {
+              code: "BAD_REQUEST",
+              message: "Follow-up note is required when followUpRequired is true.",
+            },
+          });
+          return;
+        }
+
+        if (txError.message === "STALE_UPDATE") {
+          res.status(409).json({
+            error: {
+              code: "STALE_UPDATE",
+              message: "Action content was updated concurrently by another user. Please refresh and try again.",
+            },
+          });
+          return;
+        }
+
+        throw txError;
       }
-
-      const updatedAction = await prisma.actionTaken.findUniqueOrThrow({
-        where: { id: actionId },
-        include: {
-          performedBy: { select: { id: true, name: true, role: true } },
-          assignee: { select: { id: true, name: true, role: true } },
-        },
-      });
-
-      res.status(200).json(formatActionResponse(updatedAction));
     } catch (error) {
       res.status(500).json({
         error: {
@@ -663,94 +743,133 @@ actionsRouter.put(
     try {
       const prisma = getPrisma();
 
-      // Check existing ActionTaken & parent Ticket state
-      const existingAction = await prisma.actionTaken.findUnique({
-        where: { id: actionId },
-        include: { ticket: true },
-      });
+      let updatedActionPayload: any = null;
 
-      if (!existingAction) {
-        res.status(404).json({
-          error: {
-            code: "NOT_FOUND",
-            message: "Action Taken not found.",
-          },
+      try {
+        await prisma.$transaction(async (tx) => {
+          // Look up existing ActionTaken inside transaction
+          const existingAction = await tx.actionTaken.findUnique({
+            where: { id: actionId },
+          });
+
+          if (!existingAction) {
+            throw new Error("NOT_FOUND");
+          }
+
+          // Lock parent Ticket row with FOR UPDATE (MUST FIX 1)
+          const [lockedTicket] = await tx.$queryRaw<Array<{ id: string; currentStatus: string }>>`
+            SELECT id, "currentStatus"
+            FROM "Ticket"
+            WHERE id = ${existingAction.ticketId}
+            FOR UPDATE
+          `;
+
+          if (!lockedTicket || lockedTicket.currentStatus === "CANCELLED") {
+            throw new Error("TICKET_TERMINAL");
+          }
+
+          const currentStatus = existingAction.status;
+
+          // Terminal Action Status Rule (COMPLETED and CANCELLED cannot transition further)
+          if (currentStatus === "COMPLETED" || currentStatus === "CANCELLED") {
+            throw new Error(`TERMINAL_ACTION_${currentStatus}`);
+          }
+
+          // Enforce Action Status Transition Matrix (Section 8.2 of Specification)
+          // PENDING -> IN_PROGRESS, COMPLETED, CANCELLED
+          // IN_PROGRESS -> COMPLETED, CANCELLED
+          const permittedNext: Record<string, Set<string>> = {
+            PENDING: new Set(["IN_PROGRESS", "COMPLETED", "CANCELLED"]),
+            IN_PROGRESS: new Set(["COMPLETED", "CANCELLED"]),
+          };
+
+          const allowedSet = permittedNext[currentStatus];
+          if (!allowedSet || !allowedSet.has(targetStatus)) {
+            throw new Error(`INVALID_TRANSITION_${currentStatus}_TO_${targetStatus}`);
+          }
+
+          // Atomic conditional update checking updatedAt timestamp (optimistic concurrency)
+          const updateResult = await tx.actionTaken.updateMany({
+            where: {
+              id: actionId,
+              updatedAt: expectedDate,
+            },
+            data: {
+              status: targetStatus as ActionStatus,
+            },
+          });
+
+          if (updateResult.count === 0) {
+            throw new Error("STALE_UPDATE");
+          }
+
+          const updatedAction = await tx.actionTaken.findUniqueOrThrow({
+            where: { id: actionId },
+            include: {
+              performedBy: { select: { id: true, name: true, role: true } },
+              assignee: { select: { id: true, name: true, role: true } },
+            },
+          });
+
+          updatedActionPayload = formatActionResponse(updatedAction);
         });
-        return;
+
+        res.status(200).json(updatedActionPayload);
+      } catch (txError: any) {
+        if (txError.message === "NOT_FOUND") {
+          res.status(404).json({
+            error: {
+              code: "NOT_FOUND",
+              message: "Action Taken not found.",
+            },
+          });
+          return;
+        }
+
+        if (txError.message === "TICKET_TERMINAL") {
+          res.status(400).json({
+            error: {
+              code: "TICKET_TERMINAL",
+              message: "Cannot modify action status on a cancelled ticket.",
+            },
+          });
+          return;
+        }
+
+        if (txError.message?.startsWith("TERMINAL_ACTION_")) {
+          const statusName = txError.message.replace("TERMINAL_ACTION_", "");
+          res.status(400).json({
+            error: {
+              code: "INVALID_TRANSITION",
+              message: `Cannot transition Action Taken from terminal status ${statusName}.`,
+            },
+          });
+          return;
+        }
+
+        if (txError.message?.startsWith("INVALID_TRANSITION_")) {
+          const parts = txError.message.replace("INVALID_TRANSITION_", "").split("_TO_");
+          res.status(400).json({
+            error: {
+              code: "INVALID_TRANSITION",
+              message: `Invalid action status transition from ${parts[0]} to ${parts[1]}.`,
+            },
+          });
+          return;
+        }
+
+        if (txError.message === "STALE_UPDATE") {
+          res.status(409).json({
+            error: {
+              code: "STALE_UPDATE",
+              message: "Action status was updated concurrently by another user. Please refresh and try again.",
+            },
+          });
+          return;
+        }
+
+        throw txError;
       }
-
-      if (existingAction.ticket.currentStatus === "CANCELLED") {
-        res.status(400).json({
-          error: {
-            code: "TICKET_TERMINAL",
-            message: "Cannot modify action status on a cancelled ticket.",
-          },
-        });
-        return;
-      }
-
-      const currentStatus = existingAction.status;
-
-      // Terminal Action Status Rule (COMPLETED and CANCELLED cannot transition further)
-      if (currentStatus === "COMPLETED" || currentStatus === "CANCELLED") {
-        res.status(400).json({
-          error: {
-            code: "INVALID_TRANSITION",
-            message: `Cannot transition Action Taken from terminal status ${currentStatus}.`,
-          },
-        });
-        return;
-      }
-
-      // Enforce Action Status Transition Matrix (Section 8.2 of Specification)
-      // PENDING -> IN_PROGRESS, COMPLETED, CANCELLED
-      // IN_PROGRESS -> COMPLETED, CANCELLED
-      const permittedNext: Record<string, Set<string>> = {
-        PENDING: new Set(["IN_PROGRESS", "COMPLETED", "CANCELLED"]),
-        IN_PROGRESS: new Set(["COMPLETED", "CANCELLED"]),
-      };
-
-      const allowedSet = permittedNext[currentStatus];
-      if (!allowedSet || !allowedSet.has(targetStatus)) {
-        res.status(400).json({
-          error: {
-            code: "INVALID_TRANSITION",
-            message: `Invalid action status transition from ${currentStatus} to ${targetStatus}.`,
-          },
-        });
-        return;
-      }
-
-      // Atomic conditional update checking updatedAt timestamp (optimistic concurrency)
-      const updateResult = await prisma.actionTaken.updateMany({
-        where: {
-          id: actionId,
-          updatedAt: expectedDate,
-        },
-        data: {
-          status: targetStatus as ActionStatus,
-        },
-      });
-
-      if (updateResult.count === 0) {
-        res.status(409).json({
-          error: {
-            code: "STALE_UPDATE",
-            message: "Action status was updated concurrently by another user. Please refresh and try again.",
-          },
-        });
-        return;
-      }
-
-      const updatedAction = await prisma.actionTaken.findUniqueOrThrow({
-        where: { id: actionId },
-        include: {
-          performedBy: { select: { id: true, name: true, role: true } },
-          assignee: { select: { id: true, name: true, role: true } },
-        },
-      });
-
-      res.status(200).json(formatActionResponse(updatedAction));
     } catch (error) {
       res.status(500).json({
         error: {
