@@ -5,9 +5,11 @@ import { getPrisma } from "../../src/prisma.js";
 import { seedDatabase } from "../../prisma/seed.js";
 import { clearRevocationBlocklist, signToken } from "../../src/utils/jwt.js";
 
+let globalSeq = 0;
 function makeTestTicketNumber(): string {
-  const rand = Math.floor(100000 + Math.random() * 899999);
-  return `TKT-2026-${rand}`;
+  globalSeq = (globalSeq + 1) % 100;
+  const num = ((Date.now() + globalSeq) % 890000 + 100000).toString().padStart(6, "0");
+  return `TKT-2026-${num}`;
 }
 
 describe("Issue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-detail.api.test.ts)", () => {
