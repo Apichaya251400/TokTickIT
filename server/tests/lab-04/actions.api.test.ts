@@ -699,21 +699,54 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
 
     expect(cancelRes.status).toBe(200);
 
-    // If Action creation committed first, it returns 201; if cancellation committed first, Action creation returns 400 TICKET_TERMINAL
-    expect([201, 400]).toContain(actionRes.status);
-    if (actionRes.status === 400) {
-      expect(actionRes.body.error.code).toBe("TICKET_TERMINAL");
-    }
-
-    // Verify Business Invariant: If ticket is CANCELLED, verify no action was created AFTER cancellation
     const finalTicket = await prisma.ticket.findUniqueOrThrow({
       where: { id: raceTicket.id },
       include: { actionsTaken: true },
     });
 
     expect(finalTicket.currentStatus).toBe("CANCELLED");
-    if (actionRes.status === 400) {
+
+    // Prove invariant under both concurrent execution outcomes:
+    if (actionRes.status === 201) {
+      // Case A: Action creation committed FIRST before Ticket became CANCELLED
+      expect(finalTicket.actionsTaken.length).toBe(1);
+      const createdAction = finalTicket.actionsTaken[0];
+      expect(createdAction.description).toBe("Concurrent action creation during ticket cancellation.");
+      const actionTime = new Date(createdAction.createdAt).getTime();
+      const cancelTime = new Date(finalTicket.updatedAt).getTime();
+      expect(isNaN(actionTime)).toBe(false);
+      expect(isNaN(cancelTime)).toBe(false);
+      expect(Math.abs(actionTime - cancelTime)).toBeLessThan(5000);
+    } else if (actionRes.status === 400) {
+      // Case B: Ticket Cancellation committed FIRST before Action creation
+      expect(actionRes.body.error.code).toBe("TICKET_TERMINAL");
       expect(finalTicket.actionsTaken.length).toBe(0);
+    } else {
+      throw new Error(`Unexpected action creation response status: ${actionRes.status}`);
     }
+
+    // Phase 2: Post-Cancellation Verification (Guaranteed Ticket state = CANCELLED)
+    // Any subsequent Action creation attempt on this CANCELLED ticket MUST be rejected with 400 TICKET_TERMINAL
+    const postCancelKey = `test-act-race-post-${Date.now()}`;
+    const postCancelRes = await request(app)
+      .post(`/api/tickets/${raceTicket.id}/actions`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .set("Idempotency-Key", postCancelKey)
+      .send({
+        description: "Post-cancellation action creation attempt.",
+        result: "Must be rejected.",
+        followUpRequired: false,
+      });
+
+    expect(postCancelRes.status).toBe(400);
+    expect(postCancelRes.body.error.code).toBe("TICKET_TERMINAL");
+
+    // Re-verify action count on CANCELLED ticket did NOT change
+    const postCancelTicket = await prisma.ticket.findUniqueOrThrow({
+      where: { id: raceTicket.id },
+      include: { actionsTaken: true },
+    });
+    expect(postCancelTicket.actionsTaken.length).toBe(finalTicket.actionsTaken.length);
   });
 });
