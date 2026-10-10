@@ -156,8 +156,18 @@ actionsRouter.post(
 
     const { description, result, assigneeId, followUpRequired, followUpNote, attachmentNotes } = req.body || {};
 
-    // Validate followUpRequired type (MUST FIX 2: Strict boolean check)
-    if (followUpRequired !== undefined && typeof followUpRequired !== "boolean") {
+    // Validate mandatory followUpRequired field (MUST FIX: mandatory boolean check)
+    if (followUpRequired === undefined || followUpRequired === null) {
+      res.status(400).json({
+        error: {
+          code: "BAD_REQUEST",
+          message: "followUpRequired is required.",
+        },
+      });
+      return;
+    }
+
+    if (typeof followUpRequired !== "boolean") {
       res.status(400).json({
         error: {
           code: "BAD_REQUEST",
@@ -461,11 +471,11 @@ actionsRouter.put(
     }
 
     const expectedDate = new Date(expectedUpdatedAt);
-    if (isNaN(expectedDate.getTime())) {
+    if (!expectedUpdatedAt.includes("T") || isNaN(expectedDate.getTime())) {
       res.status(400).json({
         error: {
           code: "MISSING_EXPECTED_UPDATED_AT",
-          message: "expectedUpdatedAt must be a valid ISO timestamp.",
+          message: "expectedUpdatedAt must be a valid ISO 8601 timestamp.",
         },
       });
       return;
@@ -720,11 +730,11 @@ actionsRouter.put(
     }
 
     const expectedDate = new Date(expectedUpdatedAt);
-    if (isNaN(expectedDate.getTime())) {
+    if (!expectedUpdatedAt.includes("T") || isNaN(expectedDate.getTime())) {
       res.status(400).json({
         error: {
           code: "MISSING_EXPECTED_UPDATED_AT",
-          message: "expectedUpdatedAt must be a valid ISO timestamp.",
+          message: "expectedUpdatedAt must be a valid ISO 8601 timestamp.",
         },
       });
       return;

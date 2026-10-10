@@ -186,6 +186,21 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
     expect(resMissing.status).toBe(400);
     expect(resMissing.body.error.code).toBe("BAD_REQUEST");
 
+    // MUST FIX: Rejects missing followUpRequired field (undefined)
+    const keyMissingField = `test-act-03-missing-field-${Date.now()}`;
+    const resMissingField = await request(app)
+      .post(`/api/tickets/${activeTicket.id}/actions`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .set("Idempotency-Key", keyMissingField)
+      .send({
+        description: "Missing followUpRequired payload.",
+        result: "Testing missing field.",
+      });
+
+    expect(resMissingField.status).toBe(400);
+    expect(resMissingField.body.error.code).toBe("BAD_REQUEST");
+
     // MUST FIX 2: Rejects string "false" for followUpRequired
     const keyTypeStr = `test-act-03-type-${Date.now()}`;
     const resTypeStr = await request(app)
@@ -503,7 +518,20 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
     const actionId = setupRes.body.id;
     const updatedAt = setupRes.body.updatedAt;
 
-    // 1. Stale update timestamp returns 409 STALE_UPDATE
+    // 1. Non-ISO expectedUpdatedAt timestamp string format returns 400 MISSING_EXPECTED_UPDATED_AT
+    const nonIsoRes = await request(app)
+      .put(`/api/actions/${actionId}`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .send({
+        expectedUpdatedAt: "2026-10-10 12:00:00",
+        description: "Non-ISO timestamp attempt.",
+      });
+
+    expect(nonIsoRes.status).toBe(400);
+    expect(nonIsoRes.body.error.code).toBe("MISSING_EXPECTED_UPDATED_AT");
+
+    // 2. Stale update timestamp returns 409 STALE_UPDATE
     const staleDate = new Date(new Date(updatedAt).getTime() - 10000).toISOString();
     const staleRes = await request(app)
       .put(`/api/actions/${actionId}`)
