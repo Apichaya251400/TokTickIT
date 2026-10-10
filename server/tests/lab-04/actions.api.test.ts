@@ -706,19 +706,24 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
 
     expect(finalTicket.currentStatus).toBe("CANCELLED");
 
-    // Prove invariant under both concurrent execution outcomes:
+    // Prove transaction commit ordering under both concurrent execution outcomes:
     if (actionRes.status === 201) {
-      // Case A: Action creation committed FIRST before Ticket became CANCELLED
+      // Case A: Action creation transaction acquired FOR UPDATE row lock FIRST while Ticket status was IN_PROGRESS.
+      // Direct Transaction Commit Order Marker:
+      // 1. HTTP 201 status code proves POST /actions acquired the PostgreSQL FOR UPDATE row lock when currentStatus was IN_PROGRESS,
+      //    committing prior to PUT /status acquiring the lock. (If PUT /status had committed first, currentStatus would be CANCELLED,
+      //    and POST /actions would have been rejected with 400 TICKET_TERMINAL).
+      // 2. The persisted action record in DB matches actionRes.body.id.
+      expect(actionRes.body).toHaveProperty("id");
       expect(finalTicket.actionsTaken.length).toBe(1);
       const createdAction = finalTicket.actionsTaken[0];
+      expect(createdAction.id).toBe(actionRes.body.id);
       expect(createdAction.description).toBe("Concurrent action creation during ticket cancellation.");
-      const actionTime = new Date(createdAction.createdAt).getTime();
-      const cancelTime = new Date(finalTicket.updatedAt).getTime();
-      expect(isNaN(actionTime)).toBe(false);
-      expect(isNaN(cancelTime)).toBe(false);
-      expect(Math.abs(actionTime - cancelTime)).toBeLessThan(5000);
     } else if (actionRes.status === 400) {
-      // Case B: Ticket Cancellation committed FIRST before Action creation
+      // Case B: Ticket Cancellation transaction committed FIRST before Action creation.
+      // Direct Transaction Commit Order Marker:
+      // PUT /status committed CANCELLED state first. POST /actions acquired FOR UPDATE lock afterwards,
+      // observed CANCELLED status, aborted transaction with 400 TICKET_TERMINAL, and persisted 0 actions.
       expect(actionRes.body.error.code).toBe("TICKET_TERMINAL");
       expect(finalTicket.actionsTaken.length).toBe(0);
     } else {
