@@ -164,6 +164,7 @@ export async function seedDatabase() {
     seededUsers[u.email] = record.id;
   }
 
+
   // Fetch Category & System IDs for ticket seeding
   const catAccount = await prisma.category.findUniqueOrThrow({ where: { name: "Account and Access" } });
   const catHardware = await prisma.category.findUniqueOrThrow({ where: { name: "Hardware" } });
