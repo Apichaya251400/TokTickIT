@@ -372,6 +372,27 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
 
     expect(badRes.status).toBe(400);
     expect(badRes.body.error.code).toBe("BAD_REQUEST");
+
+    // 3. Invalid assignment to inactive IT Staff user
+    const inactiveStaff = await prisma.user.findUniqueOrThrow({
+      where: { email: "inactive.staff@toktick.it" },
+    });
+
+    const keyInactive = `test-act-06-inactive-${Date.now()}`;
+    const inactiveRes = await request(app)
+      .post(`/api/tickets/${activeTicket.id}/actions`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .set("Idempotency-Key", keyInactive)
+      .send({
+        description: "Assigning work to inactive staff.",
+        result: "Should fail.",
+        assigneeId: inactiveStaff.id,
+        followUpRequired: false,
+      });
+
+    expect(inactiveRes.status).toBe(400);
+    expect(inactiveRes.body.error.code).toBe("BAD_REQUEST");
   });
 
   // ---------------------------------------------------------------------------
