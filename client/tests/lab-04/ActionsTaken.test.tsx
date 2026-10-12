@@ -310,6 +310,12 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
 
     fireEvent.click(screen.getByTestId("record-action-btn"));
 
+    // Verify inactive staff is excluded from dropdown options
+    const assigneeSelect = screen.getByTestId("action-assignee-select");
+    expect(within(assigneeSelect).queryByText(/Inactive Staff/)).toBeNull();
+    expect(within(assigneeSelect).getByText(/John Staff/)).toBeInTheDocument();
+    expect(within(assigneeSelect).getByText(/Sarah Staff/)).toBeInTheDocument();
+
     fireEvent.change(screen.getByTestId("action-description-input"), {
       target: { value: "Assigned to decommissioned staff account." },
     });
@@ -413,11 +419,13 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
 
   // TEST-ACT-EDIT-08
   it("TEST-ACT-EDIT-08: allows editing action content with expectedUpdatedAt and handles 409 conflict", async () => {
+    const onActionUpdated = vi.fn();
     render(
       <ActionsTakenWorkspace
         ticketId="ticket-101"
         currentUser={mockStaffUser}
         isTicketCancelled={false}
+        onActionUpdated={onActionUpdated}
       />
     );
 
@@ -455,11 +463,21 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
       ).toBeInTheDocument();
     });
 
-    // Verify Refresh button is present
+    // Verify Refresh button is present and Save button is disabled during stale conflict
     const refreshBtn = screen.getByTestId("edit-refresh-btn");
     expect(refreshBtn).toBeInTheDocument();
+    const saveEditBtn = screen.getByTestId("save-edit-action-btn");
+    expect(saveEditBtn).toBeDisabled();
 
-    // Mock fresh action state returned upon refresh
+    // If refresh fails, save button remains disabled
+    vi.mocked(api.fetchTicketActions).mockRejectedValueOnce(new Error("Network failed"));
+    fireEvent.click(refreshBtn);
+    await waitFor(() => {
+      expect(screen.getByText("Failed to refresh action. Please close and re-open.")).toBeInTheDocument();
+    });
+    expect(saveEditBtn).toBeDisabled();
+
+    // Mock fresh action state returned upon successful refresh
     const updatedAction1: api.ActionTaken = {
       ...mockAction1,
       description: "Concurrently updated description by peer",
@@ -475,6 +493,8 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
       expect(screen.getByTestId("edit-description-input")).toHaveValue("Concurrently updated description by peer");
     });
     expect(screen.queryByTestId("edit-action-error")).toBeNull();
+    expect(saveEditBtn).not.toBeDisabled();
+    expect(onActionUpdated).toHaveBeenCalled();
 
     expect(api.updateTicketAction).toHaveBeenCalledWith(
       "act-001",

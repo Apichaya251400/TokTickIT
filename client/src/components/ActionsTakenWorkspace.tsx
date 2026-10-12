@@ -82,6 +82,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
   const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>({});
   const [editLoading, setEditLoading] = useState<boolean>(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [isStaleConflict, setIsStaleConflict] = useState<boolean>(false);
 
   // Status Transition State
   const [transitioningActionId, setTransitioningActionId] = useState<string | null>(null);
@@ -239,17 +240,19 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
     setEditAttachmentNotes(action.attachmentNotes || "");
     setEditFormErrors({});
     setEditError(null);
+    setIsStaleConflict(false);
   }
 
   function handleCloseEdit() {
     setEditingAction(null);
     setEditFormErrors({});
     setEditError(null);
+    setIsStaleConflict(false);
   }
 
   async function handleEditSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!editingAction || editLoading || isTicketCancelled) return;
+    if (!editingAction || editLoading || isTicketCancelled || isStaleConflict) return;
 
     const errors: Record<string, string> = {};
     const trimmedDesc = editDescription.trim();
@@ -303,6 +306,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
       const errCode = err?.data?.error?.code;
       const errMsg = err?.data?.error?.message;
       if (errCode === "STALE_UPDATE" || err?.status === 409) {
+        setIsStaleConflict(true);
         setEditError("Action content was updated concurrently by another user. Please refresh and try again.");
       } else if (errCode === "TICKET_TERMINAL") {
         setEditError("Cannot edit actions on a cancelled ticket.");
@@ -337,12 +341,16 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
         setEditFollowUpRequired(latestTarget.followUpRequired);
         setEditFollowUpNote(latestTarget.followUpNote || "");
         setEditAttachmentNotes(latestTarget.attachmentNotes || "");
+        setIsStaleConflict(false);
+        setEditError(null);
       } else {
-        handleCloseEdit();
+        setEditError("Action was removed or is no longer accessible.");
+        setIsStaleConflict(true);
       }
-      setEditError(null);
+      if (onActionUpdated) onActionUpdated();
     } catch {
       setEditError("Failed to refresh action. Please close and re-open.");
+      setIsStaleConflict(true);
     } finally {
       setEditLoading(false);
     }
@@ -971,7 +979,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                   <button
                     type="submit"
                     className="btn btn-success btn-sm fw-semibold"
-                    disabled={editLoading}
+                    disabled={editLoading || isStaleConflict}
                     data-testid="save-edit-action-btn"
                     style={{ backgroundColor: "#006B3C", borderColor: "#006B3C" }}
                   >
