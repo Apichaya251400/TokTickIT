@@ -18,6 +18,7 @@ vi.mock("../../src/api", async () => {
     fetchInternalNotes: vi.fn(),
     postInternalNote: vi.fn(),
     fetchAssignees: vi.fn(),
+    fetchTicketActions: vi.fn(),
   };
 });
 
@@ -69,6 +70,7 @@ describe("Issue 8: StaffTicketDetail Component Suite (StaffTicketDetail.test.tsx
     vi.mocked(api.fetchAssignees).mockResolvedValue({ assignees: mockAssignees });
     vi.mocked(api.fetchTicketComments).mockResolvedValue({ comments: [] });
     vi.mocked(api.fetchInternalNotes).mockResolvedValue({ notes: [] });
+    vi.mocked(api.fetchTicketActions).mockResolvedValue({ data: [] });
   });
 
   it("renders ticket detail metadata, badges, and owner info correctly", async () => {

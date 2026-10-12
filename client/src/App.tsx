@@ -24,6 +24,7 @@ import PublicComments from "./components/PublicComments";
 import StaffTicketQueue from "./components/StaffTicketQueue";
 import { StaffTicketDetail } from "./components/StaffTicketDetail";
 import UserManagement from "./components/UserManagement";
+import { ActionsTakenWorkspace } from "./components/ActionsTakenWorkspace";
 
 type UiState = "idle" | "loading" | "success" | "error";
 
@@ -866,6 +867,14 @@ export default function App() {
                   )}
                 </div>
               </div>
+
+              {/* Actions Taken Workspace (Lab 4 - Requester Read-Only View) */}
+              <ActionsTakenWorkspace
+                ticketId={detailTicket.id}
+                currentUser={currentUser}
+                isTicketCancelled={detailTicket.currentStatus === "CANCELLED"}
+                readOnly={true}
+              />
 
               {/* Requester Signalling Action Bar */}
               {currentUser.role === "REQUESTER" && (
