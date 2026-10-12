@@ -76,7 +76,7 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture", () => 
     ensureDirSync(artifactsBase);
   });
 
-  test("E2E-ACT-01 & 02: Staff Views Actions Taken, Performed-By identity, & Opens Create Form", async ({ page }) => {
+  test("E2E-ACT-01: Chronological Action List and Performed-By identity display", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await loginAsStaff(page);
 
@@ -97,6 +97,13 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture", () => 
       path: path.join(artifactsBase, "EVD-ACT-01.png"),
       fullPage: false,
     });
+  });
+
+  test("E2E-ACT-02: Action Create Form showing active assignee selector and validation", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await loginAsStaff(page);
+
+    await openStaffTicketBySearch(page, "TKT-2026-000002");
 
     // Click Record Action
     const recordBtn = page.getByTestId("record-action-btn");

@@ -316,6 +316,38 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
     }
   }
 
+  async function handleRefreshEditAction() {
+    if (!editingAction) return;
+    setEditLoading(true);
+    try {
+      const res = await fetchTicketActions(ticketId);
+      const latestActions = (res?.data || []).slice().sort((a, b) => {
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+        if (timeA !== timeB) return timeA - timeB;
+        return a.id.localeCompare(b.id);
+      });
+      setActions(latestActions);
+      const latestTarget = latestActions.find((a: ActionTaken) => a.id === editingAction.id);
+      if (latestTarget) {
+        setEditingAction(latestTarget);
+        setEditDescription(latestTarget.description);
+        setEditResult(latestTarget.result);
+        setEditAssigneeId(latestTarget.assignee?.id ? String(latestTarget.assignee.id) : "");
+        setEditFollowUpRequired(latestTarget.followUpRequired);
+        setEditFollowUpNote(latestTarget.followUpNote || "");
+        setEditAttachmentNotes(latestTarget.attachmentNotes || "");
+      } else {
+        handleCloseEdit();
+      }
+      setEditError(null);
+    } catch {
+      setEditError("Failed to refresh action. Please close and re-open.");
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
   async function handleStatusTransition(action: ActionTaken, nextStatus: ActionStatus) {
     if (transitioningActionId || isTicketCancelled || !canModify) return;
 
@@ -387,11 +419,12 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
 
       <div className="card-body p-3">
         {statusActionError && (
-          <div className="alert alert-danger py-2 small d-flex justify-content-between align-items-center mb-3">
+          <div className="alert alert-danger py-2 small d-flex justify-content-between align-items-center mb-3" data-testid="status-action-error">
             <span>{statusActionError}</span>
             <button
               type="button"
-              className="btn btn-outline-danger btn-sm py-0"
+              className="btn btn-outline-danger btn-sm py-0 ms-2"
+              data-testid="status-error-refresh-btn"
               onClick={() => {
                 setStatusActionError(null);
                 loadActions();
@@ -797,8 +830,16 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
               <form onSubmit={handleEditSubmit} noValidate>
                 <div className="modal-body">
                   {editError && (
-                    <div className="alert alert-danger py-2 small mb-3" data-testid="edit-action-error">
-                      {editError}
+                    <div className="alert alert-danger py-2 small mb-3 d-flex justify-content-between align-items-center" data-testid="edit-action-error">
+                      <span>{editError}</span>
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm py-0 ms-2"
+                        data-testid="edit-refresh-btn"
+                        onClick={handleRefreshEditAction}
+                      >
+                        Refresh
+                      </button>
                     </div>
                   )}
 

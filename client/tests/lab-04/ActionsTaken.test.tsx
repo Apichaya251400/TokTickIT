@@ -45,18 +45,16 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
   };
 
   const mockAssignees = [
-    { id: 2, name: "John Staff", email: "john.staff@toktick.it", role: "IT_STAFF", isActive: true },
-    { id: 5, name: "Sarah Staff", email: "sarah.staff@toktick.it", role: "IT_STAFF", isActive: true },
-    { id: 3, name: "System Admin", email: "admin@toktick.it", role: "ADMINISTRATOR", isActive: true },
-    { id: 9, name: "Inactive Staff", email: "inactive.staff@toktick.it", role: "IT_STAFF", isActive: false },
+    { id: 2, name: "John Staff", email: "john.staff@toktick.it", role: "IT_STAFF" as const, isActive: true },
+    { id: 5, name: "Sarah Staff", email: "sarah.staff@toktick.it", role: "IT_STAFF" as const, isActive: true },
+    { id: 3, name: "System Admin", email: "admin@toktick.it", role: "ADMINISTRATOR" as const, isActive: true },
+    { id: 9, name: "Inactive Staff", email: "inactive.staff@toktick.it", role: "IT_STAFF" as const, isActive: false },
   ];
 
   const mockAction1: api.ActionTaken = {
     id: "act-001",
     ticketId: "ticket-101",
-    performedById: 2,
     performedBy: { id: 2, name: "John Staff", role: "IT_STAFF" },
-    assigneeId: 5,
     assignee: { id: 5, name: "Sarah Staff", role: "IT_STAFF" },
     description: "Inspected hardware connectivity and cables.",
     result: "Cables intact, power supply is suspect.",
@@ -71,9 +69,7 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
   const mockAction2: api.ActionTaken = {
     id: "act-002",
     ticketId: "ticket-101",
-    performedById: 3,
     performedBy: { id: 3, name: "System Admin", role: "ADMINISTRATOR" },
-    assigneeId: null,
     assignee: null,
     description: "Replaced faulty power unit with standard PSU.",
     result: "System booted normally; burn-in test running.",
@@ -88,9 +84,7 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
   const mockAction3: api.ActionTaken = {
     id: "act-003",
     ticketId: "ticket-101",
-    performedById: 2,
     performedBy: { id: 2, name: "John Staff", role: "IT_STAFF" },
-    assigneeId: 2,
     assignee: { id: 2, name: "John Staff", role: "IT_STAFF" },
     description: "Thermal sensor readings verified within 45C limit.",
     result: "PSU replacement successful. System fully functional.",
@@ -171,9 +165,7 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
     vi.mocked(api.createTicketAction).mockResolvedValue({
       id: "act-new",
       ticketId: "ticket-101",
-      performedById: 2,
       performedBy: { id: 2, name: "John Staff", role: "IT_STAFF" },
-      assigneeId: 5,
       assignee: { id: 5, name: "Sarah Staff", role: "IT_STAFF" },
       description: "Tested RAM modules individually.",
       result: "Module 2 has memory errors.",
@@ -462,6 +454,27 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
         screen.getByText("Action content was updated concurrently by another user. Please refresh and try again.")
       ).toBeInTheDocument();
     });
+
+    // Verify Refresh button is present
+    const refreshBtn = screen.getByTestId("edit-refresh-btn");
+    expect(refreshBtn).toBeInTheDocument();
+
+    // Mock fresh action state returned upon refresh
+    const updatedAction1: api.ActionTaken = {
+      ...mockAction1,
+      description: "Concurrently updated description by peer",
+      updatedAt: "2026-10-10T12:00:00.000Z",
+    };
+    vi.mocked(api.fetchTicketActions).mockResolvedValueOnce({
+      data: [updatedAction1, mockAction2, mockAction3],
+    });
+
+    fireEvent.click(refreshBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("edit-description-input")).toHaveValue("Concurrently updated description by peer");
+    });
+    expect(screen.queryByTestId("edit-action-error")).toBeNull();
 
     expect(api.updateTicketAction).toHaveBeenCalledWith(
       "act-001",
