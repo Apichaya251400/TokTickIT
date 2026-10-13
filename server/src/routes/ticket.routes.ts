@@ -248,6 +248,7 @@ ticketRouter.post(
         updatedAt: ticket.updatedAt,
       });
     } catch (error) {
+      console.error("Failed to create ticket:", error);
       res.status(500).json({
         error: {
           code: "INTERNAL_SERVER_ERROR",

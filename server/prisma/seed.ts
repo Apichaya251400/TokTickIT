@@ -467,6 +467,26 @@ export async function seedDatabase() {
   }
 
   console.log("Seeded Actions Taken (0, 1, and multiple action scenarios) successfully.");
+
+  // Synchronize ticket_number_seq with seeded tickets so subsequent ticket creation starts past seeded tickets
+  try {
+    const maxTicket = await prisma.ticket.findFirst({
+      orderBy: { ticketNumber: "desc" },
+      select: { ticketNumber: true },
+    });
+    if (maxTicket?.ticketNumber) {
+      const match = maxTicket.ticketNumber.match(/(\d+)$/);
+      if (match) {
+        const maxSeq = parseInt(match[1], 10);
+        await prisma.$executeRawUnsafe(
+          `SELECT setval('ticket_number_seq', ${maxSeq}, true);`
+        );
+      }
+    }
+  } catch (err) {
+    // Ignore if sequence not yet created
+  }
+
   console.log("Sprint 4 Idempotent Database Seed completed cleanly!");
 }
 
