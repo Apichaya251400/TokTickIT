@@ -420,10 +420,41 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
 
   return (
     <div className="card shadow-sm mb-4 border" data-testid="actions-taken-workspace">
+      <style>{`
+        [data-testid="actions-taken-workspace"] button:focus,
+        [data-testid="actions-taken-workspace"] button:focus-visible,
+        [data-testid="actions-taken-workspace"] input:focus,
+        [data-testid="actions-taken-workspace"] input:focus-visible,
+        [data-testid="actions-taken-workspace"] select:focus,
+        [data-testid="actions-taken-workspace"] select:focus-visible,
+        [data-testid="actions-taken-workspace"] textarea:focus,
+        [data-testid="actions-taken-workspace"] textarea:focus-visible,
+        [data-testid="actions-taken-workspace"] .btn:focus,
+        [data-testid="actions-taken-workspace"] .btn:focus-visible,
+        [data-testid="actions-taken-workspace"] .form-control:focus,
+        [data-testid="actions-taken-workspace"] .form-select:focus,
+        [data-testid="actions-taken-workspace"] .form-check-input:focus,
+        [data-testid="edit-action-modal"] button:focus,
+        [data-testid="edit-action-modal"] button:focus-visible,
+        [data-testid="edit-action-modal"] input:focus,
+        [data-testid="edit-action-modal"] input:focus-visible,
+        [data-testid="edit-action-modal"] select:focus,
+        [data-testid="edit-action-modal"] select:focus-visible,
+        [data-testid="edit-action-modal"] textarea:focus,
+        [data-testid="edit-action-modal"] textarea:focus-visible,
+        [data-testid="edit-action-modal"] .btn:focus,
+        [data-testid="edit-action-modal"] .btn:focus-visible,
+        [data-testid="edit-action-modal"] .form-control:focus,
+        [data-testid="edit-action-modal"] .form-select:focus {
+          outline: 2px solid #198754 !important;
+          outline-offset: 1px !important;
+          box-shadow: 0 0 0 2px rgba(25, 135, 84, 0.25) !important;
+        }
+      `}</style>
       {/* Workspace Header */}
       <div className="card-header bg-light d-flex flex-wrap align-items-center justify-content-between gap-2 py-2">
         <div className="d-flex align-items-center gap-2">
-          <h3 className="h6 fw-bold mb-0 text-success" style={{ color: "#006B3C" }}>
+          <h3 className="h6 fw-bold mb-0 text-success" style={{ color: "#198754" }}>
             Actions Taken Work Log
           </h3>
           <span className="badge bg-secondary" data-testid="actions-count-badge">
@@ -442,7 +473,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
             className="btn btn-sm btn-success fw-semibold"
             onClick={handleOpenCreateForm}
             data-testid="record-action-btn"
-            style={{ backgroundColor: "#006B3C", borderColor: "#006B3C", outlineColor: "#0B7A46" }}
+            style={{ backgroundColor: "#198754", borderColor: "#198754" }}
           >
             + Record Action
           </button>
@@ -513,7 +544,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Describe the action taken..."
-                    style={{ outlineColor: "#0B7A46" }}
                     data-testid="action-description-input"
                   />
                   {formErrors.description && (
@@ -533,7 +563,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                     value={result}
                     onChange={(e) => setResult(e.target.value)}
                     placeholder="Describe the outcome or diagnostic findings..."
-                    style={{ outlineColor: "#0B7A46" }}
                     data-testid="action-result-input"
                   />
                   {formErrors.result && (
@@ -551,7 +580,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                     className={`form-select form-select-sm ${formErrors.assigneeId ? "is-invalid" : ""}`}
                     value={assigneeId}
                     onChange={(e) => setAssigneeId(e.target.value)}
-                    style={{ outlineColor: "#0B7A46" }}
                     data-testid="action-assignee-select"
                   >
                     <option value="">Unassigned</option>
@@ -578,7 +606,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                     className="form-check-input"
                     checked={followUpRequired}
                     onChange={(e) => setFollowUpRequired(e.target.checked)}
-                    style={{ outlineColor: "#0B7A46" }}
                     data-testid="follow-up-switch"
                   />
                   <label htmlFor="action-follow-up-switch" className="form-check-label small fw-semibold">
@@ -599,7 +626,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                       value={followUpNote}
                       onChange={(e) => setFollowUpNote(e.target.value)}
                       placeholder="Specify what follow-up action is required..."
-                      style={{ outlineColor: "#0B7A46" }}
                       data-testid="follow-up-note-input"
                     />
                     {formErrors.followUpNote && (
@@ -620,7 +646,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                     value={attachmentNotes}
                     onChange={(e) => setAttachmentNotes(e.target.value)}
                     placeholder="e.g. See diagnostic_log.png attached"
-                    style={{ outlineColor: "#0B7A46" }}
                     data-testid="attachment-notes-input"
                   />
                 </div>
@@ -640,7 +665,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                     className="btn btn-success btn-sm fw-semibold"
                     disabled={submitLoading}
                     data-testid="save-action-btn"
-                    style={{ backgroundColor: "#006B3C", borderColor: "#006B3C" }}
+                    style={{ backgroundColor: "#198754", borderColor: "#198754" }}
                   >
                     {submitLoading ? "Saving…" : "Save Action"}
                   </button>
@@ -768,6 +793,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                               onClick={() => handleStatusTransition(act, "COMPLETED")}
                               disabled={transitioningActionId === act.id}
                               data-testid={`action-complete-btn-${act.id}`}
+                              style={{ backgroundColor: "#198754", borderColor: "#198754" }}
                             >
                               Complete Action
                             </button>
@@ -791,6 +817,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                               onClick={() => handleStatusTransition(act, "COMPLETED")}
                               disabled={transitioningActionId === act.id}
                               data-testid={`action-complete-btn-${act.id}`}
+                              style={{ backgroundColor: "#198754", borderColor: "#198754" }}
                             >
                               Complete Action
                             </button>
@@ -888,7 +915,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                       className={`form-control form-control-sm ${editFormErrors.description ? "is-invalid" : ""}`}
                       value={editDescription}
                       onChange={(e) => setEditDescription(e.target.value)}
-                      style={{ outlineColor: "#0B7A46" }}
                       data-testid="edit-description-input"
                     />
                     {editFormErrors.description && (
@@ -907,7 +933,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                       className={`form-control form-control-sm ${editFormErrors.result ? "is-invalid" : ""}`}
                       value={editResult}
                       onChange={(e) => setEditResult(e.target.value)}
-                      style={{ outlineColor: "#0B7A46" }}
                       data-testid="edit-result-input"
                     />
                     {editFormErrors.result && (
@@ -925,7 +950,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                       className="form-select form-select-sm"
                       value={editAssigneeId}
                       onChange={(e) => setEditAssigneeId(e.target.value)}
-                      style={{ outlineColor: "#0B7A46" }}
                       data-testid="edit-assignee-select"
                     >
                       <option value="">Unassigned</option>
@@ -947,7 +971,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                       className="form-check-input"
                       checked={editFollowUpRequired}
                       onChange={(e) => setEditFollowUpRequired(e.target.checked)}
-                      style={{ outlineColor: "#0B7A46" }}
                       data-testid="edit-follow-up-switch"
                     />
                     <label htmlFor="edit-follow-up-switch" className="form-check-label small fw-semibold">
@@ -967,7 +990,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                         className={`form-control form-control-sm ${editFormErrors.followUpNote ? "is-invalid" : ""}`}
                         value={editFollowUpNote}
                         onChange={(e) => setEditFollowUpNote(e.target.value)}
-                        style={{ outlineColor: "#0B7A46" }}
                         data-testid="edit-follow-up-note-input"
                       />
                       {editFormErrors.followUpNote && (
@@ -987,7 +1009,6 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                       className="form-control form-control-sm"
                       value={editAttachmentNotes}
                       onChange={(e) => setEditAttachmentNotes(e.target.value)}
-                      style={{ outlineColor: "#0B7A46" }}
                       data-testid="edit-attachment-notes-input"
                     />
                   </div>
@@ -1007,7 +1028,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                     className="btn btn-success btn-sm fw-semibold"
                     disabled={editLoading || isStaleConflict}
                     data-testid="save-edit-action-btn"
-                    style={{ backgroundColor: "#006B3C", borderColor: "#006B3C" }}
+                    style={{ backgroundColor: "#198754", borderColor: "#198754" }}
                   >
                     {editLoading ? "Saving…" : "Save Changes"}
                   </button>

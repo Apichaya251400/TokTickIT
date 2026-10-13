@@ -104,6 +104,15 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
     const recordBtn = page.getByTestId("record-action-btn");
     await recordBtn.focus();
     await expect(recordBtn).toBeFocused();
+
+    // Verify Zen Green 2px solid #198754 brand color and focus ring styling
+    const recordBtnBg = await recordBtn.evaluate((el) => window.getComputedStyle(el).backgroundColor);
+    expect(recordBtnBg).toBe("rgb(25, 135, 84)");
+    const recordBtnOutlineColor = await recordBtn.evaluate((el) => window.getComputedStyle(el).outlineColor);
+    const recordBtnOutlineWidth = await recordBtn.evaluate((el) => window.getComputedStyle(el).outlineWidth);
+    expect(recordBtnOutlineColor).toBe("rgb(25, 135, 84)");
+    expect(recordBtnOutlineWidth).toBe("2px");
+
     await page.keyboard.press("Enter");
     await expect(page.getByTestId("create-action-card")).toBeVisible();
 

@@ -742,8 +742,28 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
 
     const headerTitle = screen.getByText("Actions Taken Work Log");
     expect(headerTitle).toHaveClass("text-success");
+    expect(headerTitle).toHaveStyle({ color: "#198754" });
 
     const recordBtn = screen.getByTestId("record-action-btn");
     expect(recordBtn).toHaveClass("btn-success");
+    expect(recordBtn).toHaveStyle({
+      backgroundColor: "#198754",
+      borderColor: "#198754",
+    });
+
+    // Open create action form and verify Save button Zen Green brand styling
+    fireEvent.click(recordBtn);
+    const saveBtn = screen.getByTestId("save-action-btn");
+    expect(saveBtn).toHaveClass("btn-success");
+    expect(saveBtn).toHaveStyle({
+      backgroundColor: "#198754",
+      borderColor: "#198754",
+    });
+
+    // Verify 2px solid #198754 focus ring style rule is embedded in workspace
+    const workspace = screen.getByTestId("actions-taken-workspace");
+    const styleTag = workspace.querySelector("style");
+    expect(styleTag).toBeInTheDocument();
+    expect(styleTag?.textContent).toContain("outline: 2px solid #198754");
   });
 });
