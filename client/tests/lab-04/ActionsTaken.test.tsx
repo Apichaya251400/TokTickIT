@@ -442,6 +442,52 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
     expect(screen.getByText(/Terminal status \(COMPLETED\)/)).toBeInTheDocument();
   });
 
+  // TEST-ACT-STATUS-CONFLICT-07B
+  it("TEST-ACT-STATUS-CONFLICT-07B: handles 409 status transition conflict with interactive refresh that triggers onActionUpdated", async () => {
+    const onActionUpdated = vi.fn();
+    vi.mocked(api.updateTicketActionStatus).mockRejectedValueOnce({
+      status: 409,
+      data: {
+        error: {
+          code: "STALE_UPDATE",
+          message: "Action status was updated concurrently by another user.",
+        },
+      },
+    });
+
+    render(
+      <ActionsTakenWorkspace
+        ticketId="ticket-101"
+        currentUser={mockStaffUser}
+        isTicketCancelled={false}
+        onActionUpdated={onActionUpdated}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("action-start-work-btn-act-001")).toBeInTheDocument();
+    });
+
+    // Trigger status transition failure
+    fireEvent.click(screen.getByTestId("action-start-work-btn-act-001"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status-action-error")).toBeInTheDocument();
+      expect(screen.getByTestId("status-error-refresh-btn")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Action status was updated concurrently by another user/)).toBeInTheDocument();
+
+    // Click Refresh button
+    fireEvent.click(screen.getByTestId("status-error-refresh-btn"));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("status-action-error")).toBeNull();
+      expect(api.fetchTicketActions).toHaveBeenCalled();
+      expect(onActionUpdated).toHaveBeenCalled();
+    });
+  });
+
   // TEST-ACT-EDIT-08
   it("TEST-ACT-EDIT-08: allows editing action content with expectedUpdatedAt and handles 409 conflict", async () => {
     const onActionUpdated = vi.fn();

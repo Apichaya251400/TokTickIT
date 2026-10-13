@@ -386,6 +386,12 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
     }
   }
 
+  async function handleRefreshStatusConflict() {
+    setStatusActionError(null);
+    await loadActions();
+    if (onActionUpdated) onActionUpdated();
+  }
+
   function renderStatusBadge(status: ActionStatus) {
     switch (status) {
       case "PENDING":
@@ -440,10 +446,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
               type="button"
               className="btn btn-outline-danger btn-sm py-0 ms-2"
               data-testid="status-error-refresh-btn"
-              onClick={() => {
-                setStatusActionError(null);
-                loadActions();
-              }}
+              onClick={handleRefreshStatusConflict}
             >
               Refresh
             </button>
