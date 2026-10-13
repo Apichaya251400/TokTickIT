@@ -285,11 +285,14 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
     await page.getByTestId("action-description-input").fill("Diagnostic task targeting decommissioned staff account");
     await page.getByTestId("action-result-input").fill("Awaiting active staff assignment confirmation.");
 
-    // Dynamically retrieve inactive staff user ID from database (avoiding hardcoded ID)
+    // Dynamically retrieve inactive staff user ID from database (avoiding hardcoded ID or silent fallbacks)
     const inactiveUser = await prisma.user.findFirst({
       where: { email: "inactive.staff@toktick.it" },
     });
-    const inactiveUserId = inactiveUser?.id ?? 10;
+    if (!inactiveUser) {
+      throw new Error("Inactive staff seed user (inactive.staff@toktick.it) not found in database.");
+    }
+    const inactiveUserId = inactiveUser.id;
 
     // Simulate selecting an inactive staff account
     // The dropdown UI filters out inactive users, so we inject the option to simulate an invalid/bypassed submission
