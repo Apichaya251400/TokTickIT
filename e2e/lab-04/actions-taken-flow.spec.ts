@@ -1,7 +1,9 @@
 import { test, expect, Page } from "@playwright/test";
 import path from "path";
 import fs from "fs";
+import { PrismaClient } from "../../server/node_modules/@prisma/client";
 
+const prisma = new PrismaClient();
 const artifactsBase = path.resolve(process.cwd(), "artifacts/lab-04/screenshots/actions-taken");
 
 function ensureDirSync(dirPath: string) {
@@ -76,7 +78,11 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
     ensureDirSync(artifactsBase);
   });
 
-  // EVD-ACT-01: Desktop Actions Taken List & Workspace
+  test.afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  // EVD-ACT-01: Desktop Actions Taken List & Workspace + Keyboard Navigation
   test("E2E-ACT-01: Desktop Actions Taken List (EVD-ACT-01)", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await loginAsStaff(page);
@@ -94,6 +100,19 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
     await expect(page.getByTestId("actions-list")).toBeVisible();
     await expect(page.getByTestId("action-performer").first()).toBeVisible();
 
+    // Interactive Keyboard Accessibility Verification (Focus & Activation without mouse)
+    const recordBtn = page.getByTestId("record-action-btn");
+    await recordBtn.focus();
+    await expect(recordBtn).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("create-action-card")).toBeVisible();
+
+    const closeFormBtn = page.getByRole("button", { name: "Close form" });
+    await closeFormBtn.focus();
+    await expect(closeFormBtn).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("create-action-card")).toHaveCount(0);
+
     // Evidence EVD-ACT-01: Desktop Actions Taken List
     await page.screenshot({
       path: path.join(artifactsBase, "EVD-ACT-01.png"),
@@ -101,18 +120,28 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
     });
   });
 
-  // EVD-ACT-02: Mobile Actions Taken
+  // EVD-ACT-02: Responsive Actions Taken (Tablet 768x1024 & Mobile 375x812)
   test("E2E-ACT-02: Mobile Actions Taken (EVD-ACT-02)", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+    // 1. Tablet Viewport Verification (768x1024)
+    await page.setViewportSize({ width: 768, height: 1024 });
     await loginAsStaff(page);
 
-    // Open TKT-2026-000002 in mobile viewport
     await expect(page.getByText("IT Staff Ticket Queue")).toBeVisible();
     await openStaffTicketBySearch(page, "TKT-2026-000002");
 
-    // Scroll to Actions Taken Workspace
     const workspace = page.getByTestId("actions-taken-workspace");
     await expect(workspace).toBeVisible();
+    await workspace.scrollIntoViewIfNeeded();
+    await expect(page.getByTestId("actions-list")).toBeVisible();
+
+    // Capture Tablet Responsive Evidence
+    await page.screenshot({
+      path: path.join(artifactsBase, "EVD-ACT-06-tablet.png"),
+      fullPage: false,
+    });
+
+    // 2. Mobile Viewport Verification (375x812)
+    await page.setViewportSize({ width: 375, height: 812 });
     await workspace.scrollIntoViewIfNeeded();
 
     // Verify stacked mobile presentation of action cards
@@ -121,6 +150,10 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
     // Evidence EVD-ACT-02: Mobile Actions Taken
     await page.screenshot({
       path: path.join(artifactsBase, "EVD-ACT-02.png"),
+      fullPage: false,
+    });
+    await page.screenshot({
+      path: path.join(artifactsBase, "EVD-ACT-06-mobile.png"),
       fullPage: false,
     });
   });
@@ -252,21 +285,27 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
     await page.getByTestId("action-description-input").fill("Diagnostic task targeting decommissioned staff account");
     await page.getByTestId("action-result-input").fill("Awaiting active staff assignment confirmation.");
 
-    // Simulate selecting an inactive staff account (User #10 - Inactive Staff seeded in DB)
+    // Dynamically retrieve inactive staff user ID from database (avoiding hardcoded ID)
+    const inactiveUser = await prisma.user.findFirst({
+      where: { email: "inactive.staff@toktick.it" },
+    });
+    const inactiveUserId = inactiveUser?.id ?? 10;
+
+    // Simulate selecting an inactive staff account
     // The dropdown UI filters out inactive users, so we inject the option to simulate an invalid/bypassed submission
-    await page.evaluate(() => {
+    await page.evaluate((targetId) => {
       const select = document.getElementById("action-assignee") as HTMLSelectElement;
       if (select) {
         const option = document.createElement("option");
-        option.value = "10";
-        option.textContent = "Inactive Staff (User #10 - Inactive)";
+        option.value = String(targetId);
+        option.textContent = `Inactive Staff (User #${targetId} - Inactive)`;
         select.appendChild(option);
-        select.value = "10";
+        select.value = String(targetId);
         select.dispatchEvent(new Event("change", { bubbles: true }));
       }
-    });
+    }, inactiveUserId);
 
-    expect(await page.locator("#action-assignee").inputValue()).toBe("10");
+    expect(await page.locator("#action-assignee").inputValue()).toBe(String(inactiveUserId));
 
     // Submit form directly to the real backend without route mocking
     const [actionResponse] = await Promise.all([

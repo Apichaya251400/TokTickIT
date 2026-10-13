@@ -387,9 +387,20 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
   }
 
   async function handleRefreshStatusConflict() {
-    setStatusActionError(null);
-    await loadActions();
-    if (onActionUpdated) onActionUpdated();
+    try {
+      const res = await fetchTicketActions(ticketId);
+      const sorted = (res?.data || []).slice().sort((a, b) => {
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+        if (timeA !== timeB) return timeA - timeB;
+        return a.id.localeCompare(b.id);
+      });
+      setActions(sorted);
+      setStatusActionError(null);
+      if (onActionUpdated) onActionUpdated();
+    } catch {
+      setStatusActionError("Failed to refresh actions taken. Please try again.");
+    }
   }
 
   function renderStatusBadge(status: ActionStatus) {

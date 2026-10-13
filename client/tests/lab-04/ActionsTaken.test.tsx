@@ -488,6 +488,51 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
     });
   });
 
+  // TEST-ACT-STATUS-CONFLICT-FAIL-07C
+  it("TEST-ACT-STATUS-CONFLICT-FAIL-07C: retains error and suppresses onActionUpdated when status conflict refresh fails", async () => {
+    const onActionUpdated = vi.fn();
+    vi.mocked(api.updateTicketActionStatus).mockRejectedValueOnce({
+      status: 409,
+      data: {
+        error: {
+          code: "STALE_UPDATE",
+          message: "Action status was updated concurrently by another user.",
+        },
+      },
+    });
+
+    render(
+      <ActionsTakenWorkspace
+        ticketId="ticket-101"
+        currentUser={mockStaffUser}
+        isTicketCancelled={false}
+        onActionUpdated={onActionUpdated}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("action-start-work-btn-act-001")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("action-start-work-btn-act-001"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status-action-error")).toBeInTheDocument();
+    });
+
+    // Mock fetchTicketActions to fail on refresh
+    vi.mocked(api.fetchTicketActions).mockRejectedValueOnce(new Error("Network Error"));
+
+    fireEvent.click(screen.getByTestId("status-error-refresh-btn"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Failed to refresh actions taken. Please try again.")).toBeInTheDocument();
+    });
+
+    expect(onActionUpdated).not.toHaveBeenCalled();
+    expect(screen.getByTestId("status-error-refresh-btn")).toBeInTheDocument();
+  });
+
   // TEST-ACT-EDIT-08
   it("TEST-ACT-EDIT-08: allows editing action content with expectedUpdatedAt and handles 409 conflict", async () => {
     const onActionUpdated = vi.fn();
