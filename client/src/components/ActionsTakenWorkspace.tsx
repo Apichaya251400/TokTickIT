@@ -221,7 +221,9 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
       if (errCode === "TICKET_TERMINAL") {
         setSubmitError("Cannot perform actions on a cancelled ticket.");
       } else if (errCode === "INVALID_ASSIGNEE" || (errMsg && errMsg.toLowerCase().includes("assignee"))) {
-        setSubmitError("Assignee must be an active IT Staff or Administrator user.");
+        const msg = errMsg || "Assignee must be an active IT Staff or Administrator user.";
+        setSubmitError(msg);
+        setFormErrors((prev) => ({ ...prev, assigneeId: msg }));
       } else {
         setSubmitError(errMsg || err?.message || "Failed to record action. Please check your inputs and try again.");
       }
@@ -527,7 +529,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                   </label>
                   <select
                     id="action-assignee"
-                    className="form-select form-select-sm"
+                    className={`form-select form-select-sm ${formErrors.assigneeId ? "is-invalid" : ""}`}
                     value={assigneeId}
                     onChange={(e) => setAssigneeId(e.target.value)}
                     style={{ outlineColor: "#0B7A46" }}
@@ -542,6 +544,11 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                         </option>
                       ))}
                   </select>
+                  {formErrors.assigneeId && (
+                    <div className="invalid-feedback d-block small" data-testid="assignee-error">
+                      {formErrors.assigneeId}
+                    </div>
+                  )}
                 </div>
 
                 {/* Follow-Up Required Switch */}

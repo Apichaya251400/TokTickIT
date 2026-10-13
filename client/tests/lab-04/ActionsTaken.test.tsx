@@ -316,6 +316,17 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
     expect(within(assigneeSelect).getByText(/John Staff/)).toBeInTheDocument();
     expect(within(assigneeSelect).getByText(/Sarah Staff/)).toBeInTheDocument();
 
+    // Simulate selecting inactive staff (e.g. stale client state or decommissioned account)
+    const inactiveOpt = document.createElement("option");
+    inactiveOpt.value = "9";
+    inactiveOpt.text = "Inactive Staff (IT_STAFF)";
+    assigneeSelect.appendChild(inactiveOpt);
+
+    fireEvent.change(assigneeSelect, {
+      target: { value: "9" },
+    });
+    expect(assigneeSelect).toHaveValue("9");
+
     fireEvent.change(screen.getByTestId("action-description-input"), {
       target: { value: "Assigned to decommissioned staff account." },
     });
@@ -326,9 +337,23 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
     fireEvent.click(screen.getByTestId("save-action-btn"));
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Assignee must be an active IT Staff or Administrator user.")
-      ).toBeInTheDocument();
+      expect(api.createTicketAction).toHaveBeenCalledWith(
+        "ticket-101",
+        expect.objectContaining({
+          assigneeId: 9,
+          description: "Assigned to decommissioned staff account.",
+        }),
+        expect.any(String)
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("create-action-error")).toHaveTextContent(
+        "Assignee must be an active IT Staff or Administrator user."
+      );
+      expect(screen.getByTestId("assignee-error")).toHaveTextContent(
+        "Assignee must be an active IT Staff or Administrator user."
+      );
     });
   });
 
