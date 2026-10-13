@@ -244,7 +244,7 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
   test("E2E-ACT-05: Inactive-assignee rejection & Forbidden state (EVD-ACT-05)", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
 
-    // Step A: Inactive-assignee rejection flow as Staff
+    // Step A: Real Inactive-assignee rejection flow as Staff
     await loginAsStaff(page);
     await openStaffTicketBySearch(page, "TKT-2026-000002");
 
@@ -252,30 +252,34 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
     await page.getByTestId("action-description-input").fill("Diagnostic task targeting decommissioned staff account");
     await page.getByTestId("action-result-input").fill("Awaiting active staff assignment confirmation.");
 
-    // Intercept POST /actions to simulate server-side inactive-assignee rejection (INVALID_ASSIGNEE)
-    await page.route("**/api/tickets/*/actions", async (route) => {
-      if (route.request().method() === "POST") {
-        await route.fulfill({
-          status: 400,
-          contentType: "application/json",
-          body: JSON.stringify({
-            error: {
-              code: "INVALID_ASSIGNEE",
-              message: "Assignee must be an active IT Staff or Administrator user.",
-            },
-          }),
-        });
-        return;
+    // Simulate selecting an inactive staff account (User #10 - Inactive Staff seeded in DB)
+    // The dropdown UI filters out inactive users, so we inject the option to simulate an invalid/bypassed submission
+    await page.evaluate(() => {
+      const select = document.getElementById("action-assignee") as HTMLSelectElement;
+      if (select) {
+        const option = document.createElement("option");
+        option.value = "10";
+        option.textContent = "Inactive Staff (User #10 - Inactive)";
+        select.appendChild(option);
+        select.value = "10";
+        select.dispatchEvent(new Event("change", { bubbles: true }));
       }
-      await route.continue();
     });
 
-    // Submit form and verify 400 rejection and UI error feedback
-    await Promise.all([
-      page.waitForResponse((res) => res.url().includes("/actions") && res.status() === 400),
+    expect(await page.locator("#action-assignee").inputValue()).toBe("10");
+
+    // Submit form directly to the real backend without route mocking
+    const [actionResponse] = await Promise.all([
+      page.waitForResponse((res) => res.url().includes("/actions") && res.request().method() === "POST"),
       page.getByTestId("save-action-btn").click(),
     ]);
 
+    // Backend must reject with 400 Bad Request
+    expect(actionResponse.status()).toBe(400);
+    const responseJson = await actionResponse.json();
+    expect(responseJson.error.message).toContain("Assignee must be an active IT Staff or Administrator user.");
+
+    // UI must display clear rejection error feedback in banner and inline field
     await expect(page.getByTestId("create-action-error")).toContainText(
       "Assignee must be an active IT Staff or Administrator user."
     );
@@ -283,18 +287,19 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
       "Assignee must be an active IT Staff or Administrator user."
     );
 
-    // Evidence EVD-ACT-05: Inactive-assignee rejection feedback
+    // Capture Part A: Inactive-assignee rejection feedback
+    const rejectionScreenshotPath = path.join(artifactsBase, "EVD-ACT-05-rejection.png");
     await page.screenshot({
-      path: path.join(artifactsBase, "EVD-ACT-05.png"),
+      path: rejectionScreenshotPath,
       fullPage: false,
     });
-
-    await page.unroute("**/api/tickets/*/actions");
 
     // Step B: Forbidden / Read-only state verification as Requester
     await page.context().clearCookies();
     await loginAsRequester(page);
 
+    await page.fill("#searchTickets", "TKT-2026-000002");
+    await page.waitForResponse((res) => res.url().includes("/api/tickets"));
     const viewDetailsBtn = page.getByRole("button", { name: "View Details" }).first();
     await expect(viewDetailsBtn).toBeVisible();
     await viewDetailsBtn.click();
@@ -302,11 +307,75 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
     // Verify Actions Taken is in strict read-only mode for Requester
     const requesterWorkspace = page.getByTestId("actions-taken-workspace");
     await expect(requesterWorkspace).toBeVisible();
+    await requesterWorkspace.scrollIntoViewIfNeeded();
+
     await expect(page.getByTestId("record-action-btn")).toHaveCount(0);
     await expect(page.locator("[data-testid^='action-edit-btn-']")).toHaveCount(0);
     await expect(page.locator("[data-testid^='action-start-work-btn-']")).toHaveCount(0);
     await expect(page.locator("[data-testid^='action-complete-btn-']")).toHaveCount(0);
     await expect(page.locator("[data-testid^='action-cancel-btn-']")).toHaveCount(0);
+    await expect(page.getByTestId("actions-readonly-badge")).toBeVisible();
+
+    // Capture Part B: Forbidden / Read-only state
+    const forbiddenScreenshotPath = path.join(artifactsBase, "EVD-ACT-05-forbidden.png");
+    await page.screenshot({
+      path: forbiddenScreenshotPath,
+      fullPage: false,
+    });
+
+    // Step C: Generate composite EVD-ACT-05.png combining both Part A and Part B
+    const rejectionBase64 = fs.readFileSync(rejectionScreenshotPath).toString("base64");
+    const forbiddenBase64 = fs.readFileSync(forbiddenScreenshotPath).toString("base64");
+
+    await page.setViewportSize({ width: 1280, height: 1400 });
+    await page.setContent(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f8f9fa; color: #212529; }
+            .header-banner { background: #006B3C; color: white; padding: 12px 18px; border-radius: 6px; margin-bottom: 20px; }
+            .header-banner h2 { margin: 0; font-size: 18px; font-weight: 600; }
+            .header-banner p { margin: 4px 0 0 0; font-size: 13px; opacity: 0.9; }
+            .section-card { background: white; border: 1px solid #dee2e6; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; }
+            .section-title { padding: 10px 16px; font-weight: 600; font-size: 14px; border-bottom: 1px solid #dee2e6; display: flex; align-items: center; justify-content: space-between; }
+            .badge-danger { background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+            .badge-secondary { background: #6c757d; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+            .img-container { padding: 12px; background: #fdfdfd; }
+            img { width: 100%; height: auto; border: 1px solid #e9ecef; border-radius: 4px; display: block; }
+          </style>
+        </head>
+        <body>
+          <div class="header-banner">
+            <h2>EVD-ACT-05: Inactive-Assignee Rejection & Forbidden State Evidence</h2>
+            <p>Proof of security controls: backend inactive assignee rejection (400) + requester read-only mode (all mutation controls hidden)</p>
+          </div>
+          <div class="section-card">
+            <div class="section-title">
+              <span>Part 1: Inactive-Assignee Rejection Feedback (IT Staff Role)</span>
+              <span class="badge-danger">400 Bad Request Rejection</span>
+            </div>
+            <div class="img-container">
+              <img src="data:image/png;base64,${rejectionBase64}" alt="Inactive Assignee Rejection" />
+            </div>
+          </div>
+          <div class="section-card">
+            <div class="section-title">
+              <span>Part 2: Forbidden State (Requester Role — Strict Read-Only Mode)</span>
+              <span class="badge-secondary">All Mutation Controls Forbidden</span>
+            </div>
+            <div class="img-container">
+              <img src="data:image/png;base64,${forbiddenBase64}" alt="Requester Forbidden State" />
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+
+    await page.screenshot({
+      path: path.join(artifactsBase, "EVD-ACT-05.png"),
+      fullPage: true,
+    });
   });
 
   // EVD-ACT-06: Follow-up conditional field behavior

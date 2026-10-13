@@ -412,6 +412,11 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
           <span className="badge bg-secondary" data-testid="actions-count-badge">
             {actions.length} {actions.length === 1 ? "action recorded" : "actions recorded"}
           </span>
+          {readOnly && (
+            <span className="badge bg-secondary-subtle text-secondary border" data-testid="actions-readonly-badge">
+              Read-Only (Requester)
+            </span>
+          )}
         </div>
 
         {canModify && (
