@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   push:
@@ -87,4 +87,4 @@ jobs:
         run: npm run build
 
       - name: Run server integration tests
-        run: npm test -- --fileParallelism=false
+        run: npm test
