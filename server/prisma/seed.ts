@@ -468,21 +468,11 @@ export async function seedDatabase() {
 
   console.log("Seeded Actions Taken (0, 1, and multiple action scenarios) successfully.");
 
-  // Synchronize ticket_number_seq with seeded tickets so subsequent ticket creation starts past seeded tickets
+  // Synchronize ticket_number_seq past seeded baseline tickets (TKT-2026-000001 .. 000008)
   try {
-    const maxTicket = await prisma.ticket.findFirst({
-      orderBy: { ticketNumber: "desc" },
-      select: { ticketNumber: true },
-    });
-    if (maxTicket?.ticketNumber) {
-      const match = maxTicket.ticketNumber.match(/(\d+)$/);
-      if (match) {
-        const maxSeq = parseInt(match[1], 10);
-        await prisma.$executeRawUnsafe(
-          `SELECT setval('ticket_number_seq', ${maxSeq}, true);`
-        );
-      }
-    }
+    await prisma.$executeRawUnsafe(
+      `SELECT setval('ticket_number_seq', GREATEST(COALESCE((SELECT last_value FROM ticket_number_seq), 1), 8), true);`
+    );
   } catch (err) {
     // Ignore if sequence not yet created
   }

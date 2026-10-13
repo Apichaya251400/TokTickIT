@@ -16,50 +16,29 @@ export function generateTicketNumber(sequenceNumber: number, date: Date = new Da
  * Auto-initializes sequence if not yet created.
  */
 export async function getNextTicketSequence(prisma: PrismaClient): Promise<number> {
-  try {
-    const result = await prisma.$queryRaw<{ nextval: bigint }[]>`SELECT nextval('ticket_number_seq') as nextval`;
-    let seq = Number(result[0].nextval);
-
-    // If sequence is lagging behind existing tickets (e.g. freshly created sequence after static seed),
-    // synchronize sequence forward past the highest existing ticket number.
-    const year = new Date().getFullYear();
-    const maxTicket = await prisma.ticket.findFirst({
-      where: { ticketNumber: { startsWith: `TKT-${year}-` } },
-      orderBy: { ticketNumber: "desc" },
-      select: { ticketNumber: true },
-    });
-
-    if (maxTicket?.ticketNumber) {
-      const match = maxTicket.ticketNumber.match(/(\d+)$/);
-      if (match) {
-        const maxSeq = parseInt(match[1], 10);
-        if (seq <= maxSeq) {
-          const nextVal = maxSeq + 1;
-          await prisma.$executeRawUnsafe(
-            `SELECT setval('ticket_number_seq', ${nextVal}, true);`
-          );
-          return nextVal;
-        }
-      }
+  while (true) {
+    let seq: number;
+    try {
+      const result = await prisma.$queryRaw<{ nextval: bigint }[]>`SELECT nextval('ticket_number_seq') as nextval`;
+      seq = Number(result[0].nextval);
+    } catch (error) {
+      const count = await prisma.ticket.count();
+      const startVal = Math.max(count + 1, 9);
+      await prisma.$executeRawUnsafe(
+        `CREATE SEQUENCE IF NOT EXISTS ticket_number_seq START WITH ${startVal};`
+      );
+      const result = await prisma.$queryRaw<{ nextval: bigint }[]>`SELECT nextval('ticket_number_seq') as nextval`;
+      seq = Number(result[0].nextval);
     }
 
-    return seq;
-  } catch (error) {
-    const maxTicket = await prisma.ticket.findFirst({
-      orderBy: { ticketNumber: "desc" },
-      select: { ticketNumber: true },
+    const candidateNumber = generateTicketNumber(seq);
+    const existing = await prisma.ticket.findUnique({
+      where: { ticketNumber: candidateNumber },
+      select: { id: true },
     });
-    let startVal = 1;
-    if (maxTicket?.ticketNumber) {
-      const match = maxTicket.ticketNumber.match(/(\d+)$/);
-      if (match) {
-        startVal = parseInt(match[1], 10) + 1;
-      }
+
+    if (!existing) {
+      return seq;
     }
-    await prisma.$executeRawUnsafe(
-      `CREATE SEQUENCE IF NOT EXISTS ticket_number_seq START WITH ${startVal};`
-    );
-    const result = await prisma.$queryRaw<{ nextval: bigint }[]>`SELECT nextval('ticket_number_seq') as nextval`;
-    return Number(result[0].nextval);
   }
 }
