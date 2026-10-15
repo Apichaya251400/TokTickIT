@@ -766,4 +766,110 @@ describe("Issue 5: Actions Taken Component Suite (ActionsTaken.test.tsx)", () =>
     expect(styleTag).toBeInTheDocument();
     expect(styleTag?.textContent).toContain("outline: 2px solid #198754");
   });
+
+  // TEST-ACT-ASSIGNEE-LOAD-06
+  it("TEST-ACT-ASSIGNEE-LOAD-06: displays error banner and provides retry recovery when fetchAssignees fails", async () => {
+    vi.mocked(api.fetchAssignees).mockRejectedValueOnce(new Error("Network timeout fetching staff assignees"));
+
+    render(
+      <ActionsTakenWorkspace
+        ticketId="ticket-101"
+        currentUser={mockStaffUser}
+        isTicketCancelled={false}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("actions-taken-workspace")).toBeInTheDocument();
+    });
+
+    // Open create action form
+    const recordBtn = screen.getByTestId("record-action-btn");
+    fireEvent.click(recordBtn);
+
+    // Verify error banner is visible with error message and retry button
+    await waitFor(() => {
+      expect(screen.getByTestId("assignee-load-error")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("assignee-load-error")).toHaveTextContent("Network timeout fetching staff assignees");
+
+    const retryBtn = screen.getByTestId("assignee-retry-btn");
+    expect(retryBtn).toBeInTheDocument();
+
+    // Now mock successful response on retry
+    vi.mocked(api.fetchAssignees).mockResolvedValueOnce({ assignees: mockAssignees });
+    fireEvent.click(retryBtn);
+
+    // Verify error banner is dismissed and assignees populated
+    await waitFor(() => {
+      expect(screen.queryByTestId("assignee-load-error")).toBeNull();
+    });
+    const select = screen.getByTestId("action-assignee-select") as HTMLSelectElement;
+    expect(within(select).getByText("John Staff (IT_STAFF)")).toBeInTheDocument();
+  });
+
+  // TEST-ACT-ACCESS-14
+  it("TEST-ACT-ACCESS-14: manages modal keyboard accessibility, focus trap, Escape key, and focus restoration", async () => {
+    render(
+      <ActionsTakenWorkspace
+        ticketId="ticket-101"
+        currentUser={mockStaffUser}
+        isTicketCancelled={false}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("action-card-act-001")).toBeInTheDocument();
+    });
+
+    const editBtn = screen.getByTestId("action-edit-btn-act-001");
+    editBtn.focus();
+    expect(document.activeElement).toBe(editBtn);
+
+    // Open edit modal
+    fireEvent.click(editBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("edit-action-modal")).toBeInTheDocument();
+    });
+
+    const modal = screen.getByTestId("edit-action-modal");
+    expect(modal).toHaveAttribute("role", "dialog");
+    expect(modal).toHaveAttribute("aria-modal", "true");
+    expect(modal).toHaveAttribute("aria-labelledby", "edit-action-modal-title");
+    expect(screen.getByText("Edit Action Taken Content")).toHaveAttribute("id", "edit-action-modal-title");
+
+    // Auto-focus description input
+    const descInput = screen.getByTestId("edit-description-input");
+    await waitFor(() => {
+      expect(document.activeElement).toBe(descInput);
+    });
+
+    // Test focus trap: cycle from first element backwards, and from last element forwards
+    const focusableElements = modal.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    expect(focusableElements.length).toBeGreaterThan(1);
+    const firstEl = focusableElements[0];
+    const lastEl = focusableElements[focusableElements.length - 1];
+
+    // Focus first element, press Shift+Tab -> wrap to last element
+    firstEl.focus();
+    fireEvent.keyDown(firstEl, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(lastEl);
+
+    // Focus last element, press Tab -> wrap to first element
+    lastEl.focus();
+    fireEvent.keyDown(lastEl, { key: "Tab", shiftKey: false });
+    expect(document.activeElement).toBe(firstEl);
+
+    // Press Escape -> modal closes
+    fireEvent.keyDown(modal, { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByTestId("edit-action-modal")).toBeNull();
+    });
+
+    // Focus restored to edit button trigger
+    expect(document.activeElement).toBe(editBtn);
+  });
 });

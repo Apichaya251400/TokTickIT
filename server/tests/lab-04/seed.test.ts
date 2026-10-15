@@ -113,4 +113,41 @@ describe("LAB4-03 / TEST-DB-03: Idempotent Seed & Fixture Verification", () => {
       expect(ticket).not.toBeNull();
     }
   });
+
+  it("TEST-DB-SEQ-01: verifies ticket_number_seq is dynamically synchronized to the max ticket number suffix and subsequent nextval() produces the next integer", async () => {
+    await seedDatabase();
+
+    // Query max numeric suffix directly from seeded baseline tickets
+    const seededTicketNumbers = [
+      "TKT-2026-000001",
+      "TKT-2026-000002",
+      "TKT-2026-000003",
+      "TKT-2026-000004",
+      "TKT-2026-000005",
+      "TKT-2026-000006",
+      "TKT-2026-000007",
+      "TKT-2026-000008",
+    ];
+    const maxSuffixResult = await prisma.$queryRaw<Array<{ max_suffix: bigint | number | null }>>`
+      SELECT MAX(CAST(SUBSTRING("ticketNumber" FROM '([0-9]+)$') AS BIGINT)) AS max_suffix
+      FROM "Ticket"
+      WHERE "ticketNumber" = ANY(${seededTicketNumbers});
+    `;
+    const expectedMax = Number(maxSuffixResult[0]?.max_suffix || 8);
+    expect(expectedMax).toBeGreaterThanOrEqual(8);
+
+    // Call nextval and verify it produces expectedMax + 1
+    const nextValResult = await prisma.$queryRaw<Array<{ next_val: bigint | number }>>`
+      SELECT nextval('ticket_number_seq') AS next_val;
+    `;
+    const nextVal = Number(nextValResult[0]?.next_val);
+    expect(nextVal).toBe(expectedMax + 1);
+
+    // Re-running seedDatabase should re-synchronize the sequence
+    await seedDatabase();
+    const nextValAfterReseed = await prisma.$queryRaw<Array<{ next_val: bigint | number }>>`
+      SELECT nextval('ticket_number_seq') AS next_val;
+    `;
+    expect(Number(nextValAfterReseed[0]?.next_val)).toBe(expectedMax + 1);
+  });
 });

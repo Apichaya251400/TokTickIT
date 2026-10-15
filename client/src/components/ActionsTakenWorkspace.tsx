@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   User,
   ActionTaken,
@@ -56,6 +56,13 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
 
   // Assignees list for assignee dropdown
   const [assignees, setAssignees] = useState<Array<{ id: number; name: string; email: string; role: string; isActive?: boolean }>>([]);
+  const [assigneesLoading, setAssigneesLoading] = useState<boolean>(false);
+  const [assigneesError, setAssigneesError] = useState<string | null>(null);
+
+  // Modal accessibility & focus management
+  const editModalRef = useRef<HTMLDivElement | null>(null);
+  const editDescriptionRef = useRef<HTMLTextAreaElement | null>(null);
+  const editTriggerRef = useRef<HTMLElement | null>(null);
 
   // Create Form State
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
@@ -119,11 +126,15 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
   }
 
   async function loadAssignees() {
+    setAssigneesLoading(true);
+    setAssigneesError(null);
     try {
       const res = await fetchAssignees();
       setAssignees(res?.assignees || []);
-    } catch {
-      // Ignored non-critically
+    } catch (err: any) {
+      setAssigneesError(err?.data?.error?.message || err?.message || "Failed to load assignees.");
+    } finally {
+      setAssigneesLoading(false);
     }
   }
 
@@ -232,7 +243,8 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
     }
   }
 
-  function handleOpenEdit(action: ActionTaken) {
+  function handleOpenEdit(action: ActionTaken, triggerEl?: HTMLElement) {
+    editTriggerRef.current = triggerEl || (document.activeElement as HTMLElement) || null;
     setEditingAction(action);
     setEditDescription(action.description);
     setEditResult(action.result);
@@ -251,6 +263,56 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
     setEditError(null);
     setIsStaleConflict(false);
   }
+
+  useEffect(() => {
+    if (!editingAction) return;
+
+    // Auto-focus description input
+    editDescriptionRef.current?.focus();
+    const timer = setTimeout(() => {
+      editDescriptionRef.current?.focus();
+    }, 0);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        handleCloseEdit();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        if (!editModalRef.current) return;
+        const focusableElements = editModalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement || document.activeElement === editModalRef.current) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("keydown", handleKeyDown);
+      if (editTriggerRef.current) {
+        editTriggerRef.current.focus();
+      }
+    };
+  }, [editingAction]);
 
   async function handleEditSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -575,6 +637,20 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                   <label htmlFor="action-assignee" className="form-label small fw-semibold">
                     Action Assignee (Optional)
                   </label>
+                  {assigneesError && (
+                    <div className="alert alert-danger py-2 small d-flex justify-content-between align-items-center mb-2" role="alert" data-testid="assignee-load-error">
+                      <span>{assigneesError}</span>
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm py-0"
+                        onClick={loadAssignees}
+                        disabled={assigneesLoading}
+                        data-testid="assignee-retry-btn"
+                      >
+                        {assigneesLoading ? "Retrying…" : "Retry"}
+                      </button>
+                    </div>
+                  )}
                   <select
                     id="action-assignee"
                     className={`form-select form-select-sm ${formErrors.assigneeId ? "is-invalid" : ""}`}
@@ -844,7 +920,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                         <button
                           type="button"
                           className="btn btn-outline-secondary btn-sm"
-                          onClick={() => handleOpenEdit(act)}
+                          onClick={(e) => handleOpenEdit(act, e.currentTarget)}
                           data-testid={`action-edit-btn-${act.id}`}
                         >
                           Edit Content
@@ -869,17 +945,19 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
       {/* Edit Action Modal */}
       {editingAction && (
         <div
+          ref={editModalRef}
           className="modal d-block"
           tabIndex={-1}
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
           role="dialog"
-          aria-label="Edit Action Modal"
+          aria-modal="true"
+          aria-labelledby="edit-action-modal-title"
           data-testid="edit-action-modal"
         >
           <div className="modal-dialog modal-dialog-centered modal-lg">
             <div className="modal-content">
               <div className="modal-header bg-light">
-                <h5 className="modal-title h6 fw-bold">Edit Action Taken Content</h5>
+                <h5 id="edit-action-modal-title" className="modal-title h6 fw-bold">Edit Action Taken Content</h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -910,6 +988,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                       Action Description <span className="text-danger">*</span>
                     </label>
                     <textarea
+                      ref={editDescriptionRef}
                       id="edit-action-description"
                       rows={3}
                       className={`form-control form-control-sm ${editFormErrors.description ? "is-invalid" : ""}`}
@@ -945,6 +1024,20 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
                     <label htmlFor="edit-action-assignee" className="form-label small fw-semibold">
                       Action Assignee
                     </label>
+                    {assigneesError && (
+                      <div className="alert alert-danger py-2 small d-flex justify-content-between align-items-center mb-2" role="alert" data-testid="edit-assignee-load-error">
+                        <span>{assigneesError}</span>
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger btn-sm py-0"
+                          onClick={loadAssignees}
+                          disabled={assigneesLoading}
+                          data-testid="edit-assignee-retry-btn"
+                        >
+                          {assigneesLoading ? "Retrying…" : "Retry"}
+                        </button>
+                      </div>
+                    )}
                     <select
                       id="edit-action-assignee"
                       className="form-select form-select-sm"
