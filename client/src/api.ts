@@ -588,3 +588,121 @@ export async function resetUserInitialPassword(
   return res.json();
 }
 
+// ---------------------------------------------------------------------------
+// Actions Taken API (Lab 4 Sprint 4)
+// ---------------------------------------------------------------------------
+
+export type ActionStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+
+export interface ActionTaken {
+  id: string;
+  ticketId: string;
+  performedBy: {
+    id: number;
+    name: string;
+    role: Role;
+  };
+  assignee: {
+    id: number;
+    name: string;
+    role: Role;
+  } | null;
+  description: string;
+  result: string;
+  status: ActionStatus;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateActionPayload {
+  description: string;
+  result: string;
+  assigneeId?: number | null;
+  followUpRequired: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+export interface UpdateActionPayload {
+  expectedUpdatedAt: string;
+  description?: string;
+  result?: string;
+  assigneeId?: number | null;
+  followUpRequired?: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+export interface UpdateActionStatusPayload {
+  status: ActionStatus;
+  expectedUpdatedAt: string;
+}
+
+export async function fetchTicketActions(ticketId: string): Promise<{ data: ActionTaken[] }> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/actions`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function createTicketAction(
+  ticketId: string,
+  payload: CreateActionPayload,
+  idempotencyKey: string
+): Promise<ActionTaken> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function updateTicketAction(
+  actionId: string,
+  payload: UpdateActionPayload
+): Promise<ActionTaken> {
+  const res = await fetchWithAuth(`${API_URL}/api/actions/${actionId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function updateTicketActionStatus(
+  actionId: string,
+  payload: UpdateActionStatusPayload
+): Promise<ActionTaken> {
+  const res = await fetchWithAuth(`${API_URL}/api/actions/${actionId}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+

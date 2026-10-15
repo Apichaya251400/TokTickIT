@@ -15,6 +15,7 @@ import {
   InternalNote,
   downloadAttachment,
 } from "../api";
+import { ActionsTakenWorkspace } from "./ActionsTakenWorkspace";
 
 interface StaffTicketDetailProps {
   ticketId: string;
@@ -588,6 +589,14 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
           )}
         </div>
       </div>
+
+      {/* Actions Taken Workspace (Lab 4) */}
+      <ActionsTakenWorkspace
+        ticketId={ticket.id}
+        currentUser={currentUser}
+        isTicketCancelled={ticket.currentStatus === "CANCELLED"}
+        onActionUpdated={loadTicketData}
+      />
 
       {/* Communication Section Tabs */}
       <div className="card shadow-sm border mb-4">

@@ -249,6 +249,10 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     expect(preservedAttachment!.id).toBe(customAttachmentId);
     expect(preservedAttachment!.fileName).toBe("custom_pre_existing_doc.pdf");
     expect(preservedAttachment!.ticketId).toBe(customTicket.id);
+
+    // Clean up temporary custom test fixture records
+    await prisma.attachment.deleteMany({ where: { id: customAttachmentId } });
+    await prisma.ticket.deleteMany({ where: { ticketNumber: customTicketNumber } });
   });
 });
 

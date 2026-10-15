@@ -467,6 +467,33 @@ export async function seedDatabase() {
   }
 
   console.log("Seeded Actions Taken (0, 1, and multiple action scenarios) successfully.");
+
+  // Synchronize ticket_number_seq past seeded baseline tickets (dynamically sync to max numeric suffix of seeded tickets)
+  try {
+    const seededTicketNumbers = sampleTickets.map((t) => t.ticketNumber);
+    const maxSuffixFromDb = await prisma.$queryRaw<Array<{ max_suffix: bigint | number | null }>>`
+      SELECT MAX(
+        CAST(
+          SUBSTRING("ticketNumber" FROM '([0-9]+)$')
+          AS BIGINT
+        )
+      ) AS max_suffix
+      FROM "Ticket"
+      WHERE "ticketNumber" = ANY(${seededTicketNumbers});
+    `;
+    const fallbackMax = sampleTickets.reduce((max, t) => {
+      const match = t.ticketNumber.match(/(\d+)$/);
+      return Math.max(max, match ? parseInt(match[1], 10) : 0);
+    }, 1);
+    const maxSeededSuffix = Number(maxSuffixFromDb[0]?.max_suffix) || fallbackMax;
+
+    await prisma.$executeRawUnsafe(
+      `SELECT setval('ticket_number_seq', ${maxSeededSuffix}, true);`
+    );
+  } catch (err) {
+    // Ignore if sequence not yet created
+  }
+
   console.log("Sprint 4 Idempotent Database Seed completed cleanly!");
 }
 
