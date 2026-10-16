@@ -58,6 +58,29 @@ async function loginAsRequester(page: Page) {
   }
 }
 
+async function loginAsAdmin(page: Page) {
+  await page.context().clearCookies();
+  await page.goto("/");
+  await page.fill("#login-email", "admin@toktick.it");
+  await page.fill("#login-password", "InitialPassword123!");
+
+  await Promise.all([
+    page.waitForResponse((res) => res.url().includes("/api/auth/login")),
+    page.click("button[type='submit']"),
+  ]);
+
+  if (await page.getByRole("heading", { name: /Mandatory Password Change/i }).isVisible().catch(() => false)) {
+    await page.fill("#current-password", "InitialPassword123!");
+    await page.fill("#new-password", "InitialPassword123!");
+    await page.fill("#confirm-password", "InitialPassword123!");
+
+    await Promise.all([
+      page.waitForResponse((res) => res.url().includes("/api/auth/change-password")),
+      page.click("button[type='submit']"),
+    ]);
+  }
+}
+
 async function openStaffTicketBySearch(page: Page, query: string) {
   const searchInput = page.getByTestId("queue-search-input");
   await expect(searchInput).toBeVisible();
@@ -79,7 +102,7 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
     ensureDirSync(artifactsBase);
     // Disable password change prompt for test accounts
     await prisma.user.updateMany({
-      where: { email: { in: ["john.staff@toktick.it", "alice@example.com", "staff@toktick.it"] } },
+      where: { email: { in: ["john.staff@toktick.it", "alice@example.com", "staff@toktick.it", "admin@toktick.it"] } },
       data: { requiresPasswordChange: false },
     });
   });
@@ -346,6 +369,81 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
     // Capture Evidence EVD-WORKFLOW-06
     await page.screenshot({
       path: path.join(artifactsBase, "EVD-WORKFLOW-06.png"),
+      fullPage: false,
+    });
+  });
+
+  // EVD-WORKFLOW-ADMIN-01: Administrator Status Transition & Resolution Gate Evidence
+  test("E2E-ADMIN-FLOW-01: Administrator can perform formal Ticket status transition and satisfy Resolution Gate (EVD-WORKFLOW-ADMIN-01)", async ({ page }) => {
+    // Reset TKT-2026-000003 to IN_PROGRESS with null resolutionNote
+    const ticket = await prisma.ticket.update({
+      where: { ticketNumber: "TKT-2026-000003" },
+      data: { currentStatus: "IN_PROGRESS", resolutionNote: null },
+    });
+
+    await page.setViewportSize({ width: 1280, height: 850 });
+    await loginAsAdmin(page);
+
+    // Click "Ticket Lookup" to open lookup form as Administrator
+    const ticketLookupBtn = page.getByRole("button", { name: "Ticket Lookup" });
+    await expect(ticketLookupBtn).toBeVisible();
+    await ticketLookupBtn.click();
+
+    // Look up ticket by UUID
+    const lookupInput = page.getByTestId("ticket-lookup-input");
+    await expect(lookupInput).toBeVisible();
+    await lookupInput.fill(ticket.id);
+
+    const lookupSubmitBtn = page.getByTestId("ticket-lookup-submit-btn");
+    await expect(lookupSubmitBtn).toBeVisible();
+
+    await Promise.all([
+      page.waitForResponse((res) => res.url().includes(`/api/tickets/${ticket.id}`) && res.request().method() === "GET"),
+      lookupSubmitBtn.click(),
+    ]);
+
+    const detail = page.getByTestId("staff-ticket-detail");
+    await expect(detail).toBeVisible();
+
+    // Verify Administrator Mode banner
+    await expect(page.getByText("Administrator Mode (IT Priority Read-Only)")).toBeVisible();
+
+    // Verify IT priority select is disabled for Administrator
+    await expect(page.getByTestId("it-priority-select")).toBeDisabled();
+
+    // Verify status transition button to RESOLVED is visible and enabled for Administrator
+    const resolveBtn = page.getByTestId("status-transition-btn-RESOLVED");
+    await expect(resolveBtn).toBeVisible();
+    await resolveBtn.click();
+
+    // Resolve modal opens
+    const modal = page.getByTestId("resolve-ticket-modal");
+    await expect(modal).toBeVisible();
+
+    // Fill formal resolution note to satisfy Resolution Gate
+    const noteInput = page.getByTestId("resolution-note-input");
+    await expect(noteInput).toBeVisible();
+    const adminNote = "Administrator verified network topology and confirmed resolution.";
+    await noteInput.fill(adminNote);
+
+    const confirmBtn = page.getByTestId("confirm-resolve-btn");
+    await expect(confirmBtn).toBeEnabled();
+
+    await Promise.all([
+      page.waitForResponse((res) => res.url().includes("/api/tickets/") && res.request().method() === "PUT"),
+      confirmBtn.click(),
+    ]);
+
+    // Verify ticket status is now RESOLVED and resolution note banner is displayed
+    await expect(page.getByText(/Ticket status updated successfully/i)).toBeVisible();
+    await expect(detail.getByText("RESOLVED", { exact: true })).toBeVisible();
+    const resolutionBanner = page.getByTestId("ticket-resolution-note-banner");
+    await expect(resolutionBanner).toBeVisible();
+    await expect(resolutionBanner).toContainText(adminNote);
+
+    // Capture Evidence EVD-WORKFLOW-ADMIN-01
+    await page.screenshot({
+      path: path.join(artifactsBase, "EVD-WORKFLOW-ADMIN-01.png"),
       fullPage: false,
     });
   });

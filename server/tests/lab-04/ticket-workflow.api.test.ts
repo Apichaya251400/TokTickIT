@@ -76,7 +76,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({
           status: "OPEN",
           expectedUpdatedAt: ticket.updatedAt.toISOString(),
@@ -106,7 +105,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({
           status: "IN_PROGRESS",
           expectedUpdatedAt: ticket.updatedAt.toISOString(),
@@ -134,7 +132,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({
           status: "CANCELLED",
           expectedUpdatedAt: ticket.updatedAt.toISOString(),
@@ -144,7 +141,7 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       expect(res.body.ticket.currentStatus).toBe("CANCELLED");
     });
 
-    it("TEST-TERM-01: Rejects transition attempts from CANCELLED terminal state with 400 TICKET_TERMINAL (AC-12, BR-09)", async () => {
+    it("TEST-FLOW-07 (TEST-TERM-01): Rejects transition attempts from CANCELLED terminal state with 400 TICKET_TERMINAL (AC-12, BR-09)", async () => {
       const ticket = await prisma.ticket.create({
         data: {
           ticketNumber: makeWorkflowTicketNumber(),
@@ -161,7 +158,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({
           status: "OPEN",
           expectedUpdatedAt: ticket.updatedAt.toISOString(),
@@ -170,6 +166,125 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe("TICKET_TERMINAL");
       expect(res.body.error.message).toContain("terminal state (CANCELLED)");
+    });
+
+    it("TEST-FLOW-08: Rejects Action Taken creation on CANCELLED terminal ticket with 400 TICKET_TERMINAL (AC-12, BR-09)", async () => {
+      const ticket = await prisma.ticket.create({
+        data: {
+          ticketNumber: makeWorkflowTicketNumber(),
+          requesterId: requesterUserId,
+          categoryId: 1,
+          relatedSystemId: 1,
+          requestedPriority: "MEDIUM",
+          summary: "Terminal cancelled ticket for action creation",
+          description: "Testing terminal state rejection on action creation.",
+          currentStatus: "CANCELLED",
+        },
+      });
+
+      const res = await request(app)
+        .post(`/api/tickets/${ticket.id}/actions`)
+        .set("Cookie", `token=${staffToken}`)
+        .set("Idempotency-Key", `idem-cancel-${Date.now()}`)
+        .send({
+          description: "Attempted action on cancelled ticket",
+          result: "Should fail immediately",
+          status: "PENDING",
+          followUpRequired: false,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("TICKET_TERMINAL");
+    });
+
+    describe.each([
+      ["NEW", "OPEN", false],
+      ["NEW", "CANCELLED", false],
+      ["OPEN", "IN_PROGRESS", false],
+      ["OPEN", "CANCELLED", false],
+      ["IN_PROGRESS", "WAITING_FOR_REQUESTER", false],
+      ["IN_PROGRESS", "RESOLVED", true],
+      ["IN_PROGRESS", "CANCELLED", false],
+      ["WAITING_FOR_REQUESTER", "IN_PROGRESS", false],
+      ["WAITING_FOR_REQUESTER", "RESOLVED", true],
+      ["WAITING_FOR_REQUESTER", "CANCELLED", false],
+      ["RESOLVED", "CLOSED", false],
+      ["RESOLVED", "REOPENED", false],
+      ["CLOSED", "REOPENED", false],
+      ["REOPENED", "IN_PROGRESS", false],
+      ["REOPENED", "CANCELLED", false],
+    ])("Parameterized Permitted Matrix Edge: %s -> %s", (fromStatus, toStatus, needsGateNote) => {
+      it(`successfully transitions ${fromStatus} -> ${toStatus}`, async () => {
+        const ticket = await prisma.ticket.create({
+          data: {
+            ticketNumber: makeWorkflowTicketNumber(),
+            requesterId: requesterUserId,
+            categoryId: 1,
+            relatedSystemId: 1,
+            requestedPriority: "MEDIUM",
+            summary: `Matrix edge ${fromStatus} to ${toStatus}`,
+            description: "Testing permitted edge.",
+            currentStatus: fromStatus as any,
+          },
+        });
+
+        const payload: any = {
+          status: toStatus,
+          expectedUpdatedAt: ticket.updatedAt.toISOString(),
+        };
+        if (needsGateNote) {
+          payload.resolutionNote = "Resolution gate satisfied by formal test note.";
+        }
+
+        const res = await request(app)
+          .put(`/api/tickets/${ticket.id}/status`)
+          .set("Cookie", `token=${staffToken}`)
+          .send(payload);
+
+        expect(res.status).toBe(200);
+        expect(res.body.ticket.currentStatus).toBe(toStatus);
+      });
+    });
+
+    describe.each([
+      ["NEW", "IN_PROGRESS"],
+      ["NEW", "RESOLVED"],
+      ["NEW", "CLOSED"],
+      ["NEW", "REOPENED"],
+      ["OPEN", "RESOLVED"],
+      ["OPEN", "CLOSED"],
+      ["OPEN", "REOPENED"],
+      ["RESOLVED", "OPEN"],
+      ["RESOLVED", "IN_PROGRESS"],
+      ["CLOSED", "OPEN"],
+      ["CLOSED", "IN_PROGRESS"],
+      ["CLOSED", "CANCELLED"],
+    ])("Parameterized Forbidden Jumps: %s -> %s", (fromStatus, toStatus) => {
+      it(`rejects invalid transition ${fromStatus} -> ${toStatus} with 400 INVALID_TRANSITION`, async () => {
+        const ticket = await prisma.ticket.create({
+          data: {
+            ticketNumber: makeWorkflowTicketNumber(),
+            requesterId: requesterUserId,
+            categoryId: 1,
+            relatedSystemId: 1,
+            requestedPriority: "MEDIUM",
+            summary: `Forbidden jump ${fromStatus} to ${toStatus}`,
+            description: "Testing forbidden jump.",
+            currentStatus: fromStatus as any,
+          },
+        });
+
+        const res = await request(app)
+          .put(`/api/tickets/${ticket.id}/status`)
+          .set("Cookie", `token=${staffToken}`)
+          .send({
+            status: toStatus,
+            expectedUpdatedAt: ticket.updatedAt.toISOString(),
+          });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error.code).toBe("INVALID_TRANSITION");
+      });
     });
 
     it("Executes full lifecycle sequence: OPEN -> IN_PROGRESS -> WAITING_FOR_REQUESTER -> RESOLVED -> CLOSED -> REOPENED -> IN_PROGRESS", async () => {
@@ -191,7 +306,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       let res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({ status: "IN_PROGRESS", expectedUpdatedAt: current.updatedAt.toISOString() });
       expect(res.status).toBe(200);
 
@@ -200,7 +314,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({ status: "WAITING_FOR_REQUESTER", expectedUpdatedAt: current.updatedAt.toISOString() });
       expect(res.status).toBe(200);
 
@@ -209,7 +322,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({
           status: "RESOLVED",
           resolutionNote: "Formal resolution note to satisfy gate.",
@@ -222,7 +334,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({ status: "CLOSED", expectedUpdatedAt: current.updatedAt.toISOString() });
       expect(res.status).toBe(200);
 
@@ -231,7 +342,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({ status: "REOPENED", expectedUpdatedAt: current.updatedAt.toISOString() });
       expect(res.status).toBe(200);
 
@@ -240,7 +350,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({ status: "IN_PROGRESS", expectedUpdatedAt: current.updatedAt.toISOString() });
       expect(res.status).toBe(200);
       expect(res.body.ticket.currentStatus).toBe("IN_PROGRESS");
@@ -265,7 +374,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({
           status: "RESOLVED",
           expectedUpdatedAt: ticket.updatedAt.toISOString(),
@@ -296,7 +404,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({
           status: "RESOLVED",
           resolutionNote: "    ",
@@ -325,7 +432,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({
           status: "RESOLVED",
           resolutionNote: formalNote,
@@ -371,7 +477,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({
           status: "RESOLVED",
           expectedUpdatedAt: ticket.updatedAt.toISOString(),
@@ -412,7 +517,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
-        .set("Authorization", `Bearer ${staffToken}`)
         .send({
           status: "RESOLVED",
           expectedUpdatedAt: ticket.updatedAt.toISOString(),
@@ -441,7 +545,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${requesterToken}`)
-        .set("Authorization", `Bearer ${requesterToken}`)
         .send({
           status: "IN_PROGRESS",
           expectedUpdatedAt: ticket.updatedAt.toISOString(),
@@ -491,7 +594,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${adminToken}`)
-        .set("Authorization", `Bearer ${adminToken}`)
         .send({
           status: "IN_PROGRESS",
           expectedUpdatedAt: ticket.updatedAt.toISOString(),
@@ -521,7 +623,6 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
         .set("Cookie", `token=${adminToken}`)
-        .set("Authorization", `Bearer ${adminToken}`)
         .send({
           status: "RESOLVED",
           resolutionNote: "Administrator verified server hardware and confirmed stable operation.",
@@ -555,8 +656,7 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
 
       const res = await request(app)
         .post(`/api/tickets/${ticket.id}/resolve-indicator`)
-        .set("Cookie", `token=${requesterToken}`)
-        .set("Authorization", `Bearer ${requesterToken}`);
+        .set("Cookie", `token=${requesterToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.ticket.requesterResolvedIndicatedAt).toBeDefined();

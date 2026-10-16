@@ -275,12 +275,13 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
       return;
     }
 
+    if (!ticket) return;
     setActionLoading(true);
     setActionError(null);
     setActionSuccess(null);
     setStaleConflict(false);
     try {
-      const res = await updateTicketStatusApi(ticketId, targetStatus, ticket?.updatedAt);
+      const res = await updateTicketStatusApi(ticketId, targetStatus, ticket.updatedAt);
       setActionSuccess(res.message || `Status updated to ${targetStatus}.`);
       await loadTicketData();
       if (onTicketUpdated) onTicketUpdated();
@@ -304,11 +305,12 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
       return;
     }
 
+    if (!ticket) return;
     setActionLoading(true);
     setResolveError(null);
     setStaleConflict(false);
     try {
-      const res = await updateTicketStatusApi(ticketId, "RESOLVED", ticket?.updatedAt, trimmedNote || undefined);
+      const res = await updateTicketStatusApi(ticketId, "RESOLVED", ticket.updatedAt, trimmedNote || undefined);
       setActionSuccess(res.message || "Ticket status updated to RESOLVED.");
       setShowResolveModal(false);
       await loadTicketData();
@@ -543,7 +545,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
           <span>Ticket Overview & Operational Controls</span>
           {isAdmin && (
             <span className="badge bg-purple text-white" style={{ backgroundColor: "#7C3AED" }}>
-              Administrator Mode (Read-Only Status & Priority)
+              Administrator Mode (IT Priority Read-Only)
             </span>
           )}
         </div>

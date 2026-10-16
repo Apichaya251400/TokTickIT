@@ -81,7 +81,7 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 | **AC-06 / FR-05** | IT Staff Dashboard calculates accurate metrics, urgent & recent items | `TEST-DASH-01` | Integration / API | `server/tests/lab-04/staff-dashboard.api.test.ts` | `200 OK`, exact aggregate counts for `unassignedCount`, `myAssignedCount`, `todayActionsCount`, `urgentWorkloadCount` | `Planned` |
 | **AC-07 / FR-06** | Requester Dashboard calculates accurate owned metrics & attention items | `TEST-DASH-02` | Integration / API | `server/tests/lab-04/requester-dashboard.api.test.ts` | `200 OK`, exact aggregate counts for `myOpenCount`, `waitingResponseCount`, `inProgressCount`, `recentlyResolvedCount` | `Planned` |
 | **AC-08 / BR-15** | IT Staff Dashboard metric card click navigates to filtered staff queue | `TEST-DASH-03` | Playwright E2E | `e2e/lab-04/dashboards.spec.ts` | Clicking metric card navigates to target staff queue URL (e.g. `/staff/queue?owner=unassigned`) | `Planned` |
-| **AC-09 / FR-10, BR-08** | Resolution Gate blocks resolving `IN_PROGRESS` ticket with 0 completed actions & empty note | `TEST-GATE-01` | Integration / API | `server/tests/lab-04/ticket-workflow.api.test.ts` | `400 Bad Request` (`PREMATURE_RESOLUTION`) | `Pass` |
+| **AC-09 / FR-10, BR-08** | Resolution Gate blocks resolving `IN_PROGRESS` ticket with 0 completed actions & empty note | `TEST-GATE-01` | Integration / API | `server/tests/lab-04/ticket-workflow.api.test.ts` | `400 Bad Request` (`BAD_REQUEST`) | `Pass` |
 | **AC-10 / BR-07** | Requester "Problem Appears Resolved" indication records timestamp, status unchanged | `TEST-GATE-02` | Integration / API | `server/tests/lab-04/ticket-workflow.api.test.ts` | `200 OK`, `requesterResolvedIndicatedAt` set, `currentStatus` remains `IN_PROGRESS` | `Pass` |
 | **AC-11 / BR-10** | Concurrent ticket resolution race condition using same `expectedUpdatedAt` | `TEST-CONCUR-01` | Integration / API | `server/tests/lab-04/concurrency.api.test.ts` | Concurrent `Promise.all`: exactly 1 request gets `200 OK`, competing request gets `409 Conflict` (`STALE_UPDATE`) | `Pass` |
 | **AC-12 / BR-09** | Reject status transition on `CANCELLED` ticket | `TEST-TERM-01` | Integration / API | `server/tests/lab-04/ticket-workflow.api.test.ts` | `400 Bad Request` (`TICKET_TERMINAL`) | `Pass` |
@@ -212,7 +212,7 @@ sequenceDiagram
 |---|---|---|---|---|
 | `NEW` | `OPEN` | Staff transition | `TEST-FLOW-01` | `200 OK` |
 | `NEW` | `IN_PROGRESS` | Invalid direct jump | `TEST-FLOW-02` | `400 Bad Request` (`INVALID_TRANSITION`) |
-| `IN_PROGRESS` | `RESOLVED` | 0 completed actions & empty `resolutionNote` | `TEST-FLOW-03` | `400 Bad Request` (`PREMATURE_RESOLUTION`) |
+| `IN_PROGRESS` | `RESOLVED` | 0 completed actions & empty `resolutionNote` | `TEST-FLOW-03` | `400 Bad Request` (`BAD_REQUEST`) |
 | `IN_PROGRESS` | `RESOLVED` | 0 completed actions & valid `resolutionNote` | `TEST-FLOW-04` | `200 OK` (Status = `RESOLVED`) |
 | `IN_PROGRESS` | `RESOLVED` | 1 completed action & empty `resolutionNote` | `TEST-FLOW-05` | `200 OK` (Status = `RESOLVED`) |
 | `IN_PROGRESS` | `CANCELLED` | Staff transition | `TEST-FLOW-06` | `200 OK` (Status = `CANCELLED`) |

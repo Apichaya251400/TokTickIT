@@ -65,6 +65,8 @@ export default function App() {
   // 3. Navigation Tab & Ticket Detail Selection State
   const [activeTab, setActiveTab] = useState<NavTab>("my-tickets");
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [lookupInput, setLookupInput] = useState<string>("");
+  const [lookupError, setLookupError] = useState<string | null>(null);
 
   // 4. My Tickets Query & Data State
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -693,14 +695,55 @@ export default function App() {
         </section>
       )}
 
-      {/* Ticket Lookup Placeholder */}
-      {activeTab === "ticket-lookup" && (
+      {/* Ticket Lookup */}
+      {activeTab === "ticket-lookup" && !selectedTicketId && (
         <section className="mb-5">
           <div className="card shadow-sm p-4 bg-light border-0">
             <h2 className="h5 fw-bold text-success mb-2">Ticket Lookup</h2>
-            <p className="text-muted mb-0">
-              Welcome, <strong>{currentUser.name}</strong>. Administrator ticket lookup & search view will be available in Sprint 4.
+            <p className="text-muted small mb-3">
+              Enter a Ticket UUID to inspect ticket details and perform administrative operations.
             </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const trimmed = lookupInput.trim();
+                if (!trimmed) {
+                  setLookupError("Please enter a Ticket UUID.");
+                  return;
+                }
+                setLookupError(null);
+                setSelectedTicketId(trimmed);
+              }}
+              className="row g-2 align-items-center"
+            >
+              <div className="col-12 col-md-8">
+                <input
+                  type="text"
+                  data-testid="ticket-lookup-input"
+                  className="form-control"
+                  placeholder="Enter Ticket UUID (e.g. 550e8400-e29b-41d4-a716-446655440000)"
+                  value={lookupInput}
+                  onChange={(e) => {
+                    setLookupInput(e.target.value);
+                    if (lookupError) setLookupError(null);
+                  }}
+                />
+              </div>
+              <div className="col-12 col-md-4">
+                <button
+                  type="submit"
+                  data-testid="ticket-lookup-submit-btn"
+                  className="btn btn-success w-100"
+                >
+                  Lookup Ticket
+                </button>
+              </div>
+              {lookupError && (
+                <div className="col-12">
+                  <div className="text-danger small mt-1">{lookupError}</div>
+                </div>
+              )}
+            </form>
           </div>
         </section>
       )}

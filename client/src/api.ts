@@ -451,16 +451,14 @@ export async function updateItPriorityApi(ticketId: string, itPriority: string):
 export async function updateTicketStatusApi(
   ticketId: string,
   status: string,
-  expectedUpdatedAt?: string,
+  expectedUpdatedAt: string,
   resolutionNote?: string
 ): Promise<any> {
-  const payload: any = { status };
-  if (expectedUpdatedAt) {
-    payload.expectedUpdatedAt = expectedUpdatedAt;
-  }
-  if (resolutionNote !== undefined) {
-    payload.resolutionNote = resolutionNote;
-  }
+  const payload: any = {
+    status,
+    expectedUpdatedAt,
+    ...(resolutionNote !== undefined ? { resolutionNote } : {}),
+  };
 
   const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/status`, {
     method: "PUT",
