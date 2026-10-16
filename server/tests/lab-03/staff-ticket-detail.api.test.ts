@@ -406,11 +406,11 @@ describe("Issue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-deta
       expect(["INVALID_TRANSITION", "TICKET_TERMINAL"]).toContain(res.body.error?.code || res.body.error);
     });
 
-    it("denies Administrator attempt to perform status transition with 403 Forbidden", async () => {
+    it("denies Requester attempt to perform status transition with 403 Forbidden", async () => {
       const ticket = await prisma.ticket.findFirstOrThrow();
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
-        .set("Authorization", `Bearer ${adminToken}`)
+        .set("Authorization", `Bearer ${aliceToken}`)
         .send({ status: "OPEN" });
 
       expect(res.status).toBe(403);

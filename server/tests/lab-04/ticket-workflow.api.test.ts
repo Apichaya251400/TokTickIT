@@ -473,6 +473,69 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
 
       expect(res.status).toBe(401);
     });
+
+    it("TEST-SEC-ADMIN-01: Administrator can perform valid Ticket status transition (Specification Section 6 / Handout §4.3)", async () => {
+      const ticket = await prisma.ticket.create({
+        data: {
+          ticketNumber: makeWorkflowTicketNumber(),
+          requesterId: requesterUserId,
+          categoryId: 1,
+          relatedSystemId: 1,
+          requestedPriority: "MEDIUM",
+          summary: "Admin valid transition test",
+          description: "Testing Administrator transition from OPEN to IN_PROGRESS.",
+          currentStatus: "OPEN",
+        },
+      });
+
+      const res = await request(app)
+        .put(`/api/tickets/${ticket.id}/status`)
+        .set("Cookie", `token=${adminToken}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({
+          status: "IN_PROGRESS",
+          expectedUpdatedAt: ticket.updatedAt.toISOString(),
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.ticket.currentStatus).toBe("IN_PROGRESS");
+
+      const dbTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: ticket.id } });
+      expect(dbTicket.currentStatus).toBe("IN_PROGRESS");
+    });
+
+    it("TEST-SEC-ADMIN-02: Administrator can satisfy Resolution Gate and transition to RESOLVED (Specification Section 6 / Handout §4.3)", async () => {
+      const ticket = await prisma.ticket.create({
+        data: {
+          ticketNumber: makeWorkflowTicketNumber(),
+          requesterId: requesterUserId,
+          categoryId: 1,
+          relatedSystemId: 1,
+          requestedPriority: "HIGH",
+          summary: "Admin resolution gate test",
+          description: "Testing Administrator resolving ticket with formal resolution note.",
+          currentStatus: "IN_PROGRESS",
+        },
+      });
+
+      const res = await request(app)
+        .put(`/api/tickets/${ticket.id}/status`)
+        .set("Cookie", `token=${adminToken}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({
+          status: "RESOLVED",
+          resolutionNote: "Administrator verified server hardware and confirmed stable operation.",
+          expectedUpdatedAt: ticket.updatedAt.toISOString(),
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.ticket.currentStatus).toBe("RESOLVED");
+      expect(res.body.ticket.resolutionNote).toBe("Administrator verified server hardware and confirmed stable operation.");
+
+      const dbTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: ticket.id } });
+      expect(dbTicket.currentStatus).toBe("RESOLVED");
+      expect(dbTicket.resolutionNote).toBe("Administrator verified server hardware and confirmed stable operation.");
+    });
   });
 
   describe("Requester Advisory Indicator (BR-07 / AC-10)", () => {

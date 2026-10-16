@@ -300,9 +300,113 @@ describe("LAB4-06 / TicketWorkflow Component Suite (TicketWorkflow.test.tsx)", (
     await waitFor(() => {
       expect(screen.getByTestId("resolve-ticket-modal")).toBeInTheDocument();
     });
-    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => {
       expect(screen.queryByTestId("resolve-ticket-modal")).not.toBeInTheDocument();
     });
+  });
+
+  it("TEST-WORKFLOW-UI-08: Renders permitted transitions for ADMINISTRATOR role (Specification Section 6 / Handout §4.3)", async () => {
+    const mockAdminUser: api.User = {
+      id: 1,
+      name: "System Admin",
+      email: "admin@toktick.it",
+      role: "ADMINISTRATOR",
+      isActive: true,
+      requiresPasswordChange: false,
+    };
+
+    render(
+      <StaffTicketDetail
+        ticketId="test-ticket-uuid-001"
+        currentUser={mockAdminUser}
+        onBack={() => {}}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status-transition-btn-WAITING_FOR_REQUESTER")).toBeInTheDocument();
+      expect(screen.getByTestId("status-transition-btn-RESOLVED")).toBeInTheDocument();
+      expect(screen.getByTestId("status-transition-btn-CANCELLED")).toBeInTheDocument();
+    });
+  });
+
+  it("TEST-WORKFLOW-UI-09: Displays error banner with Retry button when fetchTicketActions fails during resolution check", async () => {
+    // 1st call: initial ActionsTakenWorkspace mount
+    vi.mocked(api.fetchTicketActions).mockResolvedValueOnce({ data: [] });
+    // 2nd call: modal open
+    vi.mocked(api.fetchTicketActions).mockRejectedValueOnce(new Error("Network connection lost"));
+
+    render(
+      <StaffTicketDetail
+        ticketId="test-ticket-uuid-001"
+        currentUser={mockStaffUser}
+        onBack={() => {}}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status-transition-btn-RESOLVED")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("status-transition-btn-RESOLVED"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("resolve-ticket-modal")).toBeInTheDocument();
+      expect(screen.getByTestId("gate-actions-error")).toBeInTheDocument();
+      expect(screen.getByText("Network connection lost")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+      expect(screen.getByTestId("confirm-resolve-btn")).toBeDisabled();
+    });
+
+    // Retry recovery
+    vi.mocked(api.fetchTicketActions).mockResolvedValueOnce({
+      data: [{ id: "act-1", status: "COMPLETED" }] as any,
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("gate-actions-error")).not.toBeInTheDocument();
+      expect(screen.getByTestId("gate-notice-optional")).toBeInTheDocument();
+    });
+  });
+
+  it("TEST-WORKFLOW-UI-10: Traps Tab / Shift+Tab keyboard focus within resolve modal", async () => {
+    render(
+      <StaffTicketDetail
+        ticketId="test-ticket-uuid-001"
+        currentUser={mockStaffUser}
+        onBack={() => {}}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("status-transition-btn-RESOLVED")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("status-transition-btn-RESOLVED"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("resolve-ticket-modal")).toBeInTheDocument();
+    });
+
+    const modal = screen.getByTestId("resolve-ticket-modal");
+    const focusableElements = modal.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    expect(focusableElements.length).toBeGreaterThan(1);
+
+    const firstEl = focusableElements[0];
+    const lastEl = focusableElements[focusableElements.length - 1];
+
+    // Shift+Tab from first element wraps to last element
+    firstEl.focus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(lastEl);
+
+    // Tab from last element wraps to first element
+    lastEl.focus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: false });
+    expect(document.activeElement).toBe(firstEl);
   });
 });

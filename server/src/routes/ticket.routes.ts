@@ -1202,11 +1202,11 @@ const PERMITTED_STATUS_TRANSITIONS: Record<string, string[]> = {
   CANCELLED: [],
 };
 
-// PUT /api/tickets/:id/status - Perform Ticket Status Transition (IT Staff Only / Status Transition Matrix / FR-10 / LAB4-06)
+// PUT /api/tickets/:id/status - Perform Ticket Status Transition (IT Staff & Administrator / Status Transition Matrix / FR-10 / LAB4-06)
 ticketRouter.put(
   "/tickets/:id/status",
   authenticateToken,
-  requireRole("IT_STAFF"),
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const ticketId = req.params.id;
 

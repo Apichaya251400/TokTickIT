@@ -59,29 +59,60 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
   const [resolutionNote, setResolutionNote] = useState<string>("");
   const [resolveError, setResolveError] = useState<string | null>(null);
   const [completedActionsCount, setCompletedActionsCount] = useState<number>(0);
+  const [gateActionsLoading, setGateActionsLoading] = useState<boolean>(false);
+  const [gateActionsError, setGateActionsError] = useState<string | null>(null);
   const [staleConflict, setStaleConflict] = useState<boolean>(false);
 
   const resolveModalRef = useRef<HTMLDivElement | null>(null);
   const resolveNoteInputRef = useRef<HTMLTextAreaElement | null>(null);
-
-  useEffect(() => {
-    if (showResolveModal) {
-      const timer = setTimeout(() => {
-        resolveNoteInputRef.current?.focus();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [showResolveModal]);
+  const resolveTriggerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!showResolveModal) return;
+
+    const timer = setTimeout(() => {
+      resolveNoteInputRef.current?.focus();
+    }, 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.preventDefault();
         setShowResolveModal(false);
+        return;
+      }
+
+      if (e.key === "Tab") {
+        if (!resolveModalRef.current) return;
+        const focusableElements = resolveModalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement || document.activeElement === resolveModalRef.current) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("keydown", handleKeyDown);
+      if (resolveTriggerRef.current) {
+        resolveTriggerRef.current.focus();
+      }
+    };
   }, [showResolveModal]);
 
   // Comments state
@@ -102,6 +133,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
 
   const isItStaff = currentUser.role === "IT_STAFF";
   const isAdmin = currentUser.role === "ADMINISTRATOR";
+  const canTransitionStatus = isItStaff || isAdmin;
 
   useEffect(() => {
     loadTicketData();
@@ -215,20 +247,31 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
     }
   }
 
-  async function handleStatusTransition(targetStatus: string) {
-    if (actionLoading || !isItStaff) return;
+  async function loadGateActions() {
+    setGateActionsLoading(true);
+    setGateActionsError(null);
+    try {
+      const actionsRes = await fetchTicketActions(ticketId);
+      const completed = (actionsRes.data || []).filter((a: any) => a.status === "COMPLETED").length;
+      setCompletedActionsCount(completed);
+    } catch (err: any) {
+      setGateActionsError(err?.data?.error?.message || err?.message || "Failed to load Actions Taken for Resolution Gate verification.");
+    } finally {
+      setGateActionsLoading(false);
+    }
+  }
+
+  async function handleStatusTransition(targetStatus: string, triggerElement?: HTMLElement) {
+    if (actionLoading || !canTransitionStatus) return;
 
     if (targetStatus === "RESOLVED") {
+      if (triggerElement) {
+        resolveTriggerRef.current = triggerElement;
+      }
       setResolveError(null);
       setResolutionNote("");
-      try {
-        const actionsRes = await fetchTicketActions(ticketId);
-        const completed = (actionsRes.data || []).filter((a: any) => a.status === "COMPLETED").length;
-        setCompletedActionsCount(completed);
-      } catch {
-        setCompletedActionsCount(0);
-      }
       setShowResolveModal(true);
+      await loadGateActions();
       return;
     }
 
@@ -254,7 +297,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
   }
 
   async function handleConfirmResolve() {
-    if (actionLoading || !isItStaff) return;
+    if (actionLoading || !canTransitionStatus || gateActionsLoading || !!gateActionsError) return;
     const trimmedNote = resolutionNote.trim();
     if (completedActionsCount === 0 && !trimmedNote) {
       setResolveError("Cannot resolve ticket without at least one completed Action Taken or formal resolution note.");
@@ -615,12 +658,12 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
             </div>
           </div>
 
-          {/* Status Transitions Action Bar (IT Staff Only) */}
+          {/* Status Transitions Action Bar (IT Staff & Administrator) */}
           <div className="border-top pt-3 mt-3">
             <label className="form-label small text-muted fw-semibold d-block mb-2">
               Status Transitions (Current: {ticket.currentStatus})
             </label>
-            {isItStaff ? (
+            {canTransitionStatus ? (
               permittedTransitions.length > 0 ? (
                 <div className="d-flex flex-wrap gap-2">
                   {permittedTransitions.map((nextStatus) => (
@@ -634,7 +677,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
                           ? "btn-success"
                           : "btn-outline-primary"
                       }`}
-                      onClick={() => handleStatusTransition(nextStatus)}
+                      onClick={(e) => handleStatusTransition(nextStatus, e.currentTarget)}
                       disabled={actionLoading}
                       data-testid={`status-transition-btn-${nextStatus}`}
                     >
@@ -647,7 +690,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
               )
             ) : (
               <span className="small text-muted italic">
-                Status transitions are reserved for IT Staff members according to the authorization matrix.
+                Status transitions are reserved for IT Staff and Administrator users according to the authorization matrix.
               </span>
             )}
           </div>
@@ -915,14 +958,36 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
                   </div>
                 )}
 
-                {completedActionsCount === 0 ? (
-                  <div className="alert alert-warning border-warning small mb-3" data-testid="gate-notice-required">
-                    <strong>Resolution Gate Notice:</strong> This ticket has <strong>0 completed Actions Taken</strong>. A formal resolution note is <strong>required</strong> before this ticket can transition to RESOLVED.
+                {gateActionsLoading && (
+                  <div className="alert alert-info py-2 small mb-3" data-testid="gate-actions-loading">
+                    Checking Resolution Gate requirements…
                   </div>
-                ) : (
-                  <div className="alert alert-info border-info small mb-3" data-testid="gate-notice-optional">
-                    <strong>Resolution Gate Satisfied:</strong> This ticket has <strong>{completedActionsCount} completed Action(s) Taken</strong>. Adding a resolution note is <strong>optional</strong>.
+                )}
+
+                {gateActionsError && (
+                  <div className="alert alert-danger py-2 small d-flex justify-content-between align-items-center mb-3" data-testid="gate-actions-error">
+                    <span>{gateActionsError}</span>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={loadGateActions}
+                      disabled={gateActionsLoading}
+                    >
+                      Retry
+                    </button>
                   </div>
+                )}
+
+                {!gateActionsLoading && !gateActionsError && (
+                  completedActionsCount === 0 ? (
+                    <div className="alert alert-warning border-warning small mb-3" data-testid="gate-notice-required">
+                      <strong>Resolution Gate Notice:</strong> This ticket has <strong>0 completed Actions Taken</strong>. A formal resolution note is <strong>required</strong> before this ticket can transition to RESOLVED.
+                    </div>
+                  ) : (
+                    <div className="alert alert-info border-info small mb-3" data-testid="gate-notice-optional">
+                      <strong>Resolution Gate Satisfied:</strong> This ticket has <strong>{completedActionsCount} completed Action(s) Taken</strong>. Adding a resolution note is <strong>optional</strong>.
+                    </div>
+                  )
                 )}
 
                 <div className="mb-3">
@@ -943,12 +1008,12 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
                         : "Enter optional resolution note (up to 2000 characters)..."
                     }
                     data-testid="resolution-note-input"
-                    disabled={actionLoading}
+                    disabled={actionLoading || gateActionsLoading}
                     style={{ outlineColor: "#198754" }}
                   />
                   <div className="d-flex justify-content-between form-text text-muted small mt-1">
                     <span>
-                      {completedActionsCount === 0 && !resolutionNote.trim() && (
+                      {!gateActionsLoading && !gateActionsError && completedActionsCount === 0 && !resolutionNote.trim() && (
                         <span className="text-danger">Resolution note is required.</span>
                       )}
                     </span>
@@ -970,7 +1035,12 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
                   type="button"
                   className="btn btn-success btn-sm fw-semibold"
                   onClick={handleConfirmResolve}
-                  disabled={actionLoading || (completedActionsCount === 0 && !resolutionNote.trim())}
+                  disabled={
+                    actionLoading ||
+                    gateActionsLoading ||
+                    !!gateActionsError ||
+                    (completedActionsCount === 0 && !resolutionNote.trim())
+                  }
                   data-testid="confirm-resolve-btn"
                   style={{ backgroundColor: "#198754", borderColor: "#198754" }}
                 >
