@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   User,
   fetchTicketById,
@@ -11,6 +11,7 @@ import {
   fetchInternalNotes,
   postInternalNote,
   fetchAssignees,
+  fetchTicketActions,
   PublicComment,
   InternalNote,
   downloadAttachment,
@@ -53,6 +54,67 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
+  // Resolution Gate Modal & Concurrency State (LAB4-06)
+  const [showResolveModal, setShowResolveModal] = useState<boolean>(false);
+  const [resolutionNote, setResolutionNote] = useState<string>("");
+  const [resolveError, setResolveError] = useState<string | null>(null);
+  const [completedActionsCount, setCompletedActionsCount] = useState<number>(0);
+  const [gateActionsLoading, setGateActionsLoading] = useState<boolean>(false);
+  const [gateActionsError, setGateActionsError] = useState<string | null>(null);
+  const [staleConflict, setStaleConflict] = useState<boolean>(false);
+
+  const resolveModalRef = useRef<HTMLDivElement | null>(null);
+  const resolveNoteInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const resolveTriggerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!showResolveModal) return;
+
+    const timer = setTimeout(() => {
+      resolveNoteInputRef.current?.focus();
+    }, 50);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setShowResolveModal(false);
+        return;
+      }
+
+      if (e.key === "Tab") {
+        if (!resolveModalRef.current) return;
+        const focusableElements = resolveModalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement || document.activeElement === resolveModalRef.current) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("keydown", handleKeyDown);
+      if (resolveTriggerRef.current) {
+        resolveTriggerRef.current.focus();
+      }
+    };
+  }, [showResolveModal]);
+
   // Comments state
   const [comments, setComments] = useState<PublicComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState<boolean>(false);
@@ -71,6 +133,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
 
   const isItStaff = currentUser.role === "IT_STAFF";
   const isAdmin = currentUser.role === "ADMINISTRATOR";
+  const canTransitionStatus = isItStaff || isAdmin;
 
   useEffect(() => {
     loadTicketData();
@@ -184,18 +247,81 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
     }
   }
 
-  async function handleStatusTransition(targetStatus: string) {
-    if (actionLoading || !isItStaff) return;
+  async function loadGateActions() {
+    setGateActionsLoading(true);
+    setGateActionsError(null);
+    try {
+      const actionsRes = await fetchTicketActions(ticketId);
+      const completed = (actionsRes.data || []).filter((a: any) => a.status === "COMPLETED").length;
+      setCompletedActionsCount(completed);
+    } catch (err: any) {
+      setGateActionsError(err?.data?.error?.message || err?.message || "Failed to load Actions Taken for Resolution Gate verification.");
+    } finally {
+      setGateActionsLoading(false);
+    }
+  }
+
+  async function handleStatusTransition(targetStatus: string, triggerElement?: HTMLElement) {
+    if (actionLoading || !canTransitionStatus) return;
+
+    if (targetStatus === "RESOLVED") {
+      if (triggerElement) {
+        resolveTriggerRef.current = triggerElement;
+      }
+      setResolveError(null);
+      setResolutionNote("");
+      setShowResolveModal(true);
+      await loadGateActions();
+      return;
+    }
+
+    if (!ticket) return;
     setActionLoading(true);
     setActionError(null);
     setActionSuccess(null);
+    setStaleConflict(false);
     try {
-      const res = await updateTicketStatusApi(ticketId, targetStatus);
+      const res = await updateTicketStatusApi(ticketId, targetStatus, ticket.updatedAt);
       setActionSuccess(res.message || `Status updated to ${targetStatus}.`);
       await loadTicketData();
       if (onTicketUpdated) onTicketUpdated();
     } catch (err: any) {
-      setActionError(err?.data?.message || err?.data?.error?.message || "Failed to update status.");
+      if (err?.status === 409 || err?.data?.error?.code === "STALE_UPDATE") {
+        setStaleConflict(true);
+        setActionError(err?.data?.error?.message || "Ticket status was updated concurrently by another user. Please refresh and try again.");
+      } else {
+        setActionError(err?.data?.error?.message || err?.data?.message || "Failed to update status.");
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleConfirmResolve() {
+    if (actionLoading || !canTransitionStatus || gateActionsLoading || !!gateActionsError) return;
+    const trimmedNote = resolutionNote.trim();
+    if (completedActionsCount === 0 && !trimmedNote) {
+      setResolveError("Cannot resolve ticket without at least one completed Action Taken or formal resolution note.");
+      return;
+    }
+
+    if (!ticket) return;
+    setActionLoading(true);
+    setResolveError(null);
+    setStaleConflict(false);
+    try {
+      const res = await updateTicketStatusApi(ticketId, "RESOLVED", ticket.updatedAt, trimmedNote || undefined);
+      setActionSuccess(res.message || "Ticket status updated to RESOLVED.");
+      setShowResolveModal(false);
+      await loadTicketData();
+      if (onTicketUpdated) onTicketUpdated();
+    } catch (err: any) {
+      if (err?.status === 409 || err?.data?.error?.code === "STALE_UPDATE") {
+        setStaleConflict(true);
+        setResolveError(err?.data?.error?.message || "Ticket status was updated concurrently by another user. Please refresh and try again.");
+      } else {
+        setResolveError(err?.data?.error?.message || err?.data?.message || "Failed to resolve ticket.");
+      }
     } finally {
       setActionLoading(false);
     }
@@ -269,15 +395,15 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
   }
 
   function renderStatusBadge(status: string) {
-    let bgClass = "bg-primary";
+    let bgClass = "bg-secondary";
     if (status === "NEW") bgClass = "bg-info text-dark";
     else if (status === "OPEN") bgClass = "bg-primary text-white";
     else if (status === "IN_PROGRESS") bgClass = "bg-warning text-dark";
-    else if (status === "WAITING_FOR_REQUESTER") bgClass = "bg-secondary text-white";
+    else if (status === "WAITING_FOR_REQUESTER") bgClass = "bg-dark text-white";
     else if (status === "RESOLVED") bgClass = "bg-success text-white";
-    else if (status === "CLOSED") bgClass = "bg-dark text-white";
+    else if (status === "CLOSED") bgClass = "bg-secondary text-white";
     else if (status === "REOPENED") bgClass = "bg-danger text-white";
-    else if (status === "CANCELLED") bgClass = "bg-danger text-white";
+    else if (status === "CANCELLED") bgClass = "bg-light text-muted border";
     return <span className={`badge ${bgClass}`}>{status}</span>;
   }
 
@@ -360,7 +486,41 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
         </div>
       )}
 
-      {/* Informational Signalling Banners */}
+      {/* Stale Concurrency Conflict Banner */}
+      {staleConflict && (
+        <div className="alert alert-warning d-flex justify-content-between align-items-center mb-4" role="alert" data-testid="stale-update-banner">
+          <div>
+            <strong>Concurrent Conflict:</strong> Ticket status was updated concurrently by another user. Please refresh and try again.
+          </div>
+          <button
+            type="button"
+            className="btn btn-warning btn-sm fw-bold"
+            onClick={async () => {
+              setStaleConflict(false);
+              setActionError(null);
+              setResolveError(null);
+              setShowResolveModal(false);
+              await loadTicketData();
+            }}
+            data-testid="refresh-ticket-btn"
+          >
+            Refresh Ticket
+          </button>
+        </div>
+      )}
+
+      {/* Ticket Resolution Note Banner */}
+      {ticket.resolutionNote && (
+        <div className="alert alert-success border-success d-flex flex-column gap-1 mb-4" data-testid="ticket-resolution-note-banner">
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge bg-success">Resolution Note</span>
+            <span className="fw-semibold">Formal resolution details recorded:</span>
+          </div>
+          <div className="small text-dark mt-1" style={{ whiteSpace: "pre-wrap" }}>
+            {ticket.resolutionNote}
+          </div>
+        </div>
+      )}
       {ticket.requesterResolvedIndicatedAt && (
         <div className="alert alert-info border-info d-flex align-items-center gap-2 mb-4">
           <span className="fw-bold">Requester Signal:</span>
@@ -385,7 +545,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
           <span>Ticket Overview & Operational Controls</span>
           {isAdmin && (
             <span className="badge bg-purple text-white" style={{ backgroundColor: "#7C3AED" }}>
-              Administrator Mode (Read-Only Status & Priority)
+              Administrator Mode (IT Priority Read-Only)
             </span>
           )}
         </div>
@@ -500,12 +660,12 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
             </div>
           </div>
 
-          {/* Status Transitions Action Bar (IT Staff Only) */}
+          {/* Status Transitions Action Bar (IT Staff & Administrator) */}
           <div className="border-top pt-3 mt-3">
             <label className="form-label small text-muted fw-semibold d-block mb-2">
               Status Transitions (Current: {ticket.currentStatus})
             </label>
-            {isItStaff ? (
+            {canTransitionStatus ? (
               permittedTransitions.length > 0 ? (
                 <div className="d-flex flex-wrap gap-2">
                   {permittedTransitions.map((nextStatus) => (
@@ -519,7 +679,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
                           ? "btn-success"
                           : "btn-outline-primary"
                       }`}
-                      onClick={() => handleStatusTransition(nextStatus)}
+                      onClick={(e) => handleStatusTransition(nextStatus, e.currentTarget)}
                       disabled={actionLoading}
                       data-testid={`status-transition-btn-${nextStatus}`}
                     >
@@ -532,7 +692,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
               )
             ) : (
               <span className="small text-muted italic">
-                Status transitions are reserved for IT Staff members according to the authorization matrix.
+                Status transitions are reserved for IT Staff and Administrator users according to the authorization matrix.
               </span>
             )}
           </div>
@@ -746,6 +906,153 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
           )}
         </div>
       </div>
+
+      {/* Resolve Ticket Modal (Resolution Gate Enforcement & Concurrency) */}
+      {showResolveModal && (
+        <div
+          className="modal d-block"
+          tabIndex={-1}
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="resolveModalTitle"
+          ref={resolveModalRef}
+          data-testid="resolve-ticket-modal"
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header bg-light">
+                <h5 className="modal-title fw-bold text-success" id="resolveModalTitle">
+                  Resolve Ticket ({ticket.ticketNumber})
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowResolveModal(false)}
+                  aria-label="Close"
+                  disabled={actionLoading}
+                ></button>
+              </div>
+              <div className="modal-body">
+                {staleConflict && (
+                  <div className="alert alert-warning mb-3" data-testid="modal-stale-conflict-banner">
+                    <p className="mb-2 fw-semibold">
+                      Ticket was updated concurrently by another user.
+                    </p>
+                    <button
+                      type="button"
+                      className="btn btn-warning btn-sm fw-bold"
+                      onClick={async () => {
+                        setShowResolveModal(false);
+                        setStaleConflict(false);
+                        await loadTicketData();
+                      }}
+                      data-testid="modal-refresh-ticket-btn"
+                    >
+                      Refresh Ticket
+                    </button>
+                  </div>
+                )}
+
+                {resolveError && !staleConflict && (
+                  <div className="alert alert-danger mb-3" data-testid="resolve-error-banner">
+                    {resolveError}
+                  </div>
+                )}
+
+                {gateActionsLoading && (
+                  <div className="alert alert-info py-2 small mb-3" data-testid="gate-actions-loading">
+                    Checking Resolution Gate requirements…
+                  </div>
+                )}
+
+                {gateActionsError && (
+                  <div className="alert alert-danger py-2 small d-flex justify-content-between align-items-center mb-3" data-testid="gate-actions-error">
+                    <span>{gateActionsError}</span>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={loadGateActions}
+                      disabled={gateActionsLoading}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+
+                {!gateActionsLoading && !gateActionsError && (
+                  completedActionsCount === 0 ? (
+                    <div className="alert alert-warning border-warning small mb-3" data-testid="gate-notice-required">
+                      <strong>Resolution Gate Notice:</strong> This ticket has <strong>0 completed Actions Taken</strong>. A formal resolution note is <strong>required</strong> before this ticket can transition to RESOLVED.
+                    </div>
+                  ) : (
+                    <div className="alert alert-info border-info small mb-3" data-testid="gate-notice-optional">
+                      <strong>Resolution Gate Satisfied:</strong> This ticket has <strong>{completedActionsCount} completed Action(s) Taken</strong>. Adding a resolution note is <strong>optional</strong>.
+                    </div>
+                  )
+                )}
+
+                <div className="mb-3">
+                  <label htmlFor="resolutionNoteInput" className="form-label small fw-semibold">
+                    Resolution Note {completedActionsCount === 0 ? <span className="text-danger">*</span> : <span className="text-muted">(Optional)</span>}
+                  </label>
+                  <textarea
+                    id="resolutionNoteInput"
+                    ref={resolveNoteInputRef}
+                    className="form-control"
+                    rows={4}
+                    maxLength={2000}
+                    value={resolutionNote}
+                    onChange={(e) => setResolutionNote(e.target.value)}
+                    placeholder={
+                      completedActionsCount === 0
+                        ? "Enter formal resolution note (required, 1–2000 characters)..."
+                        : "Enter optional resolution note (up to 2000 characters)..."
+                    }
+                    data-testid="resolution-note-input"
+                    disabled={actionLoading || gateActionsLoading}
+                    style={{ outlineColor: "#198754" }}
+                  />
+                  <div className="d-flex justify-content-between form-text text-muted small mt-1">
+                    <span>
+                      {!gateActionsLoading && !gateActionsError && completedActionsCount === 0 && !resolutionNote.trim() && (
+                        <span className="text-danger">Resolution note is required.</span>
+                      )}
+                    </span>
+                    <span>{resolutionNote.length} / 2000 characters</span>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer bg-light">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => setShowResolveModal(false)}
+                  disabled={actionLoading}
+                  data-testid="cancel-resolve-btn"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success btn-sm fw-semibold"
+                  onClick={handleConfirmResolve}
+                  disabled={
+                    actionLoading ||
+                    gateActionsLoading ||
+                    !!gateActionsError ||
+                    (completedActionsCount === 0 && !resolutionNote.trim())
+                  }
+                  data-testid="confirm-resolve-btn"
+                  style={{ backgroundColor: "#198754", borderColor: "#198754" }}
+                >
+                  {actionLoading ? "Resolving…" : "Confirm Resolution"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

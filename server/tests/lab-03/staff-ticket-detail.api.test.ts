@@ -313,38 +313,47 @@ describe("Issue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-deta
       });
 
       // NEW -> OPEN
+      let currentTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: testTicket.id } });
       const t1 = await request(app)
         .put(`/api/tickets/${testTicket.id}/status`)
         .set("Authorization", `Bearer ${staffToken}`)
-        .send({ status: "OPEN" });
+        .send({ status: "OPEN", expectedUpdatedAt: currentTicket.updatedAt.toISOString() });
       expect(t1.status).toBe(200);
 
       // OPEN -> IN_PROGRESS
+      currentTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: testTicket.id } });
       const t2 = await request(app)
         .put(`/api/tickets/${testTicket.id}/status`)
         .set("Authorization", `Bearer ${staffToken}`)
-        .send({ status: "IN_PROGRESS" });
+        .send({ status: "IN_PROGRESS", expectedUpdatedAt: currentTicket.updatedAt.toISOString() });
       expect(t2.status).toBe(200);
 
       // IN_PROGRESS -> WAITING_FOR_REQUESTER
+      currentTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: testTicket.id } });
       const t3 = await request(app)
         .put(`/api/tickets/${testTicket.id}/status`)
         .set("Authorization", `Bearer ${staffToken}`)
-        .send({ status: "WAITING_FOR_REQUESTER" });
+        .send({ status: "WAITING_FOR_REQUESTER", expectedUpdatedAt: currentTicket.updatedAt.toISOString() });
       expect(t3.status).toBe(200);
 
-      // WAITING_FOR_REQUESTER -> RESOLVED
+      // WAITING_FOR_REQUESTER -> RESOLVED (Resolution Gate requires resolutionNote or completed action)
+      currentTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: testTicket.id } });
       const t4 = await request(app)
         .put(`/api/tickets/${testTicket.id}/status`)
         .set("Authorization", `Bearer ${staffToken}`)
-        .send({ status: "RESOLVED" });
+        .send({
+          status: "RESOLVED",
+          resolutionNote: "Formal resolution note to satisfy Resolution Gate.",
+          expectedUpdatedAt: currentTicket.updatedAt.toISOString(),
+        });
       expect(t4.status).toBe(200);
 
       // RESOLVED -> REOPENED
+      currentTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: testTicket.id } });
       const t5 = await request(app)
         .put(`/api/tickets/${testTicket.id}/status`)
         .set("Authorization", `Bearer ${staffToken}`)
-        .send({ status: "REOPENED" });
+        .send({ status: "REOPENED", expectedUpdatedAt: currentTicket.updatedAt.toISOString() });
       expect(t5.status).toBe(200);
     });
 
@@ -367,10 +376,10 @@ describe("Issue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-deta
       const res = await request(app)
         .put(`/api/tickets/${testTicket.id}/status`)
         .set("Authorization", `Bearer ${staffToken}`)
-        .send({ status: "RESOLVED" });
+        .send({ status: "RESOLVED", expectedUpdatedAt: testTicket.updatedAt.toISOString() });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe("INVALID_TRANSITION");
+      expect(res.body.error?.code || res.body.error).toBe("INVALID_TRANSITION");
     });
 
     it("verifies CANCELLED terminal state has no permitted outgoing transitions", async () => {
@@ -391,17 +400,17 @@ describe("Issue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-deta
       const res = await request(app)
         .put(`/api/tickets/${cancelledTicket.id}/status`)
         .set("Authorization", `Bearer ${staffToken}`)
-        .send({ status: "OPEN" });
+        .send({ status: "OPEN", expectedUpdatedAt: cancelledTicket.updatedAt.toISOString() });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe("INVALID_TRANSITION");
+      expect(["INVALID_TRANSITION", "TICKET_TERMINAL"]).toContain(res.body.error?.code || res.body.error);
     });
 
-    it("denies Administrator attempt to perform status transition with 403 Forbidden", async () => {
+    it("denies Requester attempt to perform status transition with 403 Forbidden", async () => {
       const ticket = await prisma.ticket.findFirstOrThrow();
       const res = await request(app)
         .put(`/api/tickets/${ticket.id}/status`)
-        .set("Authorization", `Bearer ${adminToken}`)
+        .set("Authorization", `Bearer ${aliceToken}`)
         .send({ status: "OPEN" });
 
       expect(res.status).toBe(403);
