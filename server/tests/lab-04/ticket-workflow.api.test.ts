@@ -141,7 +141,7 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       expect(res.body.ticket.currentStatus).toBe("CANCELLED");
     });
 
-    it("TEST-FLOW-07 (TEST-TERM-01): Rejects transition attempts from CANCELLED terminal state with 400 TICKET_TERMINAL (AC-12, BR-09)", async () => {
+    it("TEST-TERM-01: Rejects transition attempts from CANCELLED terminal state with 400 TICKET_TERMINAL (AC-12, BR-09)", async () => {
       const ticket = await prisma.ticket.create({
         data: {
           ticketNumber: makeWorkflowTicketNumber(),
@@ -168,7 +168,7 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       expect(res.body.error.message).toContain("terminal state (CANCELLED)");
     });
 
-    it("TEST-FLOW-08: Rejects Action Taken creation on CANCELLED terminal ticket with 400 TICKET_TERMINAL (AC-12, BR-09)", async () => {
+    it("TEST-TERM-02: Rejects Action Taken creation on CANCELLED terminal ticket with 400 TICKET_TERMINAL (AC-12, BR-09)", async () => {
       const ticket = await prisma.ticket.create({
         data: {
           ticketNumber: makeWorkflowTicketNumber(),

@@ -395,15 +395,15 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
   }
 
   function renderStatusBadge(status: string) {
-    let bgClass = "bg-primary";
+    let bgClass = "bg-secondary";
     if (status === "NEW") bgClass = "bg-info text-dark";
     else if (status === "OPEN") bgClass = "bg-primary text-white";
     else if (status === "IN_PROGRESS") bgClass = "bg-warning text-dark";
-    else if (status === "WAITING_FOR_REQUESTER") bgClass = "bg-secondary text-white";
+    else if (status === "WAITING_FOR_REQUESTER") bgClass = "bg-dark text-white";
     else if (status === "RESOLVED") bgClass = "bg-success text-white";
-    else if (status === "CLOSED") bgClass = "bg-dark text-white";
+    else if (status === "CLOSED") bgClass = "bg-secondary text-white";
     else if (status === "REOPENED") bgClass = "bg-danger text-white";
-    else if (status === "CANCELLED") bgClass = "bg-danger text-white";
+    else if (status === "CANCELLED") bgClass = "bg-light text-muted border";
     return <span className={`badge ${bgClass}`}>{status}</span>;
   }
 
