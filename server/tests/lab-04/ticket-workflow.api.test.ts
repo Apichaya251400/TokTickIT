@@ -287,7 +287,7 @@ describe("LAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-wor
       });
     });
 
-    it("Executes full lifecycle sequence: OPEN -> IN_PROGRESS -> WAITING_FOR_REQUESTER -> RESOLVED -> CLOSED -> REOPENED -> IN_PROGRESS", async () => {
+    it("TEST-FLOW-CYCLE-01: Executes full lifecycle sequence: OPEN -> IN_PROGRESS -> WAITING_FOR_REQUESTER -> RESOLVED -> CLOSED -> REOPENED -> IN_PROGRESS", async () => {
       const ticket = await prisma.ticket.create({
         data: {
           ticketNumber: makeWorkflowTicketNumber(),

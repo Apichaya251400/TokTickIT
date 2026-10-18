@@ -39,7 +39,7 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 | **FR-06** | Requester Dashboard backend metrics & drill-down | AC-07, BR-13, BR-15 | `TEST-DASH-02`, `TEST-CARD-07..12` |
 | **FR-07** | Authoritative backend queries & Asia/Bangkok (UTC+7) time boundaries | BR-11, BR-12 | `TEST-DASH-05`, `TEST-UNIT-02` |
 | **FR-08** | Graceful zero-count metric rendering | AC-15, BR-14 | `TEST-DASH-04` (API), `TEST-CARD-00` (UI) |
-| **FR-09** | Enforce 8 Ticket workflow statuses & state transitions | Section 8.1, AC-09, AC-12, BR-08, BR-09 | `TEST-FLOW-01..08`, `TEST-TERM-01` |
+| **FR-09** | Enforce 8 Ticket workflow statuses & state transitions | Section 8.1, AC-09, AC-12, BR-08, BR-09 | `TEST-FLOW-01..06`, `TEST-FLOW-CYCLE-01`, `TEST-TERM-01` |
 | **FR-10** | Server-side Resolution Gate rule | AC-09, BR-08 | `TEST-GATE-01`, `TEST-FLOW-03..05` |
 | **FR-11** | Safe error responses for invalid transitions & authorization | AC-02, AC-03, AC-04, AC-21, AC-23, BR-16 | `TEST-ACT-02`, `TEST-ACT-03`, `TEST-ACT-04`, `TEST-ACT-06`, `TEST-SEC-01` |
 | **FR-12** | Concurrent & stale update detection (`409 Conflict`) | AC-11, AC-17, BR-10 | `TEST-CONCUR-01`, `TEST-CONCUR-02` |
@@ -216,6 +216,7 @@ sequenceDiagram
 | `IN_PROGRESS` | `RESOLVED` | 0 completed actions & valid `resolutionNote` | `TEST-FLOW-04` | `200 OK` (Status = `RESOLVED`) |
 | `IN_PROGRESS` | `RESOLVED` | 1 completed action & empty `resolutionNote` | `TEST-FLOW-05` | `200 OK` (Status = `RESOLVED`) |
 | `IN_PROGRESS` | `CANCELLED` | Staff transition | `TEST-FLOW-06` | `200 OK` (Status = `CANCELLED`) |
+| `OPEN` | Full Sequence | `OPEN` &rarr; `IN_PROGRESS` &rarr; `WAITING_FOR_REQUESTER` &rarr; `RESOLVED` &rarr; `CLOSED` &rarr; `REOPENED` &rarr; `IN_PROGRESS` | `TEST-FLOW-CYCLE-01` | `200 OK` across all sequential transitions |
 | `CANCELLED` | `IN_PROGRESS` | Attempt transition from terminal state | `TEST-TERM-01` | `400 Bad Request` (`TICKET_TERMINAL`) |
 | `CANCELLED` | Action Creation | `POST /api/tickets/:cancelledId/actions` | `TEST-TERM-02` | `400 Bad Request` (`TICKET_TERMINAL`) |
 | `CANCELLED` | Action Update/Status | `PUT /api/actions/:actionId/status` | `TEST-TERM-03` | `400 Bad Request` (`TICKET_TERMINAL`) |
