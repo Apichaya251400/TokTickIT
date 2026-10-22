@@ -213,7 +213,7 @@ describe("Issue 8: StaffTicketDetail Component Suite (StaffTicketDetail.test.tsx
     });
   });
 
-  it("renders Administrator mode with read-only / disabled status & IT priority controls", async () => {
+  it("renders Administrator mode with read-only IT priority controls and permitted status transitions", async () => {
     render(
       <StaffTicketDetail
         ticketId="test-ticket-uuid-001"
@@ -229,6 +229,6 @@ describe("Issue 8: StaffTicketDetail Component Suite (StaffTicketDetail.test.tsx
     expect(screen.getByText(/Administrator Mode/)).toBeInTheDocument();
     expect(screen.getByTestId("it-priority-select")).toBeDisabled();
     expect(screen.queryByTestId("update-priority-btn")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("status-transition-btn-RESOLVED")).not.toBeInTheDocument();
+    expect(screen.getByTestId("status-transition-btn-RESOLVED")).toBeInTheDocument();
   });
 });

@@ -733,7 +733,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
         .put(`/api/tickets/${raceTicket.id}/status`)
         .set("Cookie", `token=${staffToken}`)
         .set("Authorization", `Bearer ${staffToken}`)
-        .send({ status: "CANCELLED" }),
+        .send({ status: "CANCELLED", expectedUpdatedAt: raceTicket.updatedAt.toISOString() }),
       request(app)
         .post(`/api/tickets/${raceTicket.id}/actions`)
         .set("Cookie", `token=${staffToken}`)

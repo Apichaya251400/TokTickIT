@@ -448,11 +448,22 @@ export async function updateItPriorityApi(ticketId: string, itPriority: string):
   return res.json();
 }
 
-export async function updateTicketStatusApi(ticketId: string, status: string): Promise<any> {
+export async function updateTicketStatusApi(
+  ticketId: string,
+  status: string,
+  expectedUpdatedAt: string,
+  resolutionNote?: string
+): Promise<any> {
+  const payload: any = {
+    status,
+    expectedUpdatedAt,
+    ...(resolutionNote !== undefined ? { resolutionNote } : {}),
+  };
+
   const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/status`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
