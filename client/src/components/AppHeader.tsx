@@ -97,15 +97,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 aria-current={activeTab === "staff-queue" ? "page" : undefined}
                 onClick={() => onTabChange("staff-queue")}
               >
-                My Queue
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm ${activeTab === "create-ticket" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
-                aria-current={activeTab === "create-ticket" ? "page" : undefined}
-                onClick={() => onTabChange("create-ticket")}
-              >
-                Create Ticket
+                IT Queue
               </button>
             </>
           )}

@@ -2,7 +2,7 @@
   "metrics": {
     "unassignedCount": 56,
     "myAssignedCount": 2,
-    "todayActionsCount": 1,
+    "todayActionsCount": 2,
     "urgentWorkloadCount": 3
   },
   "myRecentTickets": [
@@ -44,6 +44,14 @@
     }
   ],
   "currentStaffActions": [
+    {
+      "id": "b7d463a9-de99-4a27-98c7-a5ab6cff117b",
+      "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+      "ticketNumber": "TKT-2026-000002",
+      "description": "E2E Verified hardware connectivity today",
+      "result": "All diagnostics passed",
+      "createdAt": "2026-10-24T15:34:03.427Z"
+    },
     {
       "id": "15fde96c-4d45-46b3-8ffd-493e6fd608c1",
       "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
