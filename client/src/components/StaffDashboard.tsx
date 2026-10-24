@@ -15,7 +15,6 @@ export interface StaffDashboardProps {
     view?: "today_actions";
   }) => void;
   onSelectTicket: (ticketId: string) => void;
-  onNavigateToCreateTicket: () => void;
 }
 
 function formatDate(dateStr?: string): string {
@@ -59,11 +58,11 @@ export default function StaffDashboard({
   currentUser,
   onNavigateToQueue,
   onSelectTicket,
-  onNavigateToCreateTicket,
 }: StaffDashboardProps) {
   const [data, setData] = useState<StaffDashboardResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isForbidden, setIsForbidden] = useState<boolean>(false);
 
   useEffect(() => {
     loadDashboard();
@@ -72,15 +71,20 @@ export default function StaffDashboard({
   async function loadDashboard() {
     setLoading(true);
     setError(null);
+    setIsForbidden(false);
     try {
       const res = await fetchStaffDashboard();
       setData(res);
     } catch (err: any) {
-      setError(
-        err?.data?.error?.message ||
-          err?.message ||
-          "Failed to load Staff Dashboard. Please check network connection."
-      );
+      if (err?.status === 403 || err?.data?.error === "FORBIDDEN" || err?.data?.error?.code === "FORBIDDEN") {
+        setIsForbidden(true);
+      } else {
+        setError(
+          err?.data?.error?.message ||
+            err?.message ||
+            "Failed to load Staff Dashboard. Please check network connection."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -112,8 +116,16 @@ export default function StaffDashboard({
         </div>
       </div>
 
+      {/* Forbidden 403 State */}
+      {isForbidden && (
+        <div className="alert alert-danger py-4 text-center shadow-sm mb-4" data-testid="staff-dashboard-forbidden">
+          <h4 className="alert-heading fw-bold">Access Denied (403 Forbidden)</h4>
+          <p className="mb-0">You do not have permission to access the IT Staff Dashboard.</p>
+        </div>
+      )}
+
       {/* Failure State Banner with Retry */}
-      {error && (
+      {error && !isForbidden && (
         <div
           className="alert alert-danger d-flex justify-content-between align-items-center shadow-sm mb-4"
           role="alert"
@@ -371,24 +383,14 @@ export default function StaffDashboard({
                     <h2 className="h6 fw-bold text-dark mb-0">Quick Actions</h2>
                   </div>
                   <div className="card-body p-3">
-                    <div className="d-grid gap-2 d-sm-flex">
-                      <button
-                        type="button"
-                        className="btn btn-outline-success flex-grow-1"
-                        data-testid="quick-action-view-queue"
-                        onClick={() => onNavigateToQueue()}
-                      >
-                        View Queue
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-success flex-grow-1"
-                        data-testid="quick-action-create-ticket"
-                        onClick={onNavigateToCreateTicket}
-                      >
-                        + Create Ticket
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-outline-success w-100"
+                      data-testid="quick-action-view-queue"
+                      onClick={() => onNavigateToQueue()}
+                    >
+                      View Queue
+                    </button>
                   </div>
                 </div>
 

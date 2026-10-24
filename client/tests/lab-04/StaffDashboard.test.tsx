@@ -57,7 +57,6 @@ const mockZeroDashboardData: apiModule.StaffDashboardResponse = {
 describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
   const mockOnNavigateToQueue = vi.fn();
   const mockOnSelectTicket = vi.fn();
-  const mockOnNavigateToCreateTicket = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -71,7 +70,6 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
         currentUser={mockStaffUser}
         onNavigateToQueue={mockOnNavigateToQueue}
         onSelectTicket={mockOnSelectTicket}
-        onNavigateToCreateTicket={mockOnNavigateToCreateTicket}
       />
     );
 
@@ -94,7 +92,6 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
         currentUser={mockStaffUser}
         onNavigateToQueue={mockOnNavigateToQueue}
         onSelectTicket={mockOnSelectTicket}
-        onNavigateToCreateTicket={mockOnNavigateToCreateTicket}
       />
     );
 
@@ -115,7 +112,6 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
         currentUser={mockStaffUser}
         onNavigateToQueue={mockOnNavigateToQueue}
         onSelectTicket={mockOnSelectTicket}
-        onNavigateToCreateTicket={mockOnNavigateToCreateTicket}
       />
     );
 
@@ -140,7 +136,6 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
         currentUser={mockStaffUser}
         onNavigateToQueue={mockOnNavigateToQueue}
         onSelectTicket={mockOnSelectTicket}
-        onNavigateToCreateTicket={mockOnNavigateToCreateTicket}
       />
     );
 
@@ -173,7 +168,6 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
         currentUser={mockStaffUser}
         onNavigateToQueue={mockOnNavigateToQueue}
         onSelectTicket={mockOnSelectTicket}
-        onNavigateToCreateTicket={mockOnNavigateToCreateTicket}
       />
     );
 
@@ -190,7 +184,7 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
     expect(mockOnSelectTicket).toHaveBeenCalledWith("tkt-001");
   });
 
-  it("TEST-CARD-09: Quick action buttons navigate to queue and create ticket", async () => {
+  it("TEST-CARD-09: Quick action button navigates to queue", async () => {
     vi.spyOn(apiModule, "fetchStaffDashboard").mockResolvedValueOnce(mockDashboardData);
 
     render(
@@ -198,7 +192,6 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
         currentUser={mockStaffUser}
         onNavigateToQueue={mockOnNavigateToQueue}
         onSelectTicket={mockOnSelectTicket}
-        onNavigateToCreateTicket={mockOnNavigateToCreateTicket}
       />
     );
 
@@ -208,9 +201,6 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
 
     fireEvent.click(screen.getByTestId("quick-action-view-queue"));
     expect(mockOnNavigateToQueue).toHaveBeenCalledWith();
-
-    fireEvent.click(screen.getByTestId("quick-action-create-ticket"));
-    expect(mockOnNavigateToCreateTicket).toHaveBeenCalled();
   });
 
   it("TEST-CARD-10: Displays failure banner with retry button on error and retries", async () => {
@@ -223,7 +213,6 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
         currentUser={mockStaffUser}
         onNavigateToQueue={mockOnNavigateToQueue}
         onSelectTicket={mockOnSelectTicket}
-        onNavigateToCreateTicket={mockOnNavigateToCreateTicket}
       />
     );
 
@@ -239,5 +228,26 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
       expect(screen.getByTestId("metric-unassigned-count")).toHaveTextContent("14");
     });
     expect(screen.queryByTestId("dashboard-error-alert")).not.toBeInTheDocument();
+  });
+
+  it("TEST-CARD-11: Displays dedicated 403 Forbidden alert without retry button on authorization failure", async () => {
+    vi.spyOn(apiModule, "fetchStaffDashboard").mockRejectedValueOnce({
+      status: 403,
+      data: { error: { code: "FORBIDDEN", message: "Forbidden" } },
+    });
+
+    render(
+      <StaffDashboard
+        currentUser={mockStaffUser}
+        onNavigateToQueue={mockOnNavigateToQueue}
+        onSelectTicket={mockOnSelectTicket}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("staff-dashboard-forbidden")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("staff-dashboard-forbidden")).toHaveTextContent("Access Denied (403 Forbidden)");
+    expect(screen.queryByTestId("dashboard-retry-button")).not.toBeInTheDocument();
   });
 });

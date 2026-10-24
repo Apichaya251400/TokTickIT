@@ -168,6 +168,21 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
     await expect(page.getByTestId("metric-today-actions-card")).toBeVisible();
     await expect(page.getByTestId("metric-urgent-workload-card")).toBeVisible();
 
+    // Responsive Desktop Assertion: 4 cards rendered in a single horizontal row (similar y baseline)
+    const dBox1 = await page.getByTestId("metric-unassigned-card").boundingBox();
+    const dBox2 = await page.getByTestId("metric-my-assigned-card").boundingBox();
+    const dBox3 = await page.getByTestId("metric-today-actions-card").boundingBox();
+    const dBox4 = await page.getByTestId("metric-urgent-workload-card").boundingBox();
+
+    expect(dBox1).not.toBeNull();
+    expect(dBox2).not.toBeNull();
+    expect(dBox3).not.toBeNull();
+    expect(dBox4).not.toBeNull();
+
+    expect(Math.abs(dBox1!.y - dBox2!.y)).toBeLessThan(15);
+    expect(Math.abs(dBox2!.y - dBox3!.y)).toBeLessThan(15);
+    expect(Math.abs(dBox3!.y - dBox4!.y)).toBeLessThan(15);
+
     // Verify My Recent Workload & Actions feed
     await expect(page.getByTestId("my-recent-workload-section")).toBeVisible();
     await expect(page.getByTestId("quick-actions-section")).toBeVisible();
@@ -188,6 +203,25 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
     await loginAsStaff(page, staffUser.email);
 
     await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
+
+    // Tablet Responsive Assertion: 2x2 grid (cards 1 and 2 side-by-side, cards 3 and 4 below)
+    const tBox1 = await page.getByTestId("metric-unassigned-card").boundingBox();
+    const tBox2 = await page.getByTestId("metric-my-assigned-card").boundingBox();
+    const tBox3 = await page.getByTestId("metric-today-actions-card").boundingBox();
+    const tBox4 = await page.getByTestId("metric-urgent-workload-card").boundingBox();
+
+    expect(tBox1).not.toBeNull();
+    expect(tBox2).not.toBeNull();
+    expect(tBox3).not.toBeNull();
+    expect(tBox4).not.toBeNull();
+
+    // Card 1 and 2 are on top row side-by-side
+    expect(Math.abs(tBox1!.y - tBox2!.y)).toBeLessThan(15);
+    // Card 3 and 4 are on bottom row side-by-side
+    expect(Math.abs(tBox3!.y - tBox4!.y)).toBeLessThan(15);
+    // Card 3 is below Card 1
+    expect(tBox3!.y).toBeGreaterThan(tBox1!.y + tBox1!.height - 10);
+
     const tabletPath = path.join(artifactsBase, "EVD-STAFFDASH-02-tablet.png");
     await page.screenshot({ path: tabletPath, fullPage: false });
     copyToBrain("EVD-STAFFDASH-02-tablet.png");
@@ -197,6 +231,23 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
     await page.reload();
 
     await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
+
+    // Mobile Responsive Assertion: single column vertically stacked
+    const mBox1 = await page.getByTestId("metric-unassigned-card").boundingBox();
+    const mBox2 = await page.getByTestId("metric-my-assigned-card").boundingBox();
+    const mBox3 = await page.getByTestId("metric-today-actions-card").boundingBox();
+    const mBox4 = await page.getByTestId("metric-urgent-workload-card").boundingBox();
+
+    expect(mBox1).not.toBeNull();
+    expect(mBox2).not.toBeNull();
+    expect(mBox3).not.toBeNull();
+    expect(mBox4).not.toBeNull();
+
+    // Staced vertically
+    expect(mBox2!.y).toBeGreaterThan(mBox1!.y + mBox1!.height - 10);
+    expect(mBox3!.y).toBeGreaterThan(mBox2!.y + mBox2!.height - 10);
+    expect(mBox4!.y).toBeGreaterThan(mBox3!.y + mBox3!.height - 10);
+
     const mobilePath = path.join(artifactsBase, "EVD-STAFFDASH-02-mobile.png");
     await page.screenshot({ path: mobilePath, fullPage: false });
     copyToBrain("EVD-STAFFDASH-02-mobile.png");

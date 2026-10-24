@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { getPrisma } from "../../src/prisma.js";
@@ -90,7 +90,7 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
   // TEST-DASH-01: Accurate calculation of operational metrics & workload lists
   // ---------------------------------------------------------------------------
   it("TEST-DASH-01: Accurately calculates 4 operational metrics and recent lists for IT Staff (AC-06, BR-11, BR-12, BR-13)", async () => {
-    const { startOfDay } = getBangkokDayBoundaries();
+    const { startOfDay, startOfNextDay } = getBangkokDayBoundaries();
 
     // 1. Create an unassigned open ticket
     const unassignedTicket = await prisma.ticket.create({
@@ -147,17 +147,45 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
       },
     });
 
+    // Compute exact authoritative expected metrics directly from database
+    const expectedUnassignedCount = await prisma.ticket.count({
+      where: {
+        ownerId: null,
+        currentStatus: { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] },
+      },
+    });
+    const expectedMyAssignedCount = await prisma.ticket.count({
+      where: {
+        ownerId: staffUser.id,
+        currentStatus: { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] },
+      },
+    });
+    const expectedTodayActionsCount = await prisma.actionTaken.count({
+      where: {
+        performedById: staffUser.id,
+        createdAt: {
+          gte: startOfDay,
+          lt: startOfNextDay,
+        },
+      },
+    });
+    const expectedUrgentCount = await prisma.ticket.count({
+      where: {
+        itPriority: "URGENT",
+        currentStatus: { in: ["NEW", "OPEN", "IN_PROGRESS"] },
+      },
+    });
+
     const res = await request(app)
       .get("/api/dashboards/staff")
-      .set("Cookie", `token=${staffToken}`)
-      .set("Authorization", `Bearer ${staffToken}`);
+      .set("Cookie", `token=${staffToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("metrics");
-    expect(res.body.metrics.unassignedCount).toBeGreaterThanOrEqual(1);
-    expect(res.body.metrics.myAssignedCount).toBeGreaterThanOrEqual(1);
-    expect(res.body.metrics.todayActionsCount).toBeGreaterThanOrEqual(1);
-    expect(res.body.metrics.urgentWorkloadCount).toBeGreaterThanOrEqual(1);
+    expect(res.body.metrics.unassignedCount).toBe(expectedUnassignedCount);
+    expect(res.body.metrics.myAssignedCount).toBe(expectedMyAssignedCount);
+    expect(res.body.metrics.todayActionsCount).toBe(expectedTodayActionsCount);
+    expect(res.body.metrics.urgentWorkloadCount).toBe(expectedUrgentCount);
 
     // Verify recent tickets shape
     expect(Array.isArray(res.body.myRecentTickets)).toBe(true);
@@ -205,8 +233,7 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
 
     const res = await request(app)
       .get("/api/dashboards/staff")
-      .set("Cookie", `token=${zeroStaffToken}`)
-      .set("Authorization", `Bearer ${zeroStaffToken}`);
+      .set("Cookie", `token=${zeroStaffToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.metrics.myAssignedCount).toBe(0);
@@ -221,8 +248,7 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
   it("TEST-DASH-05: Provides aggregate counts without leaking full raw ticket datasets (BR-11)", async () => {
     const res = await request(app)
       .get("/api/dashboards/staff")
-      .set("Cookie", `token=${staffToken}`)
-      .set("Authorization", `Bearer ${staffToken}`);
+      .set("Cookie", `token=${staffToken}`);
 
     expect(res.status).toBe(200);
     expect(typeof res.body.metrics.unassignedCount).toBe("number");
@@ -239,7 +265,7 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
   // TEST-DASH-06: Ownership-scoped filtering strictly by authenticated user ID
   // ---------------------------------------------------------------------------
   it("TEST-DASH-06: Ownership-scoped metrics strictly filter by authenticated user ID (BR-13)", async () => {
-    const { startOfDay } = getBangkokDayBoundaries();
+    const { startOfDay, startOfNextDay } = getBangkokDayBoundaries();
 
     // Create a ticket assigned to otherStaffUser
     const otherTicket = await prisma.ticket.create({
@@ -270,13 +296,11 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
 
     const resStaff1 = await request(app)
       .get("/api/dashboards/staff")
-      .set("Cookie", `token=${staffToken}`)
-      .set("Authorization", `Bearer ${staffToken}`);
+      .set("Cookie", `token=${staffToken}`);
 
     const resStaff2 = await request(app)
       .get("/api/dashboards/staff")
-      .set("Cookie", `token=${otherStaffToken}`)
-      .set("Authorization", `Bearer ${otherStaffToken}`);
+      .set("Cookie", `token=${otherStaffToken}`);
 
     // Verify staffUser does NOT see otherStaffUser's ticket in myRecentTickets
     const staff1HasOtherTicket = resStaff1.body.myRecentTickets.some((t: any) => t.id === otherTicket.id);
@@ -292,6 +316,25 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
 
     const staff2HasOtherAction = resStaff2.body.currentStaffActions.some((a: any) => a.description === "[TEST-DASH] Action by second staff");
     expect(staff2HasOtherAction).toBe(true);
+
+    // Verify ownership-scoped metric counts for Staff A vs Staff B (BR-13)
+    const staff1Assigned = await prisma.ticket.count({
+      where: { ownerId: staffUser.id, currentStatus: { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] } },
+    });
+    const staff2Assigned = await prisma.ticket.count({
+      where: { ownerId: otherStaffUser.id, currentStatus: { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] } },
+    });
+    expect(resStaff1.body.metrics.myAssignedCount).toBe(staff1Assigned);
+    expect(resStaff2.body.metrics.myAssignedCount).toBe(staff2Assigned);
+
+    const staff1TodayActions = await prisma.actionTaken.count({
+      where: { performedById: staffUser.id, createdAt: { gte: startOfDay, lt: startOfNextDay } },
+    });
+    const staff2TodayActions = await prisma.actionTaken.count({
+      where: { performedById: otherStaffUser.id, createdAt: { gte: startOfDay, lt: startOfNextDay } },
+    });
+    expect(resStaff1.body.metrics.todayActionsCount).toBe(staff1TodayActions);
+    expect(resStaff2.body.metrics.todayActionsCount).toBe(staff2TodayActions);
   });
 
   // ---------------------------------------------------------------------------
@@ -300,8 +343,7 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
   it("TEST-SEC-05: Rejects Requester role with 403 Forbidden (AC-06, BR-06, Matrix §6)", async () => {
     const res = await request(app)
       .get("/api/dashboards/staff")
-      .set("Cookie", `token=${requesterToken}`)
-      .set("Authorization", `Bearer ${requesterToken}`);
+      .set("Cookie", `token=${requesterToken}`);
 
     expect(res.status).toBe(403);
     expect(res.body.error).toBe("FORBIDDEN");
@@ -322,8 +364,7 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
   it("TEST-DASH-07: Allows Administrator role to access Staff Dashboard (Matrix §6)", async () => {
     const res = await request(app)
       .get("/api/dashboards/staff")
-      .set("Cookie", `token=${adminToken}`)
-      .set("Authorization", `Bearer ${adminToken}`);
+      .set("Cookie", `token=${adminToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("metrics");
@@ -366,8 +407,7 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
     // Query queue with view=today_actions
     const res = await request(app)
       .get("/api/tickets?view=today_actions")
-      .set("Cookie", `token=${staffToken}`)
-      .set("Authorization", `Bearer ${staffToken}`);
+      .set("Cookie", `token=${staffToken}`);
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
@@ -377,10 +417,195 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
     // Query with invalid view filter returns 400
     const resInvalid = await request(app)
       .get("/api/tickets?view=invalid_view")
-      .set("Cookie", `token=${staffToken}`)
-      .set("Authorization", `Bearer ${staffToken}`);
+      .set("Cookie", `token=${staffToken}`);
 
     expect(resInvalid.status).toBe(400);
     expect(resInvalid.body.error.code).toBe("INVALID_QUERY_PARAMETER");
+  });
+
+  // ---------------------------------------------------------------------------
+  // TEST-DASH-09: Boundary testing for Urgent Workload count
+  // ---------------------------------------------------------------------------
+  it("TEST-DASH-09: Urgent Workload does not count URGENT tickets in WAITING_FOR_REQUESTER, RESOLVED, CLOSED, or CANCELLED", async () => {
+    const initialRes = await request(app)
+      .get("/api/dashboards/staff")
+      .set("Cookie", `token=${staffToken}`);
+    const initialUrgent = initialRes.body.metrics.urgentWorkloadCount;
+
+    const statuses = ["WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "CANCELLED"] as const;
+    for (let i = 0; i < statuses.length; i++) {
+      await prisma.ticket.create({
+        data: {
+          ticketNumber: `TKT-2026-URG-BND-${i}-${Date.now() % 100000}`,
+          requesterId: requesterUser.id,
+          ownerId: staffUser.id,
+          categoryId: testCategory.id,
+          relatedSystemId: testSystem.id,
+          requestedPriority: "URGENT",
+          itPriority: "URGENT",
+          summary: `[TEST-DASH] Non-counted urgent ticket in ${statuses[i]}`,
+          description: "Boundary test for urgent workload count",
+          currentStatus: statuses[i],
+        },
+      });
+    }
+
+    const afterRes = await request(app)
+      .get("/api/dashboards/staff")
+      .set("Cookie", `token=${staffToken}`);
+
+    expect(afterRes.body.metrics.urgentWorkloadCount).toBe(initialUrgent);
+  });
+
+  // ---------------------------------------------------------------------------
+  // TEST-DASH-10: Ordering and deterministic tie-breaker testing
+  // ---------------------------------------------------------------------------
+  it("TEST-DASH-10: Orders recent tickets by updatedAt DESC, id ASC and actions by createdAt DESC, id ASC", async () => {
+    const futureTime = new Date(Date.now() + 100000);
+
+    const tktOlder = await prisma.ticket.create({
+      data: {
+        id: "11111111-1111-4111-a111-111111111111",
+        ticketNumber: "TKT-2026-ORD-01",
+        requesterId: requesterUser.id,
+        ownerId: staffUser.id,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "LOW",
+        summary: "[TEST-DASH] Older ticket",
+        description: "Ordering test",
+        currentStatus: "OPEN",
+        updatedAt: new Date(futureTime.getTime() - 10000),
+      },
+    });
+
+    const tktSameTimeB = await prisma.ticket.create({
+      data: {
+        id: "22222222-2222-4222-a222-222222222223",
+        ticketNumber: "TKT-2026-ORD-03",
+        requesterId: requesterUser.id,
+        ownerId: staffUser.id,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "LOW",
+        summary: "[TEST-DASH] Same time ticket B",
+        description: "Ordering test",
+        currentStatus: "OPEN",
+        updatedAt: futureTime,
+      },
+    });
+
+    const tktSameTimeA = await prisma.ticket.create({
+      data: {
+        id: "22222222-2222-4222-a222-222222222222",
+        ticketNumber: "TKT-2026-ORD-02",
+        requesterId: requesterUser.id,
+        ownerId: staffUser.id,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "LOW",
+        summary: "[TEST-DASH] Same time ticket A",
+        description: "Ordering test",
+        currentStatus: "OPEN",
+        updatedAt: futureTime,
+      },
+    });
+
+    // Create actions with identical and differing createdAt
+    const actOlder = await prisma.actionTaken.create({
+      data: {
+        id: "33333333-3333-4333-a333-333333333331",
+        ticketId: tktSameTimeA.id,
+        performedById: staffUser.id,
+        description: "[TEST-DASH] Older action",
+        result: "Older action result",
+        status: "COMPLETED",
+        createdAt: new Date(futureTime.getTime() - 10000),
+      },
+    });
+
+    const actSameTimeB = await prisma.actionTaken.create({
+      data: {
+        id: "44444444-4444-4444-a444-444444444443",
+        ticketId: tktSameTimeA.id,
+        performedById: staffUser.id,
+        description: "[TEST-DASH] Same time action B",
+        result: "Action B result",
+        status: "COMPLETED",
+        createdAt: futureTime,
+      },
+    });
+
+    const actSameTimeA = await prisma.actionTaken.create({
+      data: {
+        id: "44444444-4444-4444-a444-444444444442",
+        ticketId: tktSameTimeA.id,
+        performedById: staffUser.id,
+        description: "[TEST-DASH] Same time action A",
+        result: "Action A result",
+        status: "COMPLETED",
+        createdAt: futureTime,
+      },
+    });
+
+    const res = await request(app)
+      .get("/api/dashboards/staff")
+      .set("Cookie", `token=${staffToken}`);
+
+    expect(res.status).toBe(200);
+
+    // 1. Tickets ordering
+    const tickets = res.body.myRecentTickets;
+    const idxA = tickets.findIndex((t: any) => t.id === tktSameTimeA.id);
+    const idxB = tickets.findIndex((t: any) => t.id === tktSameTimeB.id);
+    const idxOlder = tickets.findIndex((t: any) => t.id === tktOlder.id);
+
+    expect(idxA).toBeGreaterThanOrEqual(0);
+    expect(idxB).toBeGreaterThanOrEqual(0);
+    expect(idxOlder).toBeGreaterThanOrEqual(0);
+
+    // Both newer same-time tickets appear before older ticket
+    expect(idxA).toBeLessThan(idxOlder);
+    expect(idxB).toBeLessThan(idxOlder);
+
+    // Deterministic tie-breaker: id ASC ('...2222' before '...2223')
+    expect(idxA).toBeLessThan(idxB);
+
+    // 2. Actions ordering
+    const actions = res.body.currentStaffActions;
+    const actIdxA = actions.findIndex((a: any) => a.id === actSameTimeA.id);
+    const actIdxB = actions.findIndex((a: any) => a.id === actSameTimeB.id);
+    const actIdxOlder = actions.findIndex((a: any) => a.id === actOlder.id);
+
+    expect(actIdxA).toBeGreaterThanOrEqual(0);
+    expect(actIdxB).toBeGreaterThanOrEqual(0);
+    expect(actIdxOlder).toBeGreaterThanOrEqual(0);
+
+    expect(actIdxA).toBeLessThan(actIdxOlder);
+    expect(actIdxB).toBeLessThan(actIdxOlder);
+
+    // Tie-breaker: id ASC ('...4442' before '...4443')
+    expect(actIdxA).toBeLessThan(actIdxB);
+  });
+
+  // ---------------------------------------------------------------------------
+  // TEST-DASH-11: Returns 500 INTERNAL_ERROR on unhandled database failure
+  // ---------------------------------------------------------------------------
+  it("TEST-DASH-11: Returns 500 INTERNAL_ERROR on unhandled database failure (api-spec §1)", async () => {
+    const countSpy = vi.spyOn(prisma.ticket, "count").mockRejectedValueOnce(new Error("Database disconnected"));
+
+    const res = await request(app)
+      .get("/api/dashboards/staff")
+      .set("Cookie", `token=${staffToken}`);
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred. Please try again.",
+      },
+    });
+
+    countSpy.mockRestore();
   });
 });

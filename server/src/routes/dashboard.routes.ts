@@ -169,8 +169,8 @@ dashboardRouter.get(
     } catch (error) {
       res.status(500).json({
         error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to retrieve staff dashboard data.",
+          code: "INTERNAL_ERROR",
+          message: "An unexpected error occurred. Please try again.",
         },
       });
     }

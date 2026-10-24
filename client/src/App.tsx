@@ -697,10 +697,6 @@ export default function App() {
               setActiveTab("staff-queue");
             }}
             onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
-            onNavigateToCreateTicket={() => {
-              setSelectedTicketId(null);
-              setActiveTab("create-ticket");
-            }}
           />
         </section>
       )}

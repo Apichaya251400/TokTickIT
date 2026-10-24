@@ -1,9 +1,9 @@
 {
   "metrics": {
-    "unassignedCount": 56,
+    "unassignedCount": 54,
     "myAssignedCount": 2,
     "todayActionsCount": 0,
-    "urgentWorkloadCount": 3
+    "urgentWorkloadCount": 1
   },
   "myRecentTickets": [
     {
@@ -13,7 +13,7 @@
       "currentStatus": "REOPENED",
       "requestedPriority": "HIGH",
       "itPriority": "URGENT",
-      "updatedAt": "2026-10-24T04:52:34.450Z"
+      "updatedAt": "2026-10-24T08:05:08.131Z"
     },
     {
       "id": "643535fa-7627-4103-89ce-c9a2fe91b11b",
@@ -22,7 +22,7 @@
       "currentStatus": "CLOSED",
       "requestedPriority": "MEDIUM",
       "itPriority": "MEDIUM",
-      "updatedAt": "2026-10-24T04:52:34.446Z"
+      "updatedAt": "2026-10-24T08:05:08.126Z"
     },
     {
       "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
@@ -31,7 +31,7 @@
       "currentStatus": "RESOLVED",
       "requestedPriority": "LOW",
       "itPriority": "LOW",
-      "updatedAt": "2026-10-24T04:52:34.426Z"
+      "updatedAt": "2026-10-24T08:05:08.113Z"
     },
     {
       "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
@@ -40,7 +40,7 @@
       "currentStatus": "IN_PROGRESS",
       "requestedPriority": "MEDIUM",
       "itPriority": "HIGH",
-      "updatedAt": "2026-10-24T04:52:34.418Z"
+      "updatedAt": "2026-10-24T08:05:08.100Z"
     }
   ],
   "currentStaffActions": [
