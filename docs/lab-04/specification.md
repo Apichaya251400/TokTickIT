@@ -116,6 +116,7 @@ The stakeholder requires TokTickIT to provide service desk operational tracking 
 | Assign Action to Active Staff | Deny | Allow | Allow |
 | Transition Action Status (Complete / Cancel) | Deny | Allow | Allow |
 | View IT Staff Dashboard (`/staff/dashboard`) | Deny | Allow | Allow |
+| View IT Staff Ticket Queue (`/api/tickets`) | Deny | Allow | Allow (Per Handout §4.3) |
 | View Requester Dashboard (`/requester/dashboard`) | Allow (Ownership) | Deny | Deny |
 | Execute Ticket Status Transition | Deny | Allow | Allow (Per Handout §4.3) |
 | Enforce Backend Resolution Gate | Deny | Enforced | Enforced |
