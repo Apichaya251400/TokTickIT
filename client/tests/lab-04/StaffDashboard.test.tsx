@@ -264,4 +264,34 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
     expect(screen.getByTestId("staff-dashboard-forbidden")).toHaveTextContent("Access Denied (403 Forbidden)");
     expect(screen.queryByTestId("dashboard-retry-button")).not.toBeInTheDocument();
   });
+
+  it("TEST-CARD-12: Administrator user renders dashboard with ADMINISTRATOR badge and can navigate to queue", async () => {
+    const mockAdminUser: apiModule.User = {
+      id: 1,
+      name: "Admin User",
+      email: "admin@toktick.it",
+      role: "ADMINISTRATOR",
+      isActive: true,
+      requiresPasswordChange: false,
+    };
+
+    vi.spyOn(apiModule, "fetchStaffDashboard").mockResolvedValueOnce(mockDashboardData);
+
+    render(
+      <StaffDashboard
+        currentUser={mockAdminUser}
+        onNavigateToQueue={mockOnNavigateToQueue}
+        onSelectTicket={mockOnSelectTicket}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dashboard-welcome-heading")).toHaveTextContent("Welcome back, Admin User!");
+    });
+    expect(screen.getByText("ADMINISTRATOR")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("metric-unassigned-card"));
+    expect(mockOnNavigateToQueue).toHaveBeenCalledWith({ owner: "unassigned" });
+  });
 });
+

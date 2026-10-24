@@ -1,80 +1,112 @@
 {
-  "metrics": {
-    "unassignedCount": 56,
-    "myAssignedCount": 2,
-    "todayActionsCount": 2,
-    "urgentWorkloadCount": 3
+  "queryVerification": {
+    "unassignedCount": {
+      "expectedDbQuery": 54,
+      "actualApiResponse": 54,
+      "match": true
+    },
+    "myAssignedCount": {
+      "expectedDbQuery": 2,
+      "actualApiResponse": 2,
+      "match": true
+    },
+    "todayActionsCount": {
+      "expectedDbQuery": 3,
+      "actualApiResponse": 3,
+      "match": true
+    },
+    "urgentWorkloadCount": {
+      "expectedDbQuery": 2,
+      "actualApiResponse": 2,
+      "match": true
+    }
   },
-  "myRecentTickets": [
-    {
-      "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
-      "ticketNumber": "TKT-2026-000002",
-      "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
-      "currentStatus": "IN_PROGRESS",
-      "requestedPriority": "MEDIUM",
-      "itPriority": "URGENT",
-      "updatedAt": "2026-10-24T14:13:17.189Z"
+  "apiResponse": {
+    "metrics": {
+      "unassignedCount": 54,
+      "myAssignedCount": 2,
+      "todayActionsCount": 3,
+      "urgentWorkloadCount": 2
     },
-    {
-      "id": "fdb60d58-ea95-42ab-b55a-ce876b1a4d80",
-      "ticketNumber": "TKT-2026-000007",
-      "summary": "VPN connection drops immediately after multi-factor challenge",
-      "currentStatus": "REOPENED",
-      "requestedPriority": "HIGH",
-      "itPriority": "URGENT",
-      "updatedAt": "2026-10-24T14:06:44.457Z"
-    },
-    {
-      "id": "643535fa-7627-4103-89ce-c9a2fe91b11b",
-      "ticketNumber": "TKT-2026-000006",
-      "summary": "Main floor printer paper jam and low toner warning",
-      "currentStatus": "CLOSED",
-      "requestedPriority": "MEDIUM",
-      "itPriority": "MEDIUM",
-      "updatedAt": "2026-10-24T14:06:44.454Z"
-    },
-    {
-      "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
-      "ticketNumber": "TKT-2026-000003",
-      "summary": "Requesting additional storage quota for department email account",
-      "currentStatus": "RESOLVED",
-      "requestedPriority": "LOW",
-      "itPriority": "LOW",
-      "updatedAt": "2026-10-24T14:06:44.445Z"
-    }
-  ],
-  "currentStaffActions": [
-    {
-      "id": "b7d463a9-de99-4a27-98c7-a5ab6cff117b",
-      "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
-      "ticketNumber": "TKT-2026-000002",
-      "description": "E2E Verified hardware connectivity today",
-      "result": "All diagnostics passed",
-      "createdAt": "2026-10-24T15:34:03.427Z"
-    },
-    {
-      "id": "15fde96c-4d45-46b3-8ffd-493e6fd608c1",
-      "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
-      "ticketNumber": "TKT-2026-000002",
-      "description": "E2E Verified hardware connectivity today",
-      "result": "All diagnostics passed",
-      "createdAt": "2026-10-24T14:13:17.188Z"
-    },
-    {
-      "id": "act-seed-000003",
-      "ticketId": "e1f37400-afce-4127-aeb2-fe04436696f8",
-      "ticketNumber": "TKT-2026-000003",
-      "description": "Increased department email mailbox quota to 50GB.",
-      "result": "User mailbox capacity updated and verified.",
-      "createdAt": "2026-10-07T21:31:28.068Z"
-    },
-    {
-      "id": "act-seed-000001",
-      "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
-      "ticketNumber": "TKT-2026-000002",
-      "description": "Replaced faulty wireless access point antenna on Library 3rd floor.",
-      "result": "Signal strength restored to -45dBm.",
-      "createdAt": "2026-10-07T21:31:28.062Z"
-    }
-  ]
+    "myRecentTickets": [
+      {
+        "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+        "ticketNumber": "TKT-2026-000002",
+        "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
+        "currentStatus": "IN_PROGRESS",
+        "requestedPriority": "MEDIUM",
+        "itPriority": "URGENT",
+        "updatedAt": "2026-10-24T16:36:29.545Z"
+      },
+      {
+        "id": "fdb60d58-ea95-42ab-b55a-ce876b1a4d80",
+        "ticketNumber": "TKT-2026-000007",
+        "summary": "VPN connection drops immediately after multi-factor challenge",
+        "currentStatus": "REOPENED",
+        "requestedPriority": "HIGH",
+        "itPriority": "URGENT",
+        "updatedAt": "2026-10-24T16:32:19.444Z"
+      },
+      {
+        "id": "643535fa-7627-4103-89ce-c9a2fe91b11b",
+        "ticketNumber": "TKT-2026-000006",
+        "summary": "Main floor printer paper jam and low toner warning",
+        "currentStatus": "CLOSED",
+        "requestedPriority": "MEDIUM",
+        "itPriority": "MEDIUM",
+        "updatedAt": "2026-10-24T16:32:19.441Z"
+      },
+      {
+        "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
+        "ticketNumber": "TKT-2026-000003",
+        "summary": "Requesting additional storage quota for department email account",
+        "currentStatus": "RESOLVED",
+        "requestedPriority": "LOW",
+        "itPriority": "LOW",
+        "updatedAt": "2026-10-24T16:32:19.432Z"
+      }
+    ],
+    "currentStaffActions": [
+      {
+        "id": "b47747ae-7c86-4f3b-8dc0-5882347cd001",
+        "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+        "ticketNumber": "TKT-2026-000002",
+        "description": "E2E Verified hardware connectivity today",
+        "result": "All diagnostics passed",
+        "createdAt": "2026-10-24T16:38:58.708Z"
+      },
+      {
+        "id": "49a60eda-9012-4ffd-80ba-71a0abbd8d66",
+        "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+        "ticketNumber": "TKT-2026-000002",
+        "description": "E2E Verified hardware connectivity today",
+        "result": "All diagnostics passed",
+        "createdAt": "2026-10-24T16:37:40.757Z"
+      },
+      {
+        "id": "21189390-d671-4055-a7a1-249c7f005f58",
+        "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+        "ticketNumber": "TKT-2026-000002",
+        "description": "E2E Verified hardware connectivity today",
+        "result": "All diagnostics passed",
+        "createdAt": "2026-10-24T16:36:29.548Z"
+      },
+      {
+        "id": "act-seed-000003",
+        "ticketId": "e1f37400-afce-4127-aeb2-fe04436696f8",
+        "ticketNumber": "TKT-2026-000003",
+        "description": "Increased department email mailbox quota to 50GB.",
+        "result": "User mailbox capacity updated and verified.",
+        "createdAt": "2026-10-07T21:31:28.068Z"
+      },
+      {
+        "id": "act-seed-000001",
+        "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+        "ticketNumber": "TKT-2026-000002",
+        "description": "Replaced faulty wireless access point antenna on Library 3rd floor.",
+        "result": "Signal strength restored to -45dBm.",
+        "createdAt": "2026-10-07T21:31:28.062Z"
+      }
+    ]
+  }
 }

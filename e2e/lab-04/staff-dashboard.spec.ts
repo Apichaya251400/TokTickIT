@@ -213,9 +213,9 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
     await expect(page.getByTestId("quick-actions-section")).toBeVisible();
     await expect(page.getByTestId("recent-actions-section")).toBeVisible();
 
-    // Capture Evidence EVD-STAFFDASH-01
+    // Capture Evidence EVD-STAFFDASH-01 (fullPage: true to capture complete workload tables and actions)
     const screenshotPath = path.join(artifactsBase, "EVD-STAFFDASH-01.png");
-    await page.screenshot({ path: screenshotPath, fullPage: false });
+    await page.screenshot({ path: screenshotPath, fullPage: true });
     copyToBrain("EVD-STAFFDASH-01.png");
   });
 
@@ -349,7 +349,7 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
   });
 
   // ---------------------------------------------------------------------------
-  // EVD-STAFFDASH-06: Backend Query Response JSON Evidence
+  // EVD-STAFFDASH-06: Backend Query Response JSON Evidence & Database Parity
   // ---------------------------------------------------------------------------
   test("E2E-STAFFDASH-06: Backend Query & Calculation Response JSON (EVD-STAFFDASH-06)", async ({ request }) => {
     // Authenticate via API
@@ -370,9 +370,125 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
     expect(json).toHaveProperty("myRecentTickets");
     expect(json).toHaveProperty("currentStaffActions");
 
+    // Compute expected database query counts with Asia/Bangkok boundaries
+    const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
+    const now = new Date();
+    const localTime = new Date(now.getTime() + BANGKOK_OFFSET_MS);
+    const year = localTime.getUTCFullYear();
+    const month = localTime.getUTCMonth();
+    const day = localTime.getUTCDate();
+    const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0) - BANGKOK_OFFSET_MS);
+    const startOfNextDay = new Date(Date.UTC(year, month, day + 1, 0, 0, 0, 0) - BANGKOK_OFFSET_MS);
+
+    const expectedUnassigned = await prisma.ticket.count({
+      where: {
+        ownerId: null,
+        currentStatus: { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] },
+      },
+    });
+
+    const expectedMyAssigned = await prisma.ticket.count({
+      where: {
+        ownerId: staffUser.id,
+        currentStatus: { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] },
+      },
+    });
+
+    const expectedTodayActions = await prisma.actionTaken.count({
+      where: {
+        performedById: staffUser.id,
+        createdAt: { gte: startOfDay, lt: startOfNextDay },
+      },
+    });
+
+    const expectedUrgent = await prisma.ticket.count({
+      where: {
+        itPriority: "URGENT",
+        currentStatus: { in: ["NEW", "OPEN", "IN_PROGRESS"] },
+      },
+    });
+
+    // Assert exact parity between direct database query and backend dashboard API
+    expect(json.metrics.unassignedCount).toBe(expectedUnassigned);
+    expect(json.metrics.myAssignedCount).toBe(expectedMyAssigned);
+    expect(json.metrics.todayActionsCount).toBe(expectedTodayActions);
+    expect(json.metrics.urgentWorkloadCount).toBe(expectedUrgent);
+
+    const evidencePayload = {
+      queryVerification: {
+        unassignedCount: {
+          expectedDbQuery: expectedUnassigned,
+          actualApiResponse: json.metrics.unassignedCount,
+          match: expectedUnassigned === json.metrics.unassignedCount,
+        },
+        myAssignedCount: {
+          expectedDbQuery: expectedMyAssigned,
+          actualApiResponse: json.metrics.myAssignedCount,
+          match: expectedMyAssigned === json.metrics.myAssignedCount,
+        },
+        todayActionsCount: {
+          expectedDbQuery: expectedTodayActions,
+          actualApiResponse: json.metrics.todayActionsCount,
+          match: expectedTodayActions === json.metrics.todayActionsCount,
+        },
+        urgentWorkloadCount: {
+          expectedDbQuery: expectedUrgent,
+          actualApiResponse: json.metrics.urgentWorkloadCount,
+          match: expectedUrgent === json.metrics.urgentWorkloadCount,
+        },
+      },
+      apiResponse: json,
+    };
+
     // Write Evidence JSON
     const jsonPath = path.join(artifactsBase, "EVD-STAFFDASH-06.json");
-    fs.writeFileSync(jsonPath, JSON.stringify(json, null, 2), "utf8");
+    fs.writeFileSync(jsonPath, JSON.stringify(evidencePayload, null, 2), "utf8");
     copyToBrain("EVD-STAFFDASH-06.json");
+  });
+
+  // ---------------------------------------------------------------------------
+  // E2E-STAFFDASH-07: Administrator Dashboard & Queue Drill-Down Flow
+  // ---------------------------------------------------------------------------
+  test("E2E-STAFFDASH-07: Administrator Dashboard & Queue Drill-Down Flow (No 403)", async ({ page, request }) => {
+    // 1. Admin login & dashboard verification
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await loginAsStaff(page, "admin@toktick.it");
+
+    const dashboardPage = page.getByTestId("staff-dashboard-page");
+    await expect(dashboardPage).toBeVisible({ timeout: 10000 });
+
+    const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "admin@toktick.it" } });
+    await expect(page.getByTestId("dashboard-welcome-heading")).toContainText(adminUser.name);
+    await expect(dashboardPage.getByText("ADMINISTRATOR")).toBeVisible();
+
+    // 2. Click Unassigned Metric Card to drill-down to Queue
+    await page.getByTestId("metric-unassigned-card").click();
+
+    // Verify Staff Ticket Queue is rendered
+    const queuePage = page.getByTestId("staff-queue-page");
+    await expect(queuePage).toBeVisible({ timeout: 10000 });
+
+    // Ensure NO 403 Forbidden alert or access denied messages are displayed to Administrator
+    await expect(page.locator(".alert-danger")).not.toBeVisible();
+    await expect(page.getByText(/Access denied/i)).not.toBeVisible();
+
+    // 3. Verify Requester cannot access Staff Dashboard API (403 Forbidden)
+    const requesterLoginRes = await request.post("http://localhost:3000/api/auth/login", {
+      data: {
+        email: "alice@example.com",
+        password: "InitialPassword123!",
+      },
+    });
+    expect(requesterLoginRes.status()).toBe(200);
+
+    const requesterDashRes = await request.get("http://localhost:3000/api/dashboards/staff");
+    expect(requesterDashRes.status()).toBe(403);
+    const reqJson = await requesterDashRes.json();
+    expect(reqJson.error).toBe("FORBIDDEN");
+
+    // 4. Verify Requester UI does not render Dashboard navigation tab
+    await loginAsStaff(page, "alice@example.com");
+    await expect(page.getByRole("button", { name: "Dashboard" })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "My Tickets" })).toBeVisible();
   });
 });

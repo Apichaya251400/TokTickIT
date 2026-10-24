@@ -79,8 +79,11 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 | **AC-04 / BR-06** | Reject Requester attempting `POST` / `PUT` on ActionTaken | `TEST-ACT-04` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `403 Forbidden` (`FORBIDDEN`) | `Planned` |
 | **AC-05 / FR-01** | Multi-staff actions ordered chronologically (`createdAt ASC`, `id ASC`) | `TEST-ACT-05` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `200 OK`, returned list strictly sorted by `createdAt ASC`, tie-break `id ASC` | `Planned` |
 | **AC-06 / FR-05** | IT Staff Dashboard calculates accurate metrics, urgent & recent items | `TEST-DASH-01` | Integration / API | `server/tests/lab-04/staff-dashboard.api.test.ts` | `200 OK`, exact aggregate counts for `unassignedCount`, `myAssignedCount`, `todayActionsCount`, `urgentWorkloadCount` | `Pass` |
+| **AC-06 / FR-05** | Administrator can access dashboard and IT queue endpoints | `TEST-DASH-ADMIN-01` | Integration / API | `server/tests/lab-04/staff-dashboard.api.test.ts` | `200 OK`, Administrator receives dashboard metrics and queue tickets without 403 Forbidden | `Pass` |
+| **AC-06 / FR-05** | Administrator dashboard Today's Actions drill-down query | `TEST-DASH-ADMIN-02` | Integration / API | `server/tests/lab-04/staff-dashboard.api.test.ts` | `200 OK`, Administrator queries `/api/tickets?view=today_actions` returning performed actions | `Pass` |
 | **AC-07 / FR-06** | Requester Dashboard calculates accurate owned metrics & attention items | `TEST-DASH-02` | Integration / API | `server/tests/lab-04/requester-dashboard.api.test.ts` | `200 OK`, exact aggregate counts for `myOpenCount`, `waitingResponseCount`, `inProgressCount`, `recentlyResolvedCount` | `Planned` |
 | **AC-08 / BR-15** | IT Staff Dashboard metric card click navigates to filtered staff queue | `TEST-DASH-03` | Playwright E2E | `e2e/lab-04/staff-dashboard.spec.ts` | Clicking metric card navigates to target staff queue URL (e.g. `/staff/queue?owner=unassigned`) | `Pass` |
+| **AC-08 / BR-15** | Administrator Dashboard load & drill-down to queue without 403 | `E2E-STAFFDASH-07` | Playwright E2E | `e2e/lab-04/staff-dashboard.spec.ts` | Administrator accesses dashboard, drills down to `/staff/queue?owner=unassigned` without 403; Requester denied access | `Pass` |
 | **AC-09 / FR-10, BR-08** | Resolution Gate blocks resolving `IN_PROGRESS` ticket with 0 completed actions & empty note | `TEST-GATE-01` | Integration / API | `server/tests/lab-04/ticket-workflow.api.test.ts` | `400 Bad Request` (`BAD_REQUEST`) | `Pass` |
 | **AC-10 / BR-07** | Requester "Problem Appears Resolved" indication records timestamp, status unchanged | `TEST-GATE-02` | Integration / API | `server/tests/lab-04/ticket-workflow.api.test.ts` | `200 OK`, `requesterResolvedIndicatedAt` set, `currentStatus` remains `IN_PROGRESS` | `Pass` |
 | **AC-11 / BR-10** | Concurrent ticket resolution race condition using same `expectedUpdatedAt` | `TEST-CONCUR-01` | Integration / API | `server/tests/lab-04/concurrency.api.test.ts` | Concurrent `Promise.all`: exactly 1 request gets `200 OK`, competing request gets `409 Conflict` (`STALE_UPDATE`) | `Pass` |
@@ -203,6 +206,8 @@ sequenceDiagram
 | **Any User** | `TEST-SEC-08` | `POST /api/tickets/:id/actions` with `{ performedById: "hacked-uuid" }` | `400 Bad Request` (`INVALID_PERFORMER_ATTRIBUTE`) |
 | **IT Staff** | `TEST-SEC-09` | `POST /api/tickets/:id/actions` with `assigneeId = requesterUser.id` | `400 Bad Request` (`INVALID_ASSIGNEE`) |
 | **IT Staff** | `TEST-SEC-10` | `POST /api/tickets/:id/actions` with `assigneeId = inactiveStaffUser.id` | `400 Bad Request` (`INVALID_ASSIGNEE`) |
+| **Administrator** | `TEST-DASH-ADMIN-01` | `GET /api/dashboards/staff` & `GET /api/tickets` | `200 OK` (Permitted per Sprint 4 Role Matrix) |
+| **Administrator** | `TEST-DASH-ADMIN-02` | `GET /api/tickets?view=today_actions` | `200 OK` (Permitted per Sprint 4 Role Matrix) |
 
 ---
 

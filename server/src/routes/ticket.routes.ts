@@ -524,7 +524,7 @@ ticketRouter.get(
     if (isLegacyRequesterHeader && req.user?.role === "REQUESTER") {
       return handleMyTickets(req, res);
     }
-    if (req.user?.role !== "IT_STAFF") {
+    if (req.user?.role !== "IT_STAFF" && req.user?.role !== "ADMINISTRATOR") {
       res.status(403).json({
         error: "FORBIDDEN",
         message: "Access denied",

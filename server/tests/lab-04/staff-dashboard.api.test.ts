@@ -592,7 +592,8 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
   // TEST-DASH-11: Returns 500 INTERNAL_ERROR on unhandled database failure
   // ---------------------------------------------------------------------------
   it("TEST-DASH-11: Returns 500 INTERNAL_ERROR on unhandled database failure (api-spec §1)", async () => {
-    const countSpy = vi.spyOn(prisma.ticket, "count").mockRejectedValueOnce(new Error("Database disconnected"));
+    const originalCount = prisma.ticket.count;
+    (prisma.ticket as any).count = vi.fn().mockRejectedValueOnce(new Error("Database disconnected"));
 
     const res = await request(app)
       .get("/api/dashboards/staff")
@@ -606,6 +607,69 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
       },
     });
 
-    countSpy.mockRestore();
+    (prisma.ticket as any).count = originalCount;
+  });
+
+  // ---------------------------------------------------------------------------
+  // TEST-DASH-ADMIN-01: Administrator can access dashboard and IT queue endpoint
+  // ---------------------------------------------------------------------------
+  it("TEST-DASH-ADMIN-01: Administrator can access dashboard and IT queue endpoints (Sprint 4 Role Matrix)", async () => {
+    // 1. Dashboard API access
+    const dashRes = await request(app)
+      .get("/api/dashboards/staff")
+      .set("Cookie", `token=${adminToken}`);
+
+    expect(dashRes.status).toBe(200);
+    expect(dashRes.body).toHaveProperty("metrics");
+
+    // 2. Queue API access
+    const queueRes = await request(app)
+      .get("/api/tickets")
+      .set("Cookie", `token=${adminToken}`);
+
+    expect(queueRes.status).toBe(200);
+    expect(Array.isArray(queueRes.body.data)).toBe(true);
+  });
+
+  // ---------------------------------------------------------------------------
+  // TEST-DASH-ADMIN-02: Administrator dashboard Today's Actions drill-down query
+  // ---------------------------------------------------------------------------
+  it("TEST-DASH-ADMIN-02: Administrator dashboard Today's Actions drill-down query returns 200 OK (api-spec §3.1)", async () => {
+    // 1. Create a ticket with an action performed by adminUser today
+    const adminDrilldownTicket = await prisma.ticket.create({
+      data: {
+        ticketNumber: `TKT-2026-ADM-DRL`,
+        requesterId: requesterUser.id,
+        ownerId: adminUser.id,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "URGENT",
+        itPriority: "URGENT",
+        summary: "[TEST-DASH] Admin drilldown today actions ticket",
+        description: "Testing admin queue view=today_actions filter",
+        currentStatus: "IN_PROGRESS",
+      },
+    });
+
+    await prisma.actionTaken.create({
+      data: {
+        ticketId: adminDrilldownTicket.id,
+        performedById: adminUser.id,
+        description: "Admin verified network firewall configuration today",
+        result: "Rules updated successfully",
+        status: "COMPLETED",
+        createdAt: new Date(),
+      },
+    });
+
+    // 2. Query queue with view=today_actions as Administrator
+    const queueRes = await request(app)
+      .get("/api/tickets?view=today_actions")
+      .set("Cookie", `token=${adminToken}`);
+
+    expect(queueRes.status).toBe(200);
+    expect(Array.isArray(queueRes.body.data)).toBe(true);
+    const found = queueRes.body.data.some((t: any) => t.id === adminDrilldownTicket.id);
+    expect(found).toBe(true);
   });
 });
