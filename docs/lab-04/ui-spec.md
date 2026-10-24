@@ -34,7 +34,7 @@ Lab 4 preserves and extends the **Zen Green Design System** introduced in Labs 2
 - Role-Appropriate Navigation Links:
   - **Requester**: `Dashboard` (`/requester/dashboard`), `My Tickets` (`/tickets/my-tickets`), `Create Ticket` (`/tickets/new`).
   - **IT Staff**: `Dashboard` (`/staff/dashboard`), `IT Queue` (`/staff/queue`).
-  - **Administrator**: `Dashboard` (`/staff/dashboard`), `IT Queue` (`/staff/queue`), `User Management` (`/admin/users`).
+  - **Administrator**: `Dashboard` (`/staff/dashboard`), `IT Queue` (`/staff/queue`), `User Management` (`/admin/users`), and `Ticket Lookup` (permitted administrative utility for direct UUID inspection and operations per Lab 3/4 continuity).
 - User Identity Capsule: Shows authenticated User Name, Role Badge (`REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`), and `Logout` action button.
 - Development Selector is **strictly removed**.
 
