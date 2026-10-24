@@ -70,7 +70,7 @@ export default function App() {
   const [queueInitialFilters, setQueueInitialFilters] = useState<{
     owner?: "all" | "my_queue" | "unassigned";
     itPriority?: string;
-    view?: "today_actions";
+    view?: "today_actions" | "unassigned_active" | "my_queue_active" | "urgent_workload";
   } | null>(null);
 
   // 4. My Tickets Query & Data State

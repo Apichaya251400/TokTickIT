@@ -6,7 +6,7 @@ interface StaffTicketQueueProps {
   currentUser?: User | null;
   initialOwnerFilter?: "all" | "my_queue" | "unassigned";
   initialItPriorityFilter?: string;
-  initialViewFilter?: "today_actions";
+  initialViewFilter?: "today_actions" | "unassigned_active" | "my_queue_active" | "urgent_workload";
 }
 
 function formatDate(dateStr?: string): string {
@@ -52,7 +52,7 @@ export default function StaffTicketQueue({
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [requestedPriorityFilter, setRequestedPriorityFilter] = useState<string>("");
   const [itPriorityFilter, setItPriorityFilter] = useState<string>(initialItPriorityFilter || "");
-  const [viewFilter, setViewFilter] = useState<"today_actions" | undefined>(initialViewFilter);
+  const [viewFilter, setViewFilter] = useState<"today_actions" | "unassigned_active" | "my_queue_active" | "urgent_workload" | undefined>(initialViewFilter);
   const [sortBy, setSortBy] = useState<"createdAt" | "itPriority" | "updatedAt" | "ticketNumber">("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState<number>(1);
@@ -176,6 +176,48 @@ export default function StaffTicketQueue({
         <div className="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center" data-testid="view-today-actions-banner">
           <span>
             <strong>Filtered by Today's Actions:</strong> Showing tickets with actions recorded by you today.
+          </span>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setViewFilter(undefined)}
+          >
+            Clear Filter
+          </button>
+        </div>
+      )}
+
+      {viewFilter === "unassigned_active" && (
+        <div className="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center" data-testid="view-unassigned-active-banner">
+          <span>
+            <strong>Filtered by Unassigned Workload:</strong> Showing open/active unassigned tickets.
+          </span>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setViewFilter(undefined)}
+          >
+            Clear Filter
+          </button>
+        </div>
+      )}
+
+      {viewFilter === "my_queue_active" && (
+        <div className="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center" data-testid="view-my-queue-active-banner">
+          <span>
+            <strong>Filtered by My Active Workload:</strong> Showing active tickets assigned to you.
+          </span>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setViewFilter(undefined)}
+          >
+            Clear Filter
+          </button>
+        </div>
+      )}
+
+      {viewFilter === "urgent_workload" && (
+        <div className="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center" data-testid="view-urgent-workload-banner">
+          <span>
+            <strong>Filtered by Urgent Active Workload:</strong> Showing urgent tickets requiring action (NEW, OPEN, IN_PROGRESS).
           </span>
           <button
             className="btn btn-sm btn-outline-secondary"

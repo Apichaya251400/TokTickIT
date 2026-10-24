@@ -672,4 +672,160 @@ describe("LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)
     const found = queueRes.body.data.some((t: any) => t.id === adminDrilldownTicket.id);
     expect(found).toBe(true);
   });
+
+  // ---------------------------------------------------------------------------
+  // TEST-DASH-DRILL-01: Unassigned Active Drill-Down Semantics
+  // ---------------------------------------------------------------------------
+  it("TEST-DASH-DRILL-01: Unassigned Active Drill-Down excludes CLOSED / RESOLVED tickets (view=unassigned_active)", async () => {
+    // 1. Create 1 active unassigned and 1 closed unassigned ticket
+    const activeUnassignedTicket = await prisma.ticket.create({
+      data: {
+        ticketNumber: `TKT-2026-UNASS-ACT`,
+        requesterId: requesterUser.id,
+        ownerId: null,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "MEDIUM",
+        itPriority: "MEDIUM",
+        summary: "[TEST-DASH] Active Unassigned Ticket",
+        description: "Testing unassigned_active filter",
+        currentStatus: "OPEN",
+      },
+    });
+
+    const closedUnassignedTicket = await prisma.ticket.create({
+      data: {
+        ticketNumber: `TKT-2026-UNASS-CLS`,
+        requesterId: requesterUser.id,
+        ownerId: null,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "LOW",
+        itPriority: "LOW",
+        summary: "[TEST-DASH] Closed Unassigned Ticket",
+        description: "Testing unassigned_active excludes closed",
+        currentStatus: "CLOSED",
+      },
+    });
+
+    // 2. Query queue with view=unassigned_active
+    const res = await request(app)
+      .get("/api/tickets?view=unassigned_active&limit=50")
+      .set("Cookie", `token=${staffToken}`);
+
+    expect(res.status).toBe(200);
+    const ids = res.body.data.map((t: any) => t.id);
+    expect(ids).toContain(activeUnassignedTicket.id);
+    expect(ids).not.toContain(closedUnassignedTicket.id);
+
+    // Assert that every returned ticket in this view is unassigned and active
+    for (const t of res.body.data) {
+      expect(t.owner).toBeNull();
+      expect(["RESOLVED", "CLOSED", "CANCELLED"]).not.toContain(t.currentStatus);
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // TEST-DASH-DRILL-02: My Queue Active Drill-Down Semantics
+  // ---------------------------------------------------------------------------
+  it("TEST-DASH-DRILL-02: My Queue Active Drill-Down excludes RESOLVED / CLOSED tickets (view=my_queue_active)", async () => {
+    // 1. Create 1 active assigned and 1 resolved assigned ticket for staffUser
+    const activeAssignedTicket = await prisma.ticket.create({
+      data: {
+        ticketNumber: `TKT-2026-MYQ-ACT`,
+        requesterId: requesterUser.id,
+        ownerId: staffUser.id,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "HIGH",
+        itPriority: "HIGH",
+        summary: "[TEST-DASH] Active Assigned Ticket",
+        description: "Testing my_queue_active filter",
+        currentStatus: "IN_PROGRESS",
+      },
+    });
+
+    const resolvedAssignedTicket = await prisma.ticket.create({
+      data: {
+        ticketNumber: `TKT-2026-MYQ-RES`,
+        requesterId: requesterUser.id,
+        ownerId: staffUser.id,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "HIGH",
+        itPriority: "HIGH",
+        summary: "[TEST-DASH] Resolved Assigned Ticket",
+        description: "Testing my_queue_active excludes resolved",
+        currentStatus: "RESOLVED",
+      },
+    });
+
+    // 2. Query queue with view=my_queue_active
+    const res = await request(app)
+      .get("/api/tickets?view=my_queue_active&limit=50")
+      .set("Cookie", `token=${staffToken}`);
+
+    expect(res.status).toBe(200);
+    const ids = res.body.data.map((t: any) => t.id);
+    expect(ids).toContain(activeAssignedTicket.id);
+    expect(ids).not.toContain(resolvedAssignedTicket.id);
+
+    // Assert that every returned ticket in this view belongs to current user and is active
+    for (const t of res.body.data) {
+      expect(t.owner?.id).toBe(staffUser.id);
+      expect(["RESOLVED", "CLOSED", "CANCELLED"]).not.toContain(t.currentStatus);
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // TEST-DASH-DRILL-03: Urgent Workload Drill-Down Semantics
+  // ---------------------------------------------------------------------------
+  it("TEST-DASH-DRILL-03: Urgent Workload Drill-Down excludes non-actionable statuses (view=urgent_workload)", async () => {
+    // 1. Create 1 urgent in-progress and 1 urgent closed ticket
+    const urgentActiveTicket = await prisma.ticket.create({
+      data: {
+        ticketNumber: `TKT-2026-URG-ACT`,
+        requesterId: requesterUser.id,
+        ownerId: staffUser.id,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "URGENT",
+        itPriority: "URGENT",
+        summary: "[TEST-DASH] Urgent Active Ticket",
+        description: "Testing urgent_workload filter",
+        currentStatus: "IN_PROGRESS",
+      },
+    });
+
+    const urgentClosedTicket = await prisma.ticket.create({
+      data: {
+        ticketNumber: `TKT-2026-URG-CLS`,
+        requesterId: requesterUser.id,
+        ownerId: staffUser.id,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "URGENT",
+        itPriority: "URGENT",
+        summary: "[TEST-DASH] Urgent Closed Ticket",
+        description: "Testing urgent_workload excludes closed",
+        currentStatus: "CLOSED",
+      },
+    });
+
+    // 2. Query queue with view=urgent_workload
+    const res = await request(app)
+      .get("/api/tickets?view=urgent_workload&limit=50")
+      .set("Cookie", `token=${staffToken}`);
+
+    expect(res.status).toBe(200);
+    const ids = res.body.data.map((t: any) => t.id);
+    expect(ids).toContain(urgentActiveTicket.id);
+    expect(ids).not.toContain(urgentClosedTicket.id);
+
+    // Assert that every returned ticket in this view is URGENT and in NEW, OPEN, or IN_PROGRESS
+    for (const t of res.body.data) {
+      expect(t.itPriority).toBe("URGENT");
+      expect(["NEW", "OPEN", "IN_PROGRESS"]).toContain(t.currentStatus);
+    }
+  });
 });

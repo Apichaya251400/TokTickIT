@@ -54,10 +54,10 @@ Lab 4 preserves and extends the **Zen Green Design System** introduced in Labs 2
    - **Right Column (Quick Actions & Recent Actions Log)**: Direct action button (`View Queue`) and recent actions taken feed (max 5 actions with ticket link).
 
 ### Drill-Down Navigation Rules
-- Clicking **Unassigned Tickets Card** → Navigates to `/staff/queue?owner=unassigned`.
-- Clicking **My Assigned Tickets Card** → Navigates to `/staff/queue?owner=my_queue`.
+- Clicking **Unassigned Tickets Card** → Navigates to `/staff/queue?view=unassigned_active&owner=unassigned`.
+- Clicking **My Assigned Tickets Card** → Navigates to `/staff/queue?view=my_queue_active&owner=my_queue`.
 - Clicking **Today's Actions Card** → Navigates to `/staff/queue?view=today_actions`.
-- Clicking **Urgent Workload Card** → Navigates to `/staff/queue?itPriority=URGENT`.
+- Clicking **Urgent Workload Card** → Navigates to `/staff/queue?view=urgent_workload&itPriority=URGENT`.
 - Clicking any ticket row → Navigates directly to `/staff/tickets/:id`.
 
 ---

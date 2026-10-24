@@ -12,7 +12,7 @@ export interface StaffDashboardProps {
   onNavigateToQueue: (filters?: {
     owner?: "all" | "my_queue" | "unassigned";
     itPriority?: string;
-    view?: "today_actions";
+    view?: "today_actions" | "unassigned_active" | "my_queue_active" | "urgent_workload";
   }) => void;
   onSelectTicket: (ticketId: string) => void;
 }
@@ -172,11 +172,11 @@ export default function StaffDashboard({
                 role="button"
                 tabIndex={0}
                 data-testid="metric-unassigned-card"
-                onClick={() => onNavigateToQueue({ owner: "unassigned" })}
+                onClick={() => onNavigateToQueue({ view: "unassigned_active", owner: "unassigned" })}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    onNavigateToQueue({ owner: "unassigned" });
+                    onNavigateToQueue({ view: "unassigned_active", owner: "unassigned" });
                   }
                 }}
               >
@@ -205,11 +205,11 @@ export default function StaffDashboard({
                 role="button"
                 tabIndex={0}
                 data-testid="metric-my-assigned-card"
-                onClick={() => onNavigateToQueue({ owner: "my_queue" })}
+                onClick={() => onNavigateToQueue({ view: "my_queue_active", owner: "my_queue" })}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    onNavigateToQueue({ owner: "my_queue" });
+                    onNavigateToQueue({ view: "my_queue_active", owner: "my_queue" });
                   }
                 }}
               >
@@ -271,11 +271,11 @@ export default function StaffDashboard({
                 role="button"
                 tabIndex={0}
                 data-testid="metric-urgent-workload-card"
-                onClick={() => onNavigateToQueue({ itPriority: "URGENT" })}
+                onClick={() => onNavigateToQueue({ view: "urgent_workload", itPriority: "URGENT" })}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    onNavigateToQueue({ itPriority: "URGENT" });
+                    onNavigateToQueue({ view: "urgent_workload", itPriority: "URGENT" });
                   }
                 }}
               >

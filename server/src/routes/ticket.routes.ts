@@ -278,7 +278,12 @@ const QUEUE_ALLOWED_PRIORITIES = new Set(["LOW", "MEDIUM", "HIGH", "URGENT"]);
 const QUEUE_ALLOWED_OWNERS = new Set(["all", "my_queue", "unassigned"]);
 const QUEUE_ALLOWED_SORT_BY = new Set(["createdAt", "itPriority", "updatedAt", "ticketNumber"]);
 const QUEUE_ALLOWED_SORT_DIR = new Set(["asc", "desc"]);
-const QUEUE_ALLOWED_VIEWS = new Set(["today_actions"]);
+const QUEUE_ALLOWED_VIEWS = new Set([
+  "today_actions",
+  "unassigned_active",
+  "my_queue_active",
+  "urgent_workload",
+]);
 
 const ALLOWED_SORT_BY = new Set(["createdAt", "updatedAt", "ticketNumber", "requestedPriority"]);
 const ALLOWED_SORT_ORDER = new Set(["asc", "desc"]);
@@ -691,6 +696,21 @@ ticketRouter.get(
           },
         },
       };
+    } else if (view === "unassigned_active") {
+      where.ownerId = null;
+      if (!status) {
+        where.currentStatus = { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] };
+      }
+    } else if (view === "my_queue_active") {
+      where.ownerId = req.user!.id;
+      if (!status) {
+        where.currentStatus = { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] };
+      }
+    } else if (view === "urgent_workload") {
+      where.itPriority = "URGENT";
+      if (!status) {
+        where.currentStatus = { in: ["NEW", "OPEN", "IN_PROGRESS"] };
+      }
     }
 
     const include = {

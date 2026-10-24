@@ -328,7 +328,7 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
   });
 
   // ---------------------------------------------------------------------------
-  // EVD-STAFFDASH-05: Drill-Down Navigation Evidence
+  // EVD-STAFFDASH-05: Drill-Down Navigation Evidence & Active Workload Semantics
   // ---------------------------------------------------------------------------
   test("E2E-STAFFDASH-05: Drill-Down Navigation to Queue and Detail (EVD-STAFFDASH-05)", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -346,6 +346,27 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
     const drilldownPath = path.join(artifactsBase, "EVD-STAFFDASH-05.png");
     await page.screenshot({ path: drilldownPath, fullPage: false });
     copyToBrain("EVD-STAFFDASH-05.png");
+
+    // 2. Click Urgent Workload Card -> Navigates to Queue with view=urgent_workload
+    await page.getByRole("button", { name: "Dashboard" }).click();
+    await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
+    await page.getByTestId("metric-urgent-workload-card").click();
+    await expect(page.getByTestId("staff-queue-page")).toBeVisible();
+    await expect(page.getByTestId("view-urgent-workload-banner")).toBeVisible();
+
+    // 3. Click Unassigned Tickets Card -> Navigates to Queue with view=unassigned_active
+    await page.getByRole("button", { name: "Dashboard" }).click();
+    await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
+    await page.getByTestId("metric-unassigned-card").click();
+    await expect(page.getByTestId("staff-queue-page")).toBeVisible();
+    await expect(page.getByTestId("view-unassigned-active-banner")).toBeVisible();
+
+    // 4. Click My Assigned Tickets Card -> Navigates to Queue with view=my_queue_active
+    await page.getByRole("button", { name: "Dashboard" }).click();
+    await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
+    await page.getByTestId("metric-my-assigned-card").click();
+    await expect(page.getByTestId("staff-queue-page")).toBeVisible();
+    await expect(page.getByTestId("view-my-queue-active-banner")).toBeVisible();
   });
 
   // ---------------------------------------------------------------------------
@@ -467,6 +488,7 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
     // Verify Staff Ticket Queue is rendered
     const queuePage = page.getByTestId("staff-queue-page");
     await expect(queuePage).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("view-unassigned-active-banner")).toBeVisible();
 
     // Ensure NO 403 Forbidden alert or access denied messages are displayed to Administrator
     await expect(page.locator(".alert-danger")).not.toBeVisible();

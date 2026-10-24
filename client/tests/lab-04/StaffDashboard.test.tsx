@@ -143,21 +143,21 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
       expect(screen.getByTestId("metric-unassigned-card")).toBeInTheDocument();
     });
 
-    // 1. Unassigned Card Click -> owner=unassigned
+    // 1. Unassigned Card Click -> view=unassigned_active, owner=unassigned
     fireEvent.click(screen.getByTestId("metric-unassigned-card"));
-    expect(mockOnNavigateToQueue).toHaveBeenCalledWith({ owner: "unassigned" });
+    expect(mockOnNavigateToQueue).toHaveBeenCalledWith({ view: "unassigned_active", owner: "unassigned" });
 
-    // 2. My Assigned Card Click -> owner=my_queue
+    // 2. My Assigned Card Click -> view=my_queue_active, owner=my_queue
     fireEvent.click(screen.getByTestId("metric-my-assigned-card"));
-    expect(mockOnNavigateToQueue).toHaveBeenCalledWith({ owner: "my_queue" });
+    expect(mockOnNavigateToQueue).toHaveBeenCalledWith({ view: "my_queue_active", owner: "my_queue" });
 
     // 3. Today's Actions Card Click -> view=today_actions
     fireEvent.click(screen.getByTestId("metric-today-actions-card"));
     expect(mockOnNavigateToQueue).toHaveBeenCalledWith({ view: "today_actions" });
 
-    // 4. Urgent Workload Card Click -> itPriority=URGENT
+    // 4. Urgent Workload Card Click -> view=urgent_workload, itPriority=URGENT
     fireEvent.click(screen.getByTestId("metric-urgent-workload-card"));
-    expect(mockOnNavigateToQueue).toHaveBeenCalledWith({ itPriority: "URGENT" });
+    expect(mockOnNavigateToQueue).toHaveBeenCalledWith({ view: "urgent_workload", itPriority: "URGENT" });
   });
 
   it("TEST-CARD-07..08: Clicking ticket rows and action rows triggers onSelectTicket", async () => {
@@ -291,7 +291,7 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
     expect(screen.getByText("ADMINISTRATOR")).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("metric-unassigned-card"));
-    expect(mockOnNavigateToQueue).toHaveBeenCalledWith({ owner: "unassigned" });
+    expect(mockOnNavigateToQueue).toHaveBeenCalledWith({ view: "unassigned_active", owner: "unassigned" });
   });
 });
 

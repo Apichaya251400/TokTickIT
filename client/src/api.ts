@@ -228,7 +228,7 @@ export interface QueueQueryParams {
   sortDir?: "asc" | "desc";
   page?: number;
   limit?: number;
-  view?: "today_actions";
+  view?: "today_actions" | "unassigned_active" | "my_queue_active" | "urgent_workload";
 }
 
 export async function fetchQueueTickets(

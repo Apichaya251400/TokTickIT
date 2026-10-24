@@ -11,8 +11,8 @@
       "match": true
     },
     "todayActionsCount": {
-      "expectedDbQuery": 3,
-      "actualApiResponse": 3,
+      "expectedDbQuery": 1,
+      "actualApiResponse": 1,
       "match": true
     },
     "urgentWorkloadCount": {
@@ -25,7 +25,7 @@
     "metrics": {
       "unassignedCount": 54,
       "myAssignedCount": 2,
-      "todayActionsCount": 3,
+      "todayActionsCount": 1,
       "urgentWorkloadCount": 2
     },
     "myRecentTickets": [
@@ -36,7 +36,7 @@
         "currentStatus": "IN_PROGRESS",
         "requestedPriority": "MEDIUM",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-24T16:36:29.545Z"
+        "updatedAt": "2026-10-24T17:02:49.150Z"
       },
       {
         "id": "fdb60d58-ea95-42ab-b55a-ce876b1a4d80",
@@ -45,7 +45,7 @@
         "currentStatus": "REOPENED",
         "requestedPriority": "HIGH",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-24T16:32:19.444Z"
+        "updatedAt": "2026-10-24T17:01:30.255Z"
       },
       {
         "id": "643535fa-7627-4103-89ce-c9a2fe91b11b",
@@ -54,7 +54,7 @@
         "currentStatus": "CLOSED",
         "requestedPriority": "MEDIUM",
         "itPriority": "MEDIUM",
-        "updatedAt": "2026-10-24T16:32:19.441Z"
+        "updatedAt": "2026-10-24T17:01:30.252Z"
       },
       {
         "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
@@ -63,10 +63,18 @@
         "currentStatus": "RESOLVED",
         "requestedPriority": "LOW",
         "itPriority": "LOW",
-        "updatedAt": "2026-10-24T16:32:19.432Z"
+        "updatedAt": "2026-10-24T17:01:30.246Z"
       }
     ],
     "currentStaffActions": [
+      {
+        "id": "d45f1e18-2777-48be-b101-014835fa2ac9",
+        "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+        "ticketNumber": "TKT-2026-000002",
+        "description": "E2E Verified hardware connectivity today",
+        "result": "All diagnostics passed",
+        "createdAt": "2026-10-24T17:02:49.153Z"
+      },
       {
         "id": "b47747ae-7c86-4f3b-8dc0-5882347cd001",
         "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
@@ -98,14 +106,6 @@
         "description": "Increased department email mailbox quota to 50GB.",
         "result": "User mailbox capacity updated and verified.",
         "createdAt": "2026-10-07T21:31:28.068Z"
-      },
-      {
-        "id": "act-seed-000001",
-        "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
-        "ticketNumber": "TKT-2026-000002",
-        "description": "Replaced faulty wireless access point antenna on Library 3rd floor.",
-        "result": "Signal strength restored to -45dBm.",
-        "createdAt": "2026-10-07T21:31:28.062Z"
       }
     ]
   }
