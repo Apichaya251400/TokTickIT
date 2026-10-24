@@ -146,8 +146,12 @@ Unauthenticated authentication endpoints such as login remain governed by the ex
 - **Query Parameters**: None. The backend strictly evaluates time-sensitive metrics (`todayActionsCount` filtering `ActionTaken.createdAt >= startOfDay AND createdAt < startOfNextDay`) against fixed Asia/Bangkok (UTC+7) timezone rules.
 - **Recent Workload & Actions Specifications**:
   - `myRecentTickets`: Array of max 5 tickets assigned to current user (`ownerId = req.user.id`), ordered by `updatedAt DESC, id ASC`. If no tickets, returns `[]`.
-  - `currentStaffActions`: Array of max 5 actions performed by current user (`performedById = req.user.id`), ordered by `createdAt DESC, id ASC`. If no actions, returns `[]`.
-- **Staff Queue Filter Contract**: Clicking `Today's Actions` card navigates to `/staff/queue?view=today_actions`. The staff queue endpoint supports `view=today_actions` filter querying tickets with actions performed by current staff/admin today (`ActionTaken.performedById = req.user.id AND ActionTaken.createdAt >= startOfDay AND ActionTaken.createdAt < startOfNextDay`).
+- **Staff Queue Drill-Down Contract**: Metric card drill-downs navigate to `/staff/queue` with active workload views:
+  - `Unassigned Tickets` → `view=unassigned_active&owner=unassigned`
+  - `My Assigned Tickets` → `view=my_queue_active&owner=my_queue`
+  - `Today's Actions` → `view=today_actions`
+  - `Urgent Workload` → `view=urgent_workload&itPriority=URGENT`
+  See Section 4.4 for the complete `GET /api/tickets` queue drill-down and authorization specification.
 - **Success Response (`200 OK`)**:
 ```json
 {
@@ -268,6 +272,40 @@ Lab 4 does not modify the business rules of these endpoints.
 - **Behavior**: Records timestamp `requesterResolvedIndicatedAt = now()`. Does NOT change ticket status.
 - **Success Response (`200 OK`)**: Returns `{ "message": "Resolution indicator recorded", "requesterResolvedIndicatedAt": "2026-10-05T09:25:00.000Z" }`.
 
+### 4.4 List IT Staff Ticket Queue
+
+`GET /api/tickets`
+
+- **Authorization**:
+  - `IT_STAFF`: permitted to access the IT Staff Ticket Queue.
+  - `ADMINISTRATOR`: permitted to access the IT Staff Ticket Queue and the same queue filtering/drill-down capabilities as IT Staff (aligned with Lab 4 §4.3 allowing Administrator to perform IT Staff behaviors).
+  - `REQUESTER`: `403 Forbidden`.
+  - Unauthenticated requests: `401 Unauthorized`.
+  - Other unauthorized roles: `403 Forbidden`.
+- **Scope**: This endpoint returns the Ticket Queue data used by the IT Staff Dashboard drill-down views.
+- **Supported dashboard drill-down views**:
+  - `view=unassigned_active`: Filters tickets where `ownerId IS NULL` and `currentStatus NOT IN ('RESOLVED', 'CLOSED', 'CANCELLED')`.
+  - `view=my_queue_active`: Filters tickets where `ownerId = req.user.id` and `currentStatus NOT IN ('RESOLVED', 'CLOSED', 'CANCELLED')`.
+  - `view=today_actions`: Filters tickets having at least one `ActionTaken` performed by the authenticated user today (`performedById = req.user.id` within Asia/Bangkok UTC+7 day boundaries).
+  - `view=urgent_workload`: Filters tickets where `itPriority = 'URGENT'` and `currentStatus IN ('NEW', 'OPEN', 'IN_PROGRESS')`.
+- **Authorization is enforced server-side**. Client-side navigation visibility MUST NOT be treated as an authorization control.
+- **Active workload views** MUST apply the same status semantics as the corresponding Dashboard metrics so that drill-down results remain consistent with the displayed metric counts.
+- **Success Response (`200 OK`)**: Returns the documented Ticket Queue response including pagination (`data`, `pagination: { total, page, limit, totalPages }`).
+- **Forbidden Response (`403 Forbidden`)**:
+```json
+{
+  "error": "FORBIDDEN",
+  "message": "Access denied"
+}
+```
+- **Unauthenticated Response (`401 Unauthorized`)**: Returned when no valid authenticated session is provided:
+```json
+{
+  "error": "UNAUTHORIZED",
+  "message": "Authentication required"
+}
+```
+
 ---
 
 ## 5. HTTP Status Code Summary
@@ -278,7 +316,7 @@ Lab 4 does not modify the business rules of these endpoints.
 | `201 Created` | Resource created | Action Taken creation | N/A |
 | `400 Bad Request` | Validation failure / Resolution Gate failure / Terminal Ticket / Missing Header / Missing Timestamp | Missing follow-up note, invalid assignee, premature resolution, terminal ticket, missing idempotency header, missing expectedUpdatedAt timestamp | `BAD_REQUEST`, `INVALID_TRANSITION`, `TICKET_TERMINAL`, `MISSING_EXPECTED_UPDATED_AT`, `MISSING_IDEMPOTENCY_KEY` |
 | `401 Unauthorized` | Unauthenticated / Invalid Token | Missing or revoked session token | `UNAUTHORIZED` |
-| `403 Forbidden` | Access denied | Requester writing Action Taken or accessing staff dashboard | `FORBIDDEN` |
+| `403 Forbidden` | Access denied | Requester writing Action Taken, accessing staff dashboard, or accessing IT staff ticket queue | `FORBIDDEN` |
 | `404 Not Found` | Resource does not exist | Invalid ticket or action ID | `NOT_FOUND` |
 | `409 Conflict` | Stale update / Concurrency conflict / Idempotency key reused | Simultaneous ticket/action status updates or duplicate key payload mismatch | `STALE_UPDATE`, `IDEMPOTENCY_KEY_REUSED` |
 | `500 Internal Server Error` | Unexpected server failure | Generic safe unhandled exception handling | `INTERNAL_ERROR` |
