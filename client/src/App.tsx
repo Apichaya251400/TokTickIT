@@ -23,6 +23,7 @@ import AppHeader, { NavTab } from "./components/AppHeader";
 import PublicComments from "./components/PublicComments";
 import StaffTicketQueue from "./components/StaffTicketQueue";
 import { StaffTicketDetail } from "./components/StaffTicketDetail";
+import StaffDashboard from "./components/StaffDashboard";
 import UserManagement from "./components/UserManagement";
 import { ActionsTakenWorkspace } from "./components/ActionsTakenWorkspace";
 
@@ -47,8 +48,7 @@ function formatDateTime(dateStr?: string): string {
 }
 
 function getDefaultTab(role: Role): NavTab {
-  if (role === "IT_STAFF") return "staff-queue";
-  if (role === "ADMINISTRATOR") return "user-management";
+  if (role === "IT_STAFF" || role === "ADMINISTRATOR") return "staff-dashboard";
   return "my-tickets";
 }
 
@@ -67,6 +67,11 @@ export default function App() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [lookupInput, setLookupInput] = useState<string>("");
   const [lookupError, setLookupError] = useState<string | null>(null);
+  const [queueInitialFilters, setQueueInitialFilters] = useState<{
+    owner?: "all" | "my_queue" | "unassigned";
+    itPriority?: string;
+    view?: "today_actions";
+  } | null>(null);
 
   // 4. My Tickets Query & Data State
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -674,15 +679,40 @@ export default function App() {
         onTabChange={(tab) => {
           setActiveTab(tab);
           setSelectedTicketId(null);
+          if (tab !== "staff-queue") {
+            setQueueInitialFilters(null);
+          }
         }}
         onLogout={handleLogout}
       />
+
+      {/* IT Staff & Administrator Dashboard */}
+      {activeTab === "staff-dashboard" && !selectedTicketId && (
+        <section className="mb-5">
+          <StaffDashboard
+            currentUser={currentUser}
+            onNavigateToQueue={(filters) => {
+              setQueueInitialFilters(filters || null);
+              setSelectedTicketId(null);
+              setActiveTab("staff-queue");
+            }}
+            onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+            onNavigateToCreateTicket={() => {
+              setSelectedTicketId(null);
+              setActiveTab("create-ticket");
+            }}
+          />
+        </section>
+      )}
 
       {/* IT Staff Ticket Queue */}
       {activeTab === "staff-queue" && !selectedTicketId && (
         <section className="mb-5">
           <StaffTicketQueue
             currentUser={currentUser}
+            initialOwnerFilter={queueInitialFilters?.owner}
+            initialItPriorityFilter={queueInitialFilters?.itPriority}
+            initialViewFilter={queueInitialFilters?.view}
             onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
           />
         </section>

@@ -8,6 +8,7 @@ import { validateSummary, validateDescription, validateFileSize, sanitizeFileNam
 import { generateTicketNumber, getNextTicketSequence } from "../utils/ticketNumber.js";
 import { sanitizeHtml } from "../utils/sanitizer.js";
 import { Priority } from "@prisma/client";
+import { getBangkokDayBoundaries } from "../utils/timezone.js";
 
 export const ticketRouter = Router();
 
@@ -277,6 +278,7 @@ const QUEUE_ALLOWED_PRIORITIES = new Set(["LOW", "MEDIUM", "HIGH", "URGENT"]);
 const QUEUE_ALLOWED_OWNERS = new Set(["all", "my_queue", "unassigned"]);
 const QUEUE_ALLOWED_SORT_BY = new Set(["createdAt", "itPriority", "updatedAt", "ticketNumber"]);
 const QUEUE_ALLOWED_SORT_DIR = new Set(["asc", "desc"]);
+const QUEUE_ALLOWED_VIEWS = new Set(["today_actions"]);
 
 const ALLOWED_SORT_BY = new Set(["createdAt", "updatedAt", "ticketNumber", "requestedPriority"]);
 const ALLOWED_SORT_ORDER = new Set(["asc", "desc"]);
@@ -540,6 +542,7 @@ ticketRouter.get(
       sortDir: sortDirRaw,
       page: pageRaw,
       limit: limitRaw,
+      view,
     } = req.query;
 
     let page = 1;
@@ -644,6 +647,16 @@ ticketRouter.get(
       sortDir = sortDirRaw as "asc" | "desc";
     }
 
+    if (view !== undefined && (typeof view !== "string" || !QUEUE_ALLOWED_VIEWS.has(view))) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_QUERY_PARAMETER",
+          message: "Invalid view filter.",
+        },
+      });
+      return;
+    }
+
     const prisma = getPrisma();
     const where: any = {};
 
@@ -665,6 +678,19 @@ ticketRouter.get(
       where.ownerId = req.user!.id;
     } else if (ownerFilter === "unassigned") {
       where.ownerId = null;
+    }
+
+    if (view === "today_actions") {
+      const { startOfDay, startOfNextDay } = getBangkokDayBoundaries();
+      where.actionsTaken = {
+        some: {
+          performedById: req.user!.id,
+          createdAt: {
+            gte: startOfDay,
+            lt: startOfNextDay,
+          },
+        },
+      };
     }
 
     const include = {
