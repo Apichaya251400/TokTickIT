@@ -1,0 +1,64 @@
+{
+  "metrics": {
+    "unassignedCount": 54,
+    "myAssignedCount": 2,
+    "todayActionsCount": 0,
+    "urgentWorkloadCount": 1
+  },
+  "myRecentTickets": [
+    {
+      "id": "fdb60d58-ea95-42ab-b55a-ce876b1a4d80",
+      "ticketNumber": "TKT-2026-000007",
+      "summary": "VPN connection drops immediately after multi-factor challenge",
+      "currentStatus": "REOPENED",
+      "requestedPriority": "HIGH",
+      "itPriority": "URGENT",
+      "updatedAt": "2026-10-24T08:05:08.131Z"
+    },
+    {
+      "id": "643535fa-7627-4103-89ce-c9a2fe91b11b",
+      "ticketNumber": "TKT-2026-000006",
+      "summary": "Main floor printer paper jam and low toner warning",
+      "currentStatus": "CLOSED",
+      "requestedPriority": "MEDIUM",
+      "itPriority": "MEDIUM",
+      "updatedAt": "2026-10-24T08:05:08.126Z"
+    },
+    {
+      "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
+      "ticketNumber": "TKT-2026-000003",
+      "summary": "Requesting additional storage quota for department email account",
+      "currentStatus": "RESOLVED",
+      "requestedPriority": "LOW",
+      "itPriority": "LOW",
+      "updatedAt": "2026-10-24T08:05:08.113Z"
+    },
+    {
+      "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+      "ticketNumber": "TKT-2026-000002",
+      "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
+      "currentStatus": "IN_PROGRESS",
+      "requestedPriority": "MEDIUM",
+      "itPriority": "HIGH",
+      "updatedAt": "2026-10-24T08:05:08.100Z"
+    }
+  ],
+  "currentStaffActions": [
+    {
+      "id": "act-seed-000003",
+      "ticketId": "e1f37400-afce-4127-aeb2-fe04436696f8",
+      "ticketNumber": "TKT-2026-000003",
+      "description": "Increased department email mailbox quota to 50GB.",
+      "result": "User mailbox capacity updated and verified.",
+      "createdAt": "2026-10-07T21:31:28.068Z"
+    },
+    {
+      "id": "act-seed-000001",
+      "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+      "ticketNumber": "TKT-2026-000002",
+      "description": "Replaced faulty wireless access point antenna on Library 3rd floor.",
+      "result": "Signal strength restored to -45dBm.",
+      "createdAt": "2026-10-07T21:31:28.062Z"
+    }
+  ]
+}
