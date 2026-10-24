@@ -1,7 +1,7 @@
 import React from "react";
 import { User, logoutApi } from "../api";
 
-export type NavTab = "my-tickets" | "create-ticket" | "staff-queue" | "user-management" | "ticket-lookup";
+export type NavTab = "my-tickets" | "create-ticket" | "staff-queue" | "user-management" | "ticket-lookup" | "staff-dashboard";
 
 interface AppHeaderProps {
   user: User;
@@ -85,25 +85,41 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
             <>
               <button
                 type="button"
+                className={`btn btn-sm ${activeTab === "staff-dashboard" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "staff-dashboard" ? "page" : undefined}
+                onClick={() => onTabChange("staff-dashboard")}
+              >
+                Dashboard
+              </button>
+              <button
+                type="button"
                 className={`btn btn-sm ${activeTab === "staff-queue" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "staff-queue" ? "page" : undefined}
                 onClick={() => onTabChange("staff-queue")}
               >
-                My Queue
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm ${activeTab === "create-ticket" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
-                aria-current={activeTab === "create-ticket" ? "page" : undefined}
-                onClick={() => onTabChange("create-ticket")}
-              >
-                Create Ticket
+                IT Queue
               </button>
             </>
           )}
 
           {user.role === "ADMINISTRATOR" && (
             <>
+              <button
+                type="button"
+                className={`btn btn-sm ${activeTab === "staff-dashboard" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "staff-dashboard" ? "page" : undefined}
+                onClick={() => onTabChange("staff-dashboard")}
+              >
+                Dashboard
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${activeTab === "staff-queue" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "staff-queue" ? "page" : undefined}
+                onClick={() => onTabChange("staff-queue")}
+              >
+                IT Queue
+              </button>
               <button
                 type="button"
                 className={`btn btn-sm ${activeTab === "user-management" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}

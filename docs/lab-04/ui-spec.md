@@ -33,8 +33,8 @@ Lab 4 preserves and extends the **Zen Green Design System** introduced in Labs 2
 - Brand Logo: **TokTickIT** with subtitle `IT Service Desk`.
 - Role-Appropriate Navigation Links:
   - **Requester**: `Dashboard` (`/requester/dashboard`), `My Tickets` (`/tickets/my-tickets`), `Create Ticket` (`/tickets/new`).
-  - **IT Staff**: `Dashboard` (`/staff/dashboard`), `IT Queue` (`/staff/queue`), `Create Ticket` (`/tickets/new`).
-  - **Administrator**: `Dashboard` (`/staff/dashboard`), `IT Queue` (`/staff/queue`), `User Management` (`/admin/users`).
+  - **IT Staff**: `Dashboard` (`/staff/dashboard`), `IT Queue` (`/staff/queue`).
+  - **Administrator**: `Dashboard` (`/staff/dashboard`), `IT Queue` (`/staff/queue`), `User Management` (`/admin/users`), and `Ticket Lookup` (permitted administrative utility for direct UUID inspection and operations per Lab 3/4 continuity).
 - User Identity Capsule: Shows authenticated User Name, Role Badge (`REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`), and `Logout` action button.
 - Development Selector is **strictly removed**.
 
@@ -51,13 +51,13 @@ Lab 4 preserves and extends the **Zen Green Design System** introduced in Labs 2
    - **Urgent Workload**: Displays count. Subtext: `Urgent workload`.
 3. **Main Content Row**:
    - **Left Column (My Recent Workload)**: List of max 5 recent tickets assigned to current staff with ticket number, summary, priority badge, status badge, and drill-down link (`/staff/tickets/:id`).
-   - **Right Column (Quick Actions & Recent Actions Log)**: Direct action buttons (`View Queue`, `Create Ticket`) and recent actions taken feed (max 5 actions with ticket link).
+   - **Right Column (Quick Actions & Recent Actions Log)**: Direct action button (`View Queue`) and recent actions taken feed (max 5 actions with ticket link).
 
 ### Drill-Down Navigation Rules
-- Clicking **Unassigned Tickets Card** → Navigates to `/staff/queue?owner=unassigned`.
-- Clicking **My Assigned Tickets Card** → Navigates to `/staff/queue?owner=my_queue`.
+- Clicking **Unassigned Tickets Card** → Navigates to `/staff/queue?view=unassigned_active&owner=unassigned`.
+- Clicking **My Assigned Tickets Card** → Navigates to `/staff/queue?view=my_queue_active&owner=my_queue`.
 - Clicking **Today's Actions Card** → Navigates to `/staff/queue?view=today_actions`.
-- Clicking **Urgent Workload Card** → Navigates to `/staff/queue?itPriority=URGENT`.
+- Clicking **Urgent Workload Card** → Navigates to `/staff/queue?view=urgent_workload&itPriority=URGENT`.
 - Clicking any ticket row → Navigates directly to `/staff/tickets/:id`.
 
 ---

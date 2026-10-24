@@ -70,13 +70,13 @@ describe("Issue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)", (
       expect(res.body.pagination.totalItems).toBeUndefined();
     });
 
-    it("denies Administrator access to ticket queue endpoint (403 Forbidden per Authorization Matrix)", async () => {
+    it("allows Administrator access to ticket queue endpoint (200 OK per Sprint 4 Role Matrix)", async () => {
       const res = await request(app)
         .get("/api/tickets")
         .set("Authorization", `Bearer ${adminToken}`);
 
-      expect(res.status).toBe(403);
-      expect(res.body.error).toBe("FORBIDDEN");
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.data)).toBe(true);
     });
 
     it("denies Requester access to ticket queue endpoint (403 Forbidden)", async () => {

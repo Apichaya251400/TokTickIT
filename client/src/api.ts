@@ -228,6 +228,7 @@ export interface QueueQueryParams {
   sortDir?: "asc" | "desc";
   page?: number;
   limit?: number;
+  view?: "today_actions" | "unassigned_active" | "my_queue_active" | "urgent_workload";
 }
 
 export async function fetchQueueTickets(
@@ -245,6 +246,7 @@ export async function fetchQueueTickets(
     if (params.sortDir) searchParams.set("sortDir", params.sortDir);
     if (params.page) searchParams.set("page", String(params.page));
     if (params.limit) searchParams.set("limit", String(params.limit));
+    if (params.view) searchParams.set("view", params.view);
   }
 
   const queryString = searchParams.toString();
@@ -716,4 +718,52 @@ export async function updateTicketActionStatus(
   }
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Staff & Administrator Dashboard API (Lab 4 Sprint 4)
+// ---------------------------------------------------------------------------
+
+export interface StaffDashboardMetrics {
+  unassignedCount: number;
+  myAssignedCount: number;
+  todayActionsCount: number;
+  urgentWorkloadCount: number;
+}
+
+export interface RecentWorkloadTicket {
+  id: string;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: string;
+  requestedPriority: string;
+  itPriority: string | null;
+  updatedAt: string;
+}
+
+export interface RecentStaffAction {
+  id: string;
+  ticketId: string;
+  ticketNumber: string;
+  description: string;
+  result: string;
+  createdAt: string;
+}
+
+export interface StaffDashboardResponse {
+  metrics: StaffDashboardMetrics;
+  myRecentTickets: RecentWorkloadTicket[];
+  currentStaffActions: RecentStaffAction[];
+}
+
+export async function fetchStaffDashboard(): Promise<StaffDashboardResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/dashboards/staff`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export const fetchStaffDashboardApi = fetchStaffDashboard;
+
 

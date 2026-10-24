@@ -4,6 +4,9 @@ import { fetchQueueTickets, QueueQueryParams, User } from "../api";
 interface StaffTicketQueueProps {
   onSelectTicket: (ticketId: string) => void;
   currentUser?: User | null;
+  initialOwnerFilter?: "all" | "my_queue" | "unassigned";
+  initialItPriorityFilter?: string;
+  initialViewFilter?: "today_actions" | "unassigned_active" | "my_queue_active" | "urgent_workload";
 }
 
 function formatDate(dateStr?: string): string {
@@ -37,12 +40,19 @@ function renderStatusBadge(status: string) {
   return <span className={`badge ${bgClass}`}>{status}</span>;
 }
 
-export default function StaffTicketQueue({ onSelectTicket, currentUser }: StaffTicketQueueProps) {
-  const [ownerFilter, setOwnerFilter] = useState<"all" | "my_queue" | "unassigned">("all");
+export default function StaffTicketQueue({
+  onSelectTicket,
+  currentUser,
+  initialOwnerFilter,
+  initialItPriorityFilter,
+  initialViewFilter,
+}: StaffTicketQueueProps) {
+  const [ownerFilter, setOwnerFilter] = useState<"all" | "my_queue" | "unassigned">(initialOwnerFilter || "all");
   const [q, setQ] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [requestedPriorityFilter, setRequestedPriorityFilter] = useState<string>("");
-  const [itPriorityFilter, setItPriorityFilter] = useState<string>("");
+  const [itPriorityFilter, setItPriorityFilter] = useState<string>(initialItPriorityFilter || "");
+  const [viewFilter, setViewFilter] = useState<"today_actions" | "unassigned_active" | "my_queue_active" | "urgent_workload" | undefined>(initialViewFilter);
   const [sortBy, setSortBy] = useState<"createdAt" | "itPriority" | "updatedAt" | "ticketNumber">("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState<number>(1);
@@ -62,8 +72,20 @@ export default function StaffTicketQueue({ onSelectTicket, currentUser }: StaffT
   const latestRequestIdRef = useRef<number>(0);
 
   useEffect(() => {
+    if (initialOwnerFilter !== undefined) setOwnerFilter(initialOwnerFilter);
+  }, [initialOwnerFilter]);
+
+  useEffect(() => {
+    if (initialItPriorityFilter !== undefined) setItPriorityFilter(initialItPriorityFilter);
+  }, [initialItPriorityFilter]);
+
+  useEffect(() => {
+    if (initialViewFilter !== undefined) setViewFilter(initialViewFilter);
+  }, [initialViewFilter]);
+
+  useEffect(() => {
     loadQueue();
-  }, [ownerFilter, q, statusFilter, requestedPriorityFilter, itPriorityFilter, sortBy, sortDir, page, limit]);
+  }, [ownerFilter, q, statusFilter, requestedPriorityFilter, itPriorityFilter, viewFilter, sortBy, sortDir, page, limit]);
 
   async function loadQueue() {
     const requestId = ++latestRequestIdRef.current;
@@ -78,6 +100,7 @@ export default function StaffTicketQueue({ onSelectTicket, currentUser }: StaffT
         requestedPriority: requestedPriorityFilter || undefined,
         itPriority: itPriorityFilter || undefined,
         owner: ownerFilter,
+        view: viewFilter,
         sortBy,
         sortDir,
         page,
@@ -113,6 +136,7 @@ export default function StaffTicketQueue({ onSelectTicket, currentUser }: StaffT
     setStatusFilter("");
     setRequestedPriorityFilter("");
     setItPriorityFilter("");
+    setViewFilter(undefined);
     setOwnerFilter("all");
     setSortBy("createdAt");
     setSortDir("desc");
@@ -134,7 +158,8 @@ export default function StaffTicketQueue({ onSelectTicket, currentUser }: StaffT
     statusFilter !== "" ||
     requestedPriorityFilter !== "" ||
     itPriorityFilter !== "" ||
-    ownerFilter !== "all";
+    ownerFilter !== "all" ||
+    Boolean(viewFilter);
 
   return (
     <div className="container py-2" data-testid="staff-queue-page">
@@ -146,6 +171,62 @@ export default function StaffTicketQueue({ onSelectTicket, currentUser }: StaffT
           </span>
         )}
       </div>
+
+      {viewFilter === "today_actions" && (
+        <div className="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center" data-testid="view-today-actions-banner">
+          <span>
+            <strong>Filtered by Today's Actions:</strong> Showing tickets with actions recorded by you today.
+          </span>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setViewFilter(undefined)}
+          >
+            Clear Filter
+          </button>
+        </div>
+      )}
+
+      {viewFilter === "unassigned_active" && (
+        <div className="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center" data-testid="view-unassigned-active-banner">
+          <span>
+            <strong>Filtered by Unassigned Workload:</strong> Showing open/active unassigned tickets.
+          </span>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setViewFilter(undefined)}
+          >
+            Clear Filter
+          </button>
+        </div>
+      )}
+
+      {viewFilter === "my_queue_active" && (
+        <div className="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center" data-testid="view-my-queue-active-banner">
+          <span>
+            <strong>Filtered by My Active Workload:</strong> Showing active tickets assigned to you.
+          </span>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setViewFilter(undefined)}
+          >
+            Clear Filter
+          </button>
+        </div>
+      )}
+
+      {viewFilter === "urgent_workload" && (
+        <div className="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center" data-testid="view-urgent-workload-banner">
+          <span>
+            <strong>Filtered by Urgent Active Workload:</strong> Showing urgent tickets requiring action (NEW, OPEN, IN_PROGRESS).
+          </span>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setViewFilter(undefined)}
+          >
+            Clear Filter
+          </button>
+        </div>
+      )}
 
       {/* Owner Tab Navigation Pills */}
       <ul className="nav nav-pills mb-3">
