@@ -1,11 +1,20 @@
 {
   "metrics": {
-    "unassignedCount": 54,
+    "unassignedCount": 56,
     "myAssignedCount": 2,
-    "todayActionsCount": 0,
-    "urgentWorkloadCount": 1
+    "todayActionsCount": 1,
+    "urgentWorkloadCount": 3
   },
   "myRecentTickets": [
+    {
+      "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+      "ticketNumber": "TKT-2026-000002",
+      "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
+      "currentStatus": "IN_PROGRESS",
+      "requestedPriority": "MEDIUM",
+      "itPriority": "URGENT",
+      "updatedAt": "2026-10-24T14:13:17.189Z"
+    },
     {
       "id": "fdb60d58-ea95-42ab-b55a-ce876b1a4d80",
       "ticketNumber": "TKT-2026-000007",
@@ -13,7 +22,7 @@
       "currentStatus": "REOPENED",
       "requestedPriority": "HIGH",
       "itPriority": "URGENT",
-      "updatedAt": "2026-10-24T08:05:08.131Z"
+      "updatedAt": "2026-10-24T14:06:44.457Z"
     },
     {
       "id": "643535fa-7627-4103-89ce-c9a2fe91b11b",
@@ -22,7 +31,7 @@
       "currentStatus": "CLOSED",
       "requestedPriority": "MEDIUM",
       "itPriority": "MEDIUM",
-      "updatedAt": "2026-10-24T08:05:08.126Z"
+      "updatedAt": "2026-10-24T14:06:44.454Z"
     },
     {
       "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
@@ -31,19 +40,18 @@
       "currentStatus": "RESOLVED",
       "requestedPriority": "LOW",
       "itPriority": "LOW",
-      "updatedAt": "2026-10-24T08:05:08.113Z"
-    },
-    {
-      "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
-      "ticketNumber": "TKT-2026-000002",
-      "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
-      "currentStatus": "IN_PROGRESS",
-      "requestedPriority": "MEDIUM",
-      "itPriority": "HIGH",
-      "updatedAt": "2026-10-24T08:05:08.100Z"
+      "updatedAt": "2026-10-24T14:06:44.445Z"
     }
   ],
   "currentStaffActions": [
+    {
+      "id": "15fde96c-4d45-46b3-8ffd-493e6fd608c1",
+      "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+      "ticketNumber": "TKT-2026-000002",
+      "description": "E2E Verified hardware connectivity today",
+      "result": "All diagnostics passed",
+      "createdAt": "2026-10-24T14:13:17.188Z"
+    },
     {
       "id": "act-seed-000003",
       "ticketId": "e1f37400-afce-4127-aeb2-fe04436696f8",

@@ -341,12 +341,27 @@ export default function StaffDashboard({
                               key={t.id}
                               style={{ cursor: "pointer" }}
                               data-testid={`recent-ticket-row-${t.id}`}
+                              tabIndex={0}
+                              role="button"
                               onClick={() => onSelectTicket(t.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  onSelectTicket(t.id);
+                                }
+                              }}
                             >
                               <td>
-                                <span className="fw-semibold text-success font-monospace">
+                                <button
+                                  type="button"
+                                  className="btn btn-link p-0 text-success text-decoration-none fw-semibold font-monospace"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onSelectTicket(t.id);
+                                  }}
+                                >
                                   {t.ticketNumber}
-                                </span>
+                                </button>
                               </td>
                               <td>
                                 <span className="text-dark text-truncate d-inline-block" style={{ maxWidth: "220px" }}>
@@ -422,7 +437,15 @@ export default function StaffDashboard({
                             className="p-2 border rounded bg-light"
                             style={{ cursor: "pointer" }}
                             data-testid={`recent-action-row-${a.id}`}
+                            tabIndex={0}
+                            role="button"
                             onClick={() => onSelectTicket(a.ticketId)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                onSelectTicket(a.ticketId);
+                              }
+                            }}
                           >
                             <div className="d-flex justify-content-between align-items-center mb-1">
                               <span className="badge bg-success-subtle text-success border border-success font-monospace">

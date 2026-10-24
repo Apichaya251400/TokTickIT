@@ -73,7 +73,32 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
       where: { email: "staff@toktick.it" },
     });
 
-    // Ensure staffUser has at least 1 assigned ticket in an active state
+    // Ensure at least 1 unassigned active ticket exists
+    const unassignedTicket = await prisma.ticket.findFirst({
+      where: { ownerId: null, currentStatus: { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] } },
+    });
+    if (!unassignedTicket) {
+      const category = await prisma.category.findFirstOrThrow();
+      const system = await prisma.relatedSystem.findFirstOrThrow();
+      const requester = await prisma.user.findFirstOrThrow({ where: { role: "REQUESTER" } });
+      const num = (Date.now() % 700000 + 100000).toString().padStart(6, "0");
+      await prisma.ticket.create({
+        data: {
+          ticketNumber: `TKT-2026-${num}`,
+          requesterId: requester.id,
+          ownerId: null,
+          categoryId: category.id,
+          relatedSystemId: system.id,
+          requestedPriority: "MEDIUM",
+          itPriority: "HIGH",
+          summary: "E2E Staff Dashboard Unassigned Ticket",
+          description: "Unassigned ticket for staff dashboard testing",
+          currentStatus: "OPEN",
+        },
+      });
+    }
+
+    // Ensure staffUser has at least 1 assigned ticket in an active urgent state
     let assignedTicket = await prisma.ticket.findFirst({
       where: { ownerId: staffUser.id },
     });
@@ -98,24 +123,24 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
           currentStatus: "IN_PROGRESS",
         },
       });
-    }
-
-    // Ensure staffUser has at least 1 action recorded today
-    const existingAction = await prisma.actionTaken.findFirst({
-      where: { performedById: staffUser.id },
-    });
-
-    if (!existingAction) {
-      await prisma.actionTaken.create({
-        data: {
-          ticketId: assignedTicket.id,
-          performedById: staffUser.id,
-          description: "E2E Verified hardware connectivity",
-          result: "All diagnostics passed",
-          status: "COMPLETED",
-        },
+    } else if (assignedTicket.itPriority !== "URGENT" || ["RESOLVED", "CLOSED", "CANCELLED"].includes(assignedTicket.currentStatus)) {
+      assignedTicket = await prisma.ticket.update({
+        where: { id: assignedTicket.id },
+        data: { itPriority: "URGENT", currentStatus: "IN_PROGRESS" },
       });
     }
+
+    // Ensure staffUser has at least 1 action recorded today (Asia/Bangkok boundary)
+    await prisma.actionTaken.create({
+      data: {
+        ticketId: assignedTicket.id,
+        performedById: staffUser.id,
+        description: "E2E Verified hardware connectivity today",
+        result: "All diagnostics passed",
+        status: "COMPLETED",
+        createdAt: new Date(),
+      },
+    });
 
     const anyUser = await prisma.user.findFirstOrThrow();
     const validPasswordHash = anyUser.passwordHash;
@@ -262,12 +287,18 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
 
     await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
 
-    // Verify non-zero counts
+    // Verify non-zero counts for all 4 metric cards
     const unassignedCount = await page.getByTestId("metric-unassigned-count").innerText();
     expect(Number(unassignedCount)).toBeGreaterThanOrEqual(1);
 
     const myAssignedCount = await page.getByTestId("metric-my-assigned-count").innerText();
     expect(Number(myAssignedCount)).toBeGreaterThanOrEqual(1);
+
+    const todayActionsCount = await page.getByTestId("metric-today-actions-count").innerText();
+    expect(Number(todayActionsCount)).toBeGreaterThanOrEqual(1);
+
+    const urgentWorkloadCount = await page.getByTestId("metric-urgent-workload-count").innerText();
+    expect(Number(urgentWorkloadCount)).toBeGreaterThanOrEqual(1);
 
     const nonZeroPath = path.join(artifactsBase, "EVD-STAFFDASH-03.png");
     await page.screenshot({ path: nonZeroPath, fullPage: false });

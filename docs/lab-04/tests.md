@@ -24,7 +24,7 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 ## 2. Requirement-to-Test Traceability Matrix
 
 ### 2.1 Test ID Semantic Separation Notice
-- **`TEST-DASH-*` (Backend Query & API Contract Tests)**: Target `server/tests/lab-04/staff-dashboard.api.test.ts` and `requester-dashboard.api.test.ts`. Verifies backend Prisma aggregate query calculation accuracy, Asia/Bangkok (UTC+7) date boundary filtering, role authorization, and JSON response payloads.
+- **`TEST-DASH-*` (Backend Query & API Contract Tests)**: Target `server/tests/lab-04/staff-dashboard.api.test.ts`. Verifies backend Prisma aggregate query calculation accuracy, Asia/Bangkok (UTC+7) date boundary filtering, role authorization, and JSON response payloads.
 - **`TEST-CARD-*` (UI Presentation & Drill-Down Tests)**: Target `client/tests/lab-04/StaffDashboard.test.tsx` and `RequesterDashboard.test.tsx`. Verifies client UI card rendering, helper subtext, empty state `0` displays, and interactive drill-down URL navigation.
 
 ### 2.2 Functional Requirements (FR) Traceability Summary Table
@@ -63,7 +63,7 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 | **BR-10** | Optimistic concurrency via mandatory `expectedUpdatedAt` | AC-11, AC-17 | `TEST-CONCUR-01..02` | `server/tests/lab-04/concurrency.api.test.ts` |
 | **BR-11** | Dashboard metrics calculated server-side | AC-06, AC-07 | `TEST-DASH-05` | `server/tests/lab-04/staff-dashboard.api.test.ts` |
 | **BR-12** | Asia/Bangkok (UTC+7) time boundary calculations | AC-06, AC-07 | `TEST-UNIT-02` | `server/tests/unit/timezone.test.ts` |
-| **BR-13** | Ownership-scoped dashboard metric filtering | AC-06, AC-07 | `TEST-DASH-06` | `server/tests/lab-04/staff-dashboard.api.test.ts` & `requester-dashboard.api.test.ts` |
+| **BR-13** | Ownership-scoped dashboard metric filtering | AC-06, AC-07 | `TEST-DASH-06` | `server/tests/lab-04/staff-dashboard.api.test.ts` |
 | **BR-14** | Explicit empty state `0` behavior for metric cards | AC-15 | `TEST-CARD-00` | `client/tests/lab-04/StaffDashboard.test.tsx` |
 | **BR-15** | Metric card click drill-down navigation | AC-08 | `TEST-DASH-03` | `e2e/lab-04/staff-dashboard.spec.ts` |
 | **BR-16** | ActionTaken authorization bound to parent Ticket | AC-23 | `TEST-SEC-01` | `server/tests/lab-04/actions-taken.api.test.ts` |

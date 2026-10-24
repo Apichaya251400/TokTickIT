@@ -122,6 +122,14 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
               </button>
               <button
                 type="button"
+                className={`btn btn-sm ${activeTab === "staff-queue" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "staff-queue" ? "page" : undefined}
+                onClick={() => onTabChange("staff-queue")}
+              >
+                IT Queue
+              </button>
+              <button
+                type="button"
                 className={`btn btn-sm ${activeTab === "user-management" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "user-management" ? "page" : undefined}
                 onClick={() => onTabChange("user-management")}

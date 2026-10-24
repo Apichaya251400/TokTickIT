@@ -179,8 +179,22 @@ describe("StaffDashboard Component (StaffDashboard.test.tsx)", () => {
     fireEvent.click(screen.getByTestId("recent-ticket-row-tkt-001"));
     expect(mockOnSelectTicket).toHaveBeenCalledWith("tkt-001");
 
+    // Keyboard navigation (Enter / Space) on ticket row
+    fireEvent.keyDown(screen.getByTestId("recent-ticket-row-tkt-001"), { key: "Enter" });
+    expect(mockOnSelectTicket).toHaveBeenCalledWith("tkt-001");
+
+    fireEvent.keyDown(screen.getByTestId("recent-ticket-row-tkt-001"), { key: " " });
+    expect(mockOnSelectTicket).toHaveBeenCalledWith("tkt-001");
+
     // Click action row
     fireEvent.click(screen.getByTestId("recent-action-row-act-001"));
+    expect(mockOnSelectTicket).toHaveBeenCalledWith("tkt-001");
+
+    // Keyboard navigation (Enter / Space) on action row
+    fireEvent.keyDown(screen.getByTestId("recent-action-row-act-001"), { key: "Enter" });
+    expect(mockOnSelectTicket).toHaveBeenCalledWith("tkt-001");
+
+    fireEvent.keyDown(screen.getByTestId("recent-action-row-act-001"), { key: " " });
     expect(mockOnSelectTicket).toHaveBeenCalledWith("tkt-001");
   });
 
