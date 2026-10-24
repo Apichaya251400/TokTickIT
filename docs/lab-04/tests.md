@@ -63,9 +63,9 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 | **BR-10** | Optimistic concurrency via mandatory `expectedUpdatedAt` | AC-11, AC-17 | `TEST-CONCUR-01..02` | `server/tests/lab-04/concurrency.api.test.ts` |
 | **BR-11** | Dashboard metrics calculated server-side | AC-06, AC-07 | `TEST-DASH-05` | `server/tests/lab-04/staff-dashboard.api.test.ts` |
 | **BR-12** | Asia/Bangkok (UTC+7) time boundary calculations | AC-06, AC-07 | `TEST-UNIT-02` | `server/tests/unit/timezone.test.ts` |
-| **BR-13** | Ownership-scoped dashboard metric filtering | AC-06, AC-07 | `TEST-DASH-06` | `server/tests/lab-04/requester-dashboard.api.test.ts` |
-| **BR-14** | Explicit empty state `0` behavior for metric cards | AC-15 | `TEST-CARD-00` | `client/tests/lab-04/DashboardCards.test.tsx` |
-| **BR-15** | Metric card click drill-down navigation | AC-08 | `TEST-DASH-03` | `e2e/lab-04/dashboards.spec.ts` |
+| **BR-13** | Ownership-scoped dashboard metric filtering | AC-06, AC-07 | `TEST-DASH-06` | `server/tests/lab-04/staff-dashboard.api.test.ts` & `requester-dashboard.api.test.ts` |
+| **BR-14** | Explicit empty state `0` behavior for metric cards | AC-15 | `TEST-CARD-00` | `client/tests/lab-04/StaffDashboard.test.tsx` |
+| **BR-15** | Metric card click drill-down navigation | AC-08 | `TEST-DASH-03` | `e2e/lab-04/staff-dashboard.spec.ts` |
 | **BR-16** | ActionTaken authorization bound to parent Ticket | AC-23 | `TEST-SEC-01` | `server/tests/lab-04/actions-taken.api.test.ts` |
 | **BR-17** | Whitespace-only string rejection on textual inputs | AC-03, AC-09 | `TEST-UNIT-03` | `server/tests/unit/validation.test.ts` |
 
@@ -145,14 +145,14 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 - **`concurrency.api.test.ts`**: Tests race conditions and optimistic concurrency control using parallel requests (`Promise.all`). Covers concurrent Ticket resolution (`AC-11`), stale `expectedUpdatedAt` rejection (`AC-17`), concurrent idempotency token uniqueness races (`§9.2`), and concurrent Action mutation vs Ticket cancellation (`BR-09`).
 
 ### 3.3 UI Component & Style Test Suites (`client/tests/lab-04/`)
-- **`StaffDashboard.test.tsx`**: Renders metric cards for IT Staff dashboard. Verifies card total rendering, helper subtext, empty state `0` displays, and drill-down URL links.
+- **`StaffDashboard.test.tsx`**: Renders metric cards for IT Staff dashboard (`TEST-CARD-00..11`). Verifies card total rendering, helper subtext, empty state `0` displays, 403 Forbidden alert UI, and drill-down navigation.
 - **`RequesterDashboard.test.tsx`**: Renders metric cards for Requester dashboard. Verifies owned ticket counts, attention-required items, and recent ticket lists.
 - **`ActionsTaken.test.tsx`**: Renders Actions Taken workspace on Ticket Detail. Verifies collapsible create form, status badge styling (Zen Green theme `TEST-STYLE-01`), `attachmentNotes` rendering (`TEST-UI-ACT-03`), conditional follow-up note input display, edit controls, Requester read-only view (`AC-04`), and form data preservation upon recoverable network failure (`TEST-FAIL-01`).
 - **`TicketWorkflow.test.tsx`**: Renders status transition UI for resolving tickets. Verifies mandatory `resolutionNote` prompt when 0 completed actions exist, optional prompt when >= 1 completed action exists, inline error messaging, and stale update alert banners.
-- **`DashboardCards.test.tsx`**: Renders zero-count metric cards (`TEST-CARD-00`), verifying graceful empty state displays without layout shifts.
 
 ### 3.4 Playwright E2E Test Suites (`e2e/lab-04/`)
-- **`dashboards.spec.ts`**: E2E test for IT Staff and Requester Dashboard login, metric card rendering, and drill-down navigation (`AC-06`, `AC-07`, `AC-08`).
+- **`staff-dashboard.spec.ts`**: E2E test for IT Staff and Administrator Dashboard login, metric card rendering, responsive viewports (Desktop, Tablet, Mobile), zero-workload states, and drill-down navigation (`AC-06`, `AC-08`, `EVD-STAFFDASH-01..06`).
+- **`requester-dashboard.spec.ts`**: E2E test for Requester Dashboard login, owned metric cards, attention required, and drill-down navigation (`AC-07`).
 - **`actions-taken-flow.spec.ts`**: E2E test for end-to-end Action Taken lifecycle: creation by Staff, assignee selection, `attachmentNotes`, status progression (`PENDING` → `IN_PROGRESS` → `COMPLETED`), edit modal content updates, Requester read-only inspection (`AC-01`, `AC-05`), and submission retry using same `Idempotency-Key` after network failure (`TEST-IDEM-03`).
 - **`ticket-resolution.spec.ts`**: E2E test for Ticket resolution flow: verifying Resolution Gate inline validation errors, successful resolution with completed ActionTaken, successful resolution with staff resolutionNote, and advisory Requester indication (`AC-09`, `AC-10`).
 - **`responsive-a11y.spec.ts`**: E2E test for visual QA and accessibility across Desktop (`1920×1080`), Tablet (`768×1024`), and Mobile (`375×812`) viewports. Separates visual responsive layout adaptation (`TEST-RESP-01`) from interactive accessibility checks (`TEST-A11Y-01`).
