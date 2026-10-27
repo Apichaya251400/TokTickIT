@@ -66,7 +66,20 @@ export default function RequesterDashboard({
     setIsForbidden(false);
     try {
       const res = await fetchRequesterDashboard();
-      setData(res);
+      if (res && res.metrics && typeof res.metrics === "object") {
+        setData(res);
+      } else {
+        setData({
+          metrics: {
+            openTicketsCount: 0,
+            waitingForRequesterCount: 0,
+            inProgressCount: 0,
+            recentlyResolvedCount: 0,
+          },
+          attentionRequiredTickets: [],
+          recentTickets: [],
+        });
+      }
     } catch (err: any) {
       if (err?.status === 403 || err?.data?.error === "FORBIDDEN" || err?.data?.error?.code === "FORBIDDEN") {
         setIsForbidden(true);
@@ -162,7 +175,7 @@ export default function RequesterDashboard({
       )}
 
       {/* Dashboard Main Content */}
-      {!loading && data && (
+      {!loading && data && data.metrics && (
         <>
           {/* 4 Operational Metric Cards Grid */}
           <div className="row g-3 mb-4" data-testid="metric-cards-grid">
@@ -190,7 +203,7 @@ export default function RequesterDashboard({
                     className="display-6 fw-bold text-primary my-1"
                     data-testid="metric-open-count"
                   >
-                    {data.metrics.openTicketsCount}
+                    {data.metrics?.openTicketsCount ?? 0}
                   </div>
                   <div className="text-muted small">
                     Click to view open tickets &rarr;
@@ -223,7 +236,7 @@ export default function RequesterDashboard({
                     className="display-6 fw-bold text-warning my-1"
                     data-testid="metric-waiting-count"
                   >
-                    {data.metrics.waitingForRequesterCount}
+                    {data.metrics?.waitingForRequesterCount ?? 0}
                   </div>
                   <div className="text-muted small">
                     Requires your response &rarr;
@@ -256,7 +269,7 @@ export default function RequesterDashboard({
                     className="display-6 fw-bold text-info my-1"
                     data-testid="metric-inprogress-count"
                   >
-                    {data.metrics.inProgressCount}
+                    {data.metrics?.inProgressCount ?? 0}
                   </div>
                   <div className="text-muted small">
                     Under active investigation &rarr;
@@ -289,7 +302,7 @@ export default function RequesterDashboard({
                     className="display-6 fw-bold text-success my-1"
                     data-testid="metric-resolved-count"
                   >
-                    {data.metrics.recentlyResolvedCount}
+                    {data.metrics?.recentlyResolvedCount ?? 0}
                   </div>
                   <div className="text-muted small">
                     Resolved in past 30 days &rarr;
@@ -310,11 +323,11 @@ export default function RequesterDashboard({
                     <span className="text-muted small">Tickets waiting for your response or clarification</span>
                   </div>
                   <span className="badge bg-warning text-dark">
-                    {data.attentionRequiredTickets.length} Pending
+                    {(data.attentionRequiredTickets || []).length} Pending
                   </span>
                 </div>
                 <div className="card-body p-0">
-                  {data.attentionRequiredTickets.length === 0 ? (
+                  {(!data.attentionRequiredTickets || data.attentionRequiredTickets.length === 0) ? (
                     <div
                       className="p-5 text-center text-muted"
                       data-testid="empty-attention-tickets"
@@ -405,7 +418,7 @@ export default function RequesterDashboard({
                   </button>
                 </div>
                 <div className="card-body p-0">
-                  {data.recentTickets.length === 0 ? (
+                  {(!data.recentTickets || data.recentTickets.length === 0) ? (
                     <div
                       className="p-5 text-center text-muted"
                       data-testid="empty-recent-tickets"

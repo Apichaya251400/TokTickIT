@@ -69,7 +69,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 onClick={() => onTabChange("requester-dashboard")}
                 data-testid="nav-requester-dashboard"
               >
-                Overview
+                Home
               </button>
               <button
                 type="button"
