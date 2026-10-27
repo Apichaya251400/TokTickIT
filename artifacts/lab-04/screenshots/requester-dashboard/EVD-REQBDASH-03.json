@@ -30,6 +30,14 @@
     },
     "recentTickets": [
       {
+        "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+        "ticketNumber": "TKT-2026-000002",
+        "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
+        "currentStatus": "IN_PROGRESS",
+        "requestedPriority": "MEDIUM",
+        "updatedAt": "2026-10-27T20:27:23.698Z"
+      },
+      {
         "id": "85719f51-3382-49e5-82d9-1b1243e0b5db",
         "ticketNumber": "TKT-2026-000035",
         "summary": "Lab 2 feature continuity under JWT Auth",
@@ -44,14 +52,6 @@
         "currentStatus": "CANCELLED",
         "requestedPriority": "LOW",
         "updatedAt": "2026-10-27T20:26:55.981Z"
-      },
-      {
-        "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
-        "ticketNumber": "TKT-2026-000002",
-        "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
-        "currentStatus": "IN_PROGRESS",
-        "requestedPriority": "MEDIUM",
-        "updatedAt": "2026-10-27T20:26:55.965Z"
       },
       {
         "id": "a9040c07-92af-405f-a50d-cd45c99f4ca1",

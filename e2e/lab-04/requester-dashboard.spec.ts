@@ -466,6 +466,121 @@ test.describe("E2E-REQBDASH: Requester Dashboard & Workload Overview (Issue #79 
     copyToBrain("EVD-REQBDASH-07.png");
   });
 
+  // ---------------------------------------------------------------------------
+  // EVD-REQBDASH-08: Ownership Isolation & Malicious Query Parameter Override Evidence
+  // ---------------------------------------------------------------------------
+  test("E2E-REQBDASH-08: Ownership Isolation & Malicious Query Parameter Override (EVD-REQBDASH-08)", async ({ request }) => {
+    // 1. Ensure Bob (Requester B) exists and has distinct active tickets
+    let bobUser = await prisma.user.findFirst({
+      where: { email: "bob.requester@example.com" },
+    });
+    if (!bobUser) {
+      bobUser = await prisma.user.create({
+        data: {
+          name: "Bob Requester",
+          email: "bob.requester@example.com",
+          passwordHash: aliceUser.passwordHash,
+          role: "REQUESTER",
+          isActive: true,
+          requiresPasswordChange: false,
+        },
+      });
+    }
+
+    const category = await prisma.category.findFirstOrThrow();
+    const system = await prisma.relatedSystem.findFirstOrThrow();
+
+    const bobNum = (Date.now() % 700000 + 300000).toString().padStart(6, "0");
+    const bobTicket = await prisma.ticket.create({
+      data: {
+        ticketNumber: `TKT-2026-${bobNum}`,
+        requesterId: bobUser.id,
+        ownerId: staffUser.id,
+        categoryId: category.id,
+        relatedSystemId: system.id,
+        requestedPriority: "URGENT",
+        summary: "[TEST-REQDASH-E2E] Bob Confidential Financial Request",
+        description: "Confidential data belonging solely to Bob Requester",
+        currentStatus: "WAITING_FOR_REQUESTER",
+      },
+    });
+    createdTicketIds.push(bobTicket.id);
+
+    // 2. Authenticate as Alice (Requester A)
+    const loginRes = await request.post("http://localhost:3000/api/auth/login", {
+      data: {
+        email: aliceUser.email,
+        password: "InitialPassword123!",
+      },
+    });
+    expect(loginRes.status()).toBe(200);
+
+    // 3. Alice attempts malicious query override with Bob's requesterId and userId
+    const maliciousUrl = `/api/dashboards/requester?requesterId=${bobUser.id}&userId=${bobUser.id}`;
+    const dashRes = await request.get(`http://localhost:3000${maliciousUrl}`);
+    expect(dashRes.status()).toBe(200);
+
+    const json = await dashRes.json();
+
+    // 4. Verification: Bob's confidential ticket must NOT be visible to Alice
+    const bobTicketInRecent = json.recentTickets.some((t: any) => t.id === bobTicket.id || t.summary.includes("Bob"));
+    const bobTicketInAttention = json.attentionRequiredTickets.some((t: any) => t.id === bobTicket.id || t.summary.includes("Bob"));
+
+    expect(bobTicketInRecent).toBe(false);
+    expect(bobTicketInAttention).toBe(false);
+
+    // 5. Structure and save Ownership-Isolation API Evidence artifact
+    const isolationEvidence = {
+      evidenceId: "EVD-REQBDASH-08",
+      testCase: "BR-13 / Ownership Isolation & Query Parameter Override Rejection",
+      description: "Demonstrates that Requester A attempting to query Requester B's dashboard receives 200 OK scoped strictly to Requester A's owned data, completely ignoring malicious query parameters.",
+      actors: {
+        requesterA_Authenticated: {
+          id: aliceUser.id,
+          name: aliceUser.name,
+          email: aliceUser.email,
+          role: aliceUser.role,
+        },
+        requesterB_TargetVictim: {
+          id: bobUser.id,
+          name: bobUser.name,
+          email: bobUser.email,
+          role: bobUser.role,
+          confidentialTicket: {
+            id: bobTicket.id,
+            ticketNumber: bobTicket.ticketNumber,
+            summary: bobTicket.summary,
+            currentStatus: bobTicket.currentStatus,
+          },
+        },
+      },
+      request: {
+        method: "GET",
+        endpoint: maliciousUrl,
+        authenticatedSession: "Alice (Requester A)",
+        attemptedOverride: {
+          requesterId: bobUser.id,
+          userId: bobUser.id,
+        },
+      },
+      response: {
+        status: 200,
+        ownershipIsolationVerification: {
+          queryParameterIgnored: true,
+          serverSessionAuthoritative: true,
+          requesterBTicketLeakedInRecent: bobTicketInRecent,
+          requesterBTicketLeakedInAttention: bobTicketInAttention,
+          isolationIntegrityPass: !bobTicketInRecent && !bobTicketInAttention,
+        },
+        returnedPayload: json,
+      },
+    };
+
+    const evidencePath = path.join(artifactsBase, "EVD-REQBDASH-08.json");
+    fs.writeFileSync(evidencePath, JSON.stringify(isolationEvidence, null, 2), "utf8");
+    copyToBrain("EVD-REQBDASH-08.json");
+  });
+
   test.afterAll(async () => {
     // 1. Clean up test tickets created specifically for E2E
     if (createdTicketIds.length > 0) {
@@ -477,17 +592,20 @@ test.describe("E2E-REQBDASH: Requester Dashboard & Workload Overview (Issue #79 
       where: { summary: { startsWith: "[TEST-REQDASH-E2E]" } },
     });
 
-    // 2. Clean up zeroUser tickets and user account
-    if (zeroUser) {
-      await prisma.ticket.deleteMany({
-        where: { requesterId: zeroUser.id },
-      });
-      await prisma.user.deleteMany({
-        where: { email: "zero.requester@example.com" },
-      });
-    }
+    // 2. Clean up test user tickets and accounts
+    await prisma.ticket.deleteMany({
+      where: {
+        requester: {
+          email: { in: ["zero.requester@example.com", "bob.requester@example.com"] },
+        },
+      },
+    });
+    await prisma.user.deleteMany({
+      where: { email: { in: ["zero.requester@example.com", "bob.requester@example.com"] } },
+    });
 
     await prisma.$disconnect();
   });
 });
+
 

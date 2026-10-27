@@ -693,9 +693,7 @@ export default function App() {
           <RequesterDashboard
             currentUser={currentUser}
             onNavigateToMyTickets={(status) => {
-              if (status !== undefined) {
-                setFilterCurrentStatus(status);
-              }
+              setFilterCurrentStatus(status || "");
               setSelectedTicketId(null);
               setActiveTab("my-tickets");
             }}

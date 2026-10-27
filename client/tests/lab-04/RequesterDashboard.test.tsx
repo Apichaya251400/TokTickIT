@@ -156,6 +156,10 @@ describe("RequesterDashboard Component (RequesterDashboard.test.tsx)", () => {
     // 4. Recently Resolved Card Click -> status="RESOLVED"
     fireEvent.click(screen.getByTestId("requester-metric-resolved"));
     expect(mockOnNavigateToMyTickets).toHaveBeenCalledWith("RESOLVED");
+
+    // 5. View All Recent Tickets Click -> resets filter (calls with no argument/undefined)
+    fireEvent.click(screen.getByRole("button", { name: /View All/i }));
+    expect(mockOnNavigateToMyTickets).toHaveBeenCalledWith();
   });
 
   it("TEST-CARD-11..12: Clicking attention tickets and recent tickets triggers onSelectTicket", async () => {
