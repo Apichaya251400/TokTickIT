@@ -69,7 +69,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 onClick={() => onTabChange("requester-dashboard")}
                 data-testid="nav-requester-dashboard"
               >
-                Home
+                Dashboard
               </button>
               <button
                 type="button"
@@ -99,6 +99,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 className={`btn btn-sm ${activeTab === "staff-dashboard" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "staff-dashboard" ? "page" : undefined}
                 onClick={() => onTabChange("staff-dashboard")}
+                data-testid="nav-staff-dashboard"
               >
                 Dashboard
               </button>
@@ -107,6 +108,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 className={`btn btn-sm ${activeTab === "staff-queue" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "staff-queue" ? "page" : undefined}
                 onClick={() => onTabChange("staff-queue")}
+                data-testid="nav-it-queue"
               >
                 IT Queue
               </button>
@@ -120,6 +122,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 className={`btn btn-sm ${activeTab === "staff-dashboard" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "staff-dashboard" ? "page" : undefined}
                 onClick={() => onTabChange("staff-dashboard")}
+                data-testid="nav-staff-dashboard"
               >
                 Dashboard
               </button>
@@ -128,6 +131,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 className={`btn btn-sm ${activeTab === "staff-queue" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "staff-queue" ? "page" : undefined}
                 onClick={() => onTabChange("staff-queue")}
+                data-testid="nav-it-queue"
               >
                 IT Queue
               </button>

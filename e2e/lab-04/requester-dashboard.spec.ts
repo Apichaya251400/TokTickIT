@@ -60,6 +60,7 @@ test.describe("E2E-REQBDASH: Requester Dashboard & Workload Overview (Issue #79 
   let aliceUser: any;
   let zeroUser: any;
   let staffUser: any;
+  const createdTicketIds: string[] = [];
 
   test.beforeAll(async () => {
     ensureDirSync(artifactsBase);
@@ -117,7 +118,7 @@ test.describe("E2E-REQBDASH: Requester Dashboard & Workload Overview (Issue #79 
 
     if (!waitingTicket) {
       const num = (Date.now() % 700000 + 100000).toString().padStart(6, "0");
-      await prisma.ticket.create({
+      const createdWaiting = await prisma.ticket.create({
         data: {
           ticketNumber: `TKT-2026-${num}`,
           requesterId: aliceUser.id,
@@ -125,11 +126,12 @@ test.describe("E2E-REQBDASH: Requester Dashboard & Workload Overview (Issue #79 
           categoryId: category.id,
           relatedSystemId: system.id,
           requestedPriority: "HIGH",
-          summary: "E2E Attention Required Ticket (Needs Requester Response)",
+          summary: "[TEST-REQDASH-E2E] Attention Required Ticket (Needs Requester Response)",
           description: "Waiting for user feedback on ticket resolution steps",
           currentStatus: "WAITING_FOR_REQUESTER",
         },
       });
+      createdTicketIds.push(createdWaiting.id);
     }
 
     // Ensure Alice has at least 1 ticket in RESOLVED within the last 30 days
@@ -138,7 +140,7 @@ test.describe("E2E-REQBDASH: Requester Dashboard & Workload Overview (Issue #79 
     });
     if (!resolvedTicket) {
       const num = (Date.now() % 700000 + 200000).toString().padStart(6, "0");
-      await prisma.ticket.create({
+      const createdResolved = await prisma.ticket.create({
         data: {
           ticketNumber: `TKT-2026-${num}`,
           requesterId: aliceUser.id,
@@ -146,12 +148,13 @@ test.describe("E2E-REQBDASH: Requester Dashboard & Workload Overview (Issue #79 
           categoryId: category.id,
           relatedSystemId: system.id,
           requestedPriority: "MEDIUM",
-          summary: "E2E Recently Resolved Ticket",
+          summary: "[TEST-REQDASH-E2E] Recently Resolved Ticket",
           description: "Recently resolved support ticket",
           currentStatus: "RESOLVED",
           updatedAt: new Date(),
         },
       });
+      createdTicketIds.push(createdResolved.id);
     }
   });
 
@@ -462,4 +465,29 @@ test.describe("E2E-REQBDASH: Requester Dashboard & Workload Overview (Issue #79 
     await page.screenshot({ path: forbiddenPath, fullPage: false });
     copyToBrain("EVD-REQBDASH-07.png");
   });
+
+  test.afterAll(async () => {
+    // 1. Clean up test tickets created specifically for E2E
+    if (createdTicketIds.length > 0) {
+      await prisma.ticket.deleteMany({
+        where: { id: { in: createdTicketIds } },
+      });
+    }
+    await prisma.ticket.deleteMany({
+      where: { summary: { startsWith: "[TEST-REQDASH-E2E]" } },
+    });
+
+    // 2. Clean up zeroUser tickets and user account
+    if (zeroUser) {
+      await prisma.ticket.deleteMany({
+        where: { requesterId: zeroUser.id },
+      });
+      await prisma.user.deleteMany({
+        where: { email: "zero.requester@example.com" },
+      });
+    }
+
+    await prisma.$disconnect();
+  });
 });
+

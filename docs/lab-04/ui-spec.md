@@ -83,6 +83,13 @@ Lab 4 preserves and extends the **Zen Green Design System** introduced in Labs 2
 - **Failure State**: Displays generic retryable error alert banner with a `[ Retry ]` button.
 - **Not Found State**: Navigates gracefully to fallback list view if a targeted ticket has been removed.
 
+### Requester Metric Drill-Down Navigation
+- Clicking **My Open Tickets Card** → Navigates to `/tickets/my-tickets?currentStatus=open`.
+- Clicking **Waiting for My Response Card** → Navigates to `/tickets/my-tickets?currentStatus=WAITING_FOR_REQUESTER`.
+- Clicking **In Progress Card** → Navigates to `/tickets/my-tickets?currentStatus=IN_PROGRESS`.
+- Clicking **Recently Resolved Card** → Navigates to `/tickets/my-tickets?currentStatus=RESOLVED`.
+- Clicking any ticket row in **Recent Tickets** or **Attention Required** → Navigates directly to `/tickets/:id`.
+
 ---
 
 ## 4. Ticket Detail Actions Taken Workspace
