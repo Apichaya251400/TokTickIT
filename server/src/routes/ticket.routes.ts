@@ -288,7 +288,17 @@ const QUEUE_ALLOWED_VIEWS = new Set([
 const ALLOWED_SORT_BY = new Set(["createdAt", "updatedAt", "ticketNumber", "requestedPriority"]);
 const ALLOWED_SORT_ORDER = new Set(["asc", "desc"]);
 const ALLOWED_PAGE_SIZES = new Set([10, 20, 50]);
-const ALLOWED_STATUSES = new Set(["NEW"]);
+const ALLOWED_STATUSES = new Set([
+  "NEW",
+  "OPEN",
+  "IN_PROGRESS",
+  "WAITING_FOR_REQUESTER",
+  "RESOLVED",
+  "CLOSED",
+  "REOPENED",
+  "CANCELLED",
+  "open",
+]);
 
 export async function handleMyTickets(req: AuthenticatedRequest, res: Response): Promise<void> {
   const {
@@ -442,7 +452,15 @@ export async function handleMyTickets(req: AuthenticatedRequest, res: Response):
     if (parsedCatId !== undefined) where.categoryId = parsedCatId;
     if (parsedSysId !== undefined) where.relatedSystemId = parsedSysId;
     if (strPriority !== undefined) where.requestedPriority = strPriority;
-    if (strStatus !== undefined) where.currentStatus = strStatus;
+    if (strStatus !== undefined) {
+      if (strStatus === "open") {
+        where.currentStatus = {
+          notIn: ["RESOLVED", "CLOSED", "CANCELLED"],
+        };
+      } else {
+        where.currentStatus = strStatus;
+      }
+    }
 
     const orderBy: any[] = [];
     if (sortBy === "requestedPriority") {

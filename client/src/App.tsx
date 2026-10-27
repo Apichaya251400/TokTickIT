@@ -26,6 +26,7 @@ import { StaffTicketDetail } from "./components/StaffTicketDetail";
 import StaffDashboard from "./components/StaffDashboard";
 import UserManagement from "./components/UserManagement";
 import { ActionsTakenWorkspace } from "./components/ActionsTakenWorkspace";
+import RequesterDashboard from "./components/RequesterDashboard";
 
 type UiState = "idle" | "loading" | "success" | "error";
 
@@ -686,6 +687,27 @@ export default function App() {
         onLogout={handleLogout}
       />
 
+      {/* Requester Dashboard */}
+      {activeTab === "requester-dashboard" && !selectedTicketId && (
+        <section className="mb-5">
+          <RequesterDashboard
+            currentUser={currentUser}
+            onNavigateToMyTickets={(status) => {
+              if (status !== undefined) {
+                setFilterCurrentStatus(status);
+              }
+              setSelectedTicketId(null);
+              setActiveTab("my-tickets");
+            }}
+            onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+            onCreateTicket={() => {
+              setSelectedTicketId(null);
+              setActiveTab("create-ticket");
+            }}
+          />
+        </section>
+      )}
+
       {/* IT Staff & Administrator Dashboard */}
       {activeTab === "staff-dashboard" && !selectedTicketId && (
         <section className="mb-5">
@@ -1162,7 +1184,15 @@ export default function App() {
                     style={{ outlineColor: "#0B7A46" }}
                   >
                     <option value="">All Statuses</option>
+                    <option value="open">Open Workload</option>
                     <option value="NEW">NEW</option>
+                    <option value="OPEN">OPEN</option>
+                    <option value="IN_PROGRESS">IN_PROGRESS</option>
+                    <option value="WAITING_FOR_REQUESTER">WAITING_FOR_REQUESTER</option>
+                    <option value="RESOLVED">RESOLVED</option>
+                    <option value="CLOSED">CLOSED</option>
+                    <option value="REOPENED">REOPENED</option>
+                    <option value="CANCELLED">CANCELLED</option>
                   </select>
                 </div>
 

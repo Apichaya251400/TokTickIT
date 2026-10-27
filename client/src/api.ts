@@ -766,4 +766,51 @@ export async function fetchStaffDashboard(): Promise<StaffDashboardResponse> {
 
 export const fetchStaffDashboardApi = fetchStaffDashboard;
 
+// ---------------------------------------------------------------------------
+// Requester Dashboard API (Lab 4 Sprint 4)
+// ---------------------------------------------------------------------------
+
+export interface RequesterDashboardMetrics {
+  openTicketsCount: number;
+  waitingForRequesterCount: number;
+  inProgressCount: number;
+  recentlyResolvedCount: number;
+}
+
+export interface RequesterRecentTicket {
+  id: string;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: string;
+  requestedPriority: string;
+  updatedAt: string;
+}
+
+export interface RequesterAttentionTicket {
+  id: string;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: string;
+  requestedPriority: string;
+  updatedAt: string;
+}
+
+export interface RequesterDashboardResponse {
+  metrics: RequesterDashboardMetrics;
+  recentTickets: RequesterRecentTicket[];
+  attentionRequiredTickets: RequesterAttentionTicket[];
+}
+
+export async function fetchRequesterDashboard(): Promise<RequesterDashboardResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/dashboards/requester`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export const fetchRequesterDashboardApi = fetchRequesterDashboard;
+
+
 
