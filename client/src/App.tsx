@@ -831,8 +831,18 @@ export default function App() {
           )}
 
           {detailError && (
-            <div className="alert alert-danger mb-4" role="alert">
-              {detailError}
+            <div className="alert alert-danger mb-4 d-flex justify-content-between align-items-center" role="alert">
+              <span>{detailError}</span>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger"
+                onClick={() => {
+                  setSelectedTicketId(null);
+                  setDetailError(null);
+                }}
+              >
+                Return to My Tickets &rarr;
+              </button>
             </div>
           )}
 
