@@ -151,19 +151,71 @@ test.describe("HARDEN-01..04: Console Errors, Broken Links, Placeholder Text & U
     expect(consoleErrors).toEqual([]);
   });
 
-  // 2. Broken Internal Hyperlinks Check
-  test("TEST-HARDEN-02: Zero broken internal hyperlinks or 4xx/5xx navigation targets", async ({ page, request }) => {
+  // 2. Broken Internal Hyperlinks Check across All Representative Views
+  test("TEST-HARDEN-02: Zero broken internal hyperlinks or 4xx/5xx navigation targets across all representative views", async ({ page, request }) => {
+    const discoveredLinks = new Set<string>();
+
+    const collectLinks = async () => {
+      const links = await page.locator('a[href^="/"]').evaluateAll((anchors) =>
+        anchors.map((a) => (a as HTMLAnchorElement).getAttribute("href") || "")
+      );
+      for (const l of links) {
+        if (l && !l.startsWith("javascript:")) {
+          discoveredLinks.add(l);
+        }
+      }
+    };
+
+    // 2.1 Requester Dashboard
+    await loginAsRequester(page);
+    await page.getByTestId("nav-requester-dashboard").click();
+    await expect(page.getByTestId("requester-dashboard-page")).toBeVisible();
+    await collectLinks();
+
+    // 2.2 My Tickets
+    await page.getByTestId("nav-my-tickets").click();
+    await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
+    await collectLinks();
+
+    // 2.3 Ticket Detail
+    const viewDetailBtn = page.getByRole("button", { name: "View Details" }).first();
+    if (await viewDetailBtn.isVisible()) {
+      await viewDetailBtn.click();
+      await expect(page.getByRole("heading", { name: /Ticket Detail/i })).toBeVisible();
+      await collectLinks();
+    }
+
+    // 2.4 Create Ticket Form
+    await page.getByTestId("nav-create-ticket").click();
+    await expect(page.getByRole("heading", { name: /Create.*Ticket/i })).toBeVisible();
+    await collectLinks();
+
+    // 2.5 Staff Dashboard
     await loginAsStaff(page);
     await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
+    await collectLinks();
 
-    // Collect all links on page
-    const links = await page.locator('a[href^="/"]').evaluateAll((anchors) =>
-      anchors.map((a) => (a as HTMLAnchorElement).getAttribute("href") || "")
-    );
+    // 2.6 Staff Queue
+    await page.getByTestId("nav-it-queue").click();
+    await expect(page.getByText("IT Staff Ticket Queue")).toBeVisible();
+    await collectLinks();
 
-    const uniqueLinks = [...new Set(links)].filter((l) => l.length > 0 && !l.startsWith("javascript:"));
+    // 2.7 Staff Ticket Detail & Actions Workspace
+    const staffTicketItem = page.locator("[data-testid^='ticket-item-']:visible").first();
+    if (await staffTicketItem.isVisible()) {
+      await staffTicketItem.click();
+      await expect(page.getByTestId("actions-taken-workspace")).toBeVisible();
+      await collectLinks();
+    }
 
-    for (const link of uniqueLinks) {
+    // 2.8 User Management
+    await loginAsAdmin(page);
+    await page.getByTestId("nav-user-management").click();
+    await expect(page.getByRole("heading", { name: "User Management" })).toBeVisible();
+    await collectLinks();
+
+    // Verify all discovered internal links return HTTP < 400
+    for (const link of discoveredLinks) {
       const response = await request.get(`http://localhost:5173${link}`);
       expect(response.status(), `Broken link found: ${link}`).toBeLessThan(400);
     }
@@ -214,12 +266,64 @@ test.describe("HARDEN-01..04: Console Errors, Broken Links, Placeholder Text & U
     expect(bodyText).not.toMatch(forbiddenPatterns);
   });
 
-  // 4. Interactive Controls and Accessible Labels Audit
+  // 4. Interactive Controls Functional Behavior and Accessible Labels Audit
   test("TEST-HARDEN-04: All interactive buttons have functional behaviors, valid labels, and zero dead placeholder controls", async ({ page }) => {
+    // 4.1 Staff Dashboard: Metric Card Click -> Navigates to Queue
     await loginAsStaff(page);
     await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
+    await page.getByTestId("metric-unassigned-card").click();
+    await expect(page.getByTestId("staff-queue-page")).toBeVisible();
 
-    // Verify all visible buttons have non-empty accessible name or text
+    // 4.2 Staff Queue -> Open Detail & Actions Workspace
+    const staffTicketItem = page.locator("[data-testid^='ticket-item-']:visible").first();
+    await expect(staffTicketItem).toBeVisible();
+    await staffTicketItem.click();
+    await expect(page.getByTestId("actions-taken-workspace")).toBeVisible();
+
+    // 4.3 Staff Detail: Back to Queue Button -> Returns to Queue
+    await page.getByTestId("back-to-queue-btn").click();
+    await expect(page.getByTestId("staff-queue-page")).toBeVisible();
+
+    // 4.4 Requester Views: Login -> Requester Dashboard
+    await loginAsRequester(page);
+    await page.getByTestId("nav-requester-dashboard").click();
+    await expect(page.getByTestId("requester-dashboard-page")).toBeVisible();
+
+    // 4.5 Requester Nav: My Tickets Button -> Navigates to My Tickets
+    await page.getByTestId("nav-my-tickets").click();
+    await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
+
+    // 4.6 My Tickets: View Details Button -> Opens Ticket Detail
+    const viewDetailBtn = page.getByRole("button", { name: "View Details" }).first();
+    await expect(viewDetailBtn).toBeVisible();
+    await viewDetailBtn.click();
+    await expect(page.getByRole("heading", { name: /Ticket Detail/i })).toBeVisible();
+
+    // 4.7 Requester Ticket Detail: Back to My Tickets Button -> Returns to My Tickets
+    const backToMyTicketsBtn = page.getByRole("button", { name: "Back to My Tickets" });
+    await expect(backToMyTicketsBtn).toBeVisible();
+    await backToMyTicketsBtn.click();
+    await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
+
+    // 4.8 Create Ticket Nav Button -> Opens Create Ticket Form
+    await page.getByTestId("nav-create-ticket").click();
+    await expect(page.getByRole("heading", { name: /Create.*Ticket/i })).toBeVisible();
+
+    // 4.9 Admin Nav: User Management Button -> Opens User Management
+    await loginAsAdmin(page);
+    await page.getByTestId("nav-user-management").click();
+    await expect(page.getByRole("heading", { name: "User Management" })).toBeVisible();
+
+    // 4.10 Logout Button -> Session Invalidated, Returns to Login Screen
+    const logoutBtn = page.getByRole("button", { name: "Logout" });
+    await expect(logoutBtn).toBeVisible();
+    await logoutBtn.click();
+    await expect(page.getByRole("heading", { name: /TokTickIT/i })).toBeVisible();
+    await expect(page.locator("#login-email")).toBeVisible();
+
+    // 4.11 Label & Non-Placeholder Quality Audit across All Rendered Buttons
+    await loginAsStaff(page);
+    await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
     const buttons = page.locator("button:visible");
     const count = await buttons.count();
     expect(count).toBeGreaterThan(0);
@@ -249,9 +353,35 @@ test.describe("HARDEN-01..04: Console Errors, Broken Links, Placeholder Text & U
       audits: {
         consoleErrors: { status: "VERIFIED_ZERO_ERRORS", count: 0 },
         pageErrors: { status: "VERIFIED_ZERO_ERRORS", count: 0 },
-        brokenHyperlinks: { status: "VERIFIED_ZERO_BROKEN_LINKS", inspected: "All relative <a> anchors" },
+        brokenHyperlinks: {
+          status: "VERIFIED_ZERO_BROKEN_LINKS",
+          inspectedViews: [
+            "Requester Dashboard",
+            "My Tickets",
+            "Ticket Detail",
+            "Create Ticket",
+            "Staff Dashboard",
+            "Staff Queue",
+            "Staff Ticket Detail",
+            "User Management"
+          ]
+        },
         placeholderPatterns: { status: "VERIFIED_CLEAN", prohibitedRegex: "TODO|TBD|Lorem ipsum|Coming Soon|Under Construction|Not Implemented" },
-        interactiveControls: { status: "VERIFIED_FUNCTIONAL", checkedButtons: count, prohibitedLabels: "None" },
+        interactiveControls: {
+          status: "VERIFIED_FUNCTIONAL",
+          verifiedFunctionalInteractions: [
+            "Dashboard metric card -> Queue navigation",
+            "Staff Queue -> Detail / Actions Taken workspace",
+            "Back to Queue button -> Queue restoration",
+            "My Tickets -> Ticket Detail navigation",
+            "Back to My Tickets button -> List restoration",
+            "Create Ticket button -> Form presentation",
+            "User Management button -> Admin view",
+            "Logout button -> Session invalidation and Login redirect"
+          ],
+          checkedButtons: count,
+          prohibitedLabels: "None"
+        },
       },
     };
 

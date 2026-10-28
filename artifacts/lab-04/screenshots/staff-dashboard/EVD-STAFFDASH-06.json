@@ -11,8 +11,8 @@
       "match": true
     },
     "todayActionsCount": {
-      "expectedDbQuery": 1,
-      "actualApiResponse": 1,
+      "expectedDbQuery": 2,
+      "actualApiResponse": 2,
       "match": true
     },
     "urgentWorkloadCount": {
@@ -25,7 +25,7 @@
     "metrics": {
       "unassignedCount": 56,
       "myAssignedCount": 2,
-      "todayActionsCount": 1,
+      "todayActionsCount": 2,
       "urgentWorkloadCount": 2
     },
     "myRecentTickets": [
@@ -36,7 +36,7 @@
         "currentStatus": "IN_PROGRESS",
         "requestedPriority": "MEDIUM",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-28T19:57:19.452Z"
+        "updatedAt": "2026-10-28T20:18:14.151Z"
       },
       {
         "id": "fdb60d58-ea95-42ab-b55a-ce876b1a4d80",
@@ -45,7 +45,7 @@
         "currentStatus": "REOPENED",
         "requestedPriority": "HIGH",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-28T19:56:40.520Z"
+        "updatedAt": "2026-10-28T20:17:34.025Z"
       },
       {
         "id": "643535fa-7627-4103-89ce-c9a2fe91b11b",
@@ -54,7 +54,7 @@
         "currentStatus": "CLOSED",
         "requestedPriority": "MEDIUM",
         "itPriority": "MEDIUM",
-        "updatedAt": "2026-10-28T19:56:40.517Z"
+        "updatedAt": "2026-10-28T20:17:34.022Z"
       },
       {
         "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
@@ -63,10 +63,18 @@
         "currentStatus": "RESOLVED",
         "requestedPriority": "LOW",
         "itPriority": "LOW",
-        "updatedAt": "2026-10-28T19:56:40.509Z"
+        "updatedAt": "2026-10-28T20:17:34.013Z"
       }
     ],
     "currentStaffActions": [
+      {
+        "id": "1a791391-ee4e-4fb1-898c-05848d849c07",
+        "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+        "ticketNumber": "TKT-2026-000002",
+        "description": "E2E Verified hardware connectivity today",
+        "result": "All diagnostics passed",
+        "createdAt": "2026-10-28T20:18:14.156Z"
+      },
       {
         "id": "4923e025-3780-4baa-83cb-383062303b41",
         "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",

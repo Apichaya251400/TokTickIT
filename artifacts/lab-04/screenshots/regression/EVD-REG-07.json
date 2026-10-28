@@ -1,7 +1,7 @@
 {
   "evidenceId": "EVD-REG-07",
   "title": "Final Product Hardening: Console Errors, Links, Placeholders & Controls Audit",
-  "timestamp": "2026-10-28T19:57:08.465Z",
+  "timestamp": "2026-10-28T20:18:03.115Z",
   "audits": {
     "consoleErrors": {
       "status": "VERIFIED_ZERO_ERRORS",
@@ -13,7 +13,16 @@
     },
     "brokenHyperlinks": {
       "status": "VERIFIED_ZERO_BROKEN_LINKS",
-      "inspected": "All relative <a> anchors"
+      "inspectedViews": [
+        "Requester Dashboard",
+        "My Tickets",
+        "Ticket Detail",
+        "Create Ticket",
+        "Staff Dashboard",
+        "Staff Queue",
+        "Staff Ticket Detail",
+        "User Management"
+      ]
     },
     "placeholderPatterns": {
       "status": "VERIFIED_CLEAN",
@@ -21,7 +30,17 @@
     },
     "interactiveControls": {
       "status": "VERIFIED_FUNCTIONAL",
-      "checkedButtons": 4,
+      "verifiedFunctionalInteractions": [
+        "Dashboard metric card -> Queue navigation",
+        "Staff Queue -> Detail / Actions Taken workspace",
+        "Back to Queue button -> Queue restoration",
+        "My Tickets -> Ticket Detail navigation",
+        "Back to My Tickets button -> List restoration",
+        "Create Ticket button -> Form presentation",
+        "User Management button -> Admin view",
+        "Logout button -> Session invalidation and Login redirect"
+      ],
+      "checkedButtons": 11,
       "prohibitedLabels": "None"
     }
   }

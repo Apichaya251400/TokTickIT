@@ -10,13 +10,13 @@
       "role": "REQUESTER"
     },
     "requesterB_TargetVictim": {
-      "id": 126019,
+      "id": 126047,
       "name": "Bob Requester",
       "email": "bob.requester@example.com",
       "role": "REQUESTER",
       "confidentialTicket": {
-        "id": "a7c81fa8-6210-4094-a670-ddaa3aa81e9a",
-        "ticketNumber": "TKT-2026-435689",
+        "id": "78997948-d00f-468a-b1dc-4cb11b53c7d9",
+        "ticketNumber": "TKT-2026-990304",
         "summary": "[TEST-REQDASH-E2E] Bob Confidential Financial Request",
         "currentStatus": "WAITING_FOR_REQUESTER"
       }
@@ -24,11 +24,11 @@
   },
   "request": {
     "method": "GET",
-    "endpoint": "/api/dashboards/requester?requesterId=126019&userId=126019",
+    "endpoint": "/api/dashboards/requester?requesterId=126047&userId=126047",
     "authenticatedSession": "Alice (Requester A)",
     "attemptedOverride": {
-      "requesterId": 126019,
-      "userId": 126019
+      "requesterId": 126047,
+      "userId": 126047
     }
   },
   "response": {
@@ -54,7 +54,7 @@
           "summary": "Accidental duplicate ticket submission for laptop keyboard repair",
           "currentStatus": "CANCELLED",
           "requestedPriority": "LOW",
-          "updatedAt": "2026-10-28T19:56:40.523Z"
+          "updatedAt": "2026-10-28T20:17:34.028Z"
         },
         {
           "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
@@ -62,7 +62,7 @@
           "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
           "currentStatus": "IN_PROGRESS",
           "requestedPriority": "MEDIUM",
-          "updatedAt": "2026-10-28T19:56:40.497Z"
+          "updatedAt": "2026-10-28T20:17:34.003Z"
         },
         {
           "id": "18a41cd7-f56c-4aca-97a7-c9a753fe50c8",
