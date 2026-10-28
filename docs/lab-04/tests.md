@@ -3,7 +3,7 @@
 - **System Name**: TokTickIT
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Document Status**: Approved Engineering Test Strategy & Traceability Matrix
-- **Repository Branch**: `feature/lab4-test-dd`
+- **Repository Branch**: `feature/lab4-regression`
 
 ---
 
