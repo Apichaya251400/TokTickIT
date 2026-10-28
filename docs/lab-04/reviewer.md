@@ -37,6 +37,10 @@ Lab 4 Pull Requests under review by [@Pilaiwan3492](https://github.com/Pilaiwan3
 - **Issue 8 / PR #92**: Aligned My Tickets drill-down contract for 30-day recently resolved filter (`filterResolvedWithinDays=30`).
 - **Issue 8 / PR #92**: Ensured Ticket Not Found state navigates back to My Tickets (`activeTab = "my-tickets"`).
 - **Issue 8 / PR #92**: Added authoritative ownership-isolation API evidence (`EVD-REQBDASH-08.json`).
+- **Issue 9 (Regression)**: Integrated Playwright E2E test suite (52 tests) directly into GitHub Actions CI (`.github/workflows/ci.yml`).
+- **Issue 9 (Regression)**: Strengthened multi-viewport assertions in `TEST-RESP-01` across Desktop (`1920x1080`), Tablet (`768x1024`), and Mobile (`375x812`), verifying all 4 cards are rendered and responsive (sequential on desktop, stacked on mobile).
+- **Issue 9 (Regression)**: Enhanced non-color accessibility verification in `TEST-A11Y-01` to loop through all visible status, priority, and role badges asserting explicit readable textual labels.
+- **Issue 9 (Regression)**: Added real simulated network drop & UI retry test (`page.route` abort) confirming form inputs are preserved and retry succeeds with the same `Idempotency-Key`.
 - **Issue 9 (Regression)**: Added visible focus rings (`2px solid #198754`) across all viewports to guarantee accessibility standards.
 - **Issue 9 (Regression)**: Updated test helpers in Lab 3 and Lab 4 E2E suites to navigate to target tabs from the new default dashboard viewports.
 

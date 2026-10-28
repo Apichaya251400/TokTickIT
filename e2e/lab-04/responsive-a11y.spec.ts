@@ -82,7 +82,7 @@ test.describe("TEST-RESP-01 & TEST-A11Y-01: Responsive Layouts & Accessibility Q
     await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
     await checkNoHorizontalOverflow(page);
 
-    // Verify 4-card metric grid rendered side-by-side
+    // Verify all 4 metric cards are rendered side-by-side in 4 columns
     const card0 = page.getByTestId("metric-unassigned-card");
     const card1 = page.getByTestId("metric-my-assigned-card");
     const card2 = page.getByTestId("metric-today-actions-card");
@@ -94,10 +94,17 @@ test.describe("TEST-RESP-01 & TEST-A11Y-01: Responsive Layouts & Accessibility Q
 
     const box0 = await card0.boundingBox();
     const box1 = await card1.boundingBox();
+    const box2 = await card2.boundingBox();
+    const box3 = await card3.boundingBox();
     expect(box0).toBeTruthy();
     expect(box1).toBeTruthy();
-    // On 1920px desktop, card 0 and card 1 are horizontally adjacent
+    expect(box2).toBeTruthy();
+    expect(box3).toBeTruthy();
+
+    // On 1920px desktop, all 4 cards are horizontally sequential
     expect(box1!.x).toBeGreaterThan(box0!.x);
+    expect(box2!.x).toBeGreaterThan(box1!.x);
+    expect(box3!.x).toBeGreaterThan(box2!.x);
 
     // Navigate to IT Queue and verify data table without body overflow
     await page.getByTestId("nav-it-queue").click();
@@ -119,15 +126,31 @@ test.describe("TEST-RESP-01 & TEST-A11Y-01: Responsive Layouts & Accessibility Q
     await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
     await checkNoHorizontalOverflow(page);
 
-    // Verify cards are visible and responsive
-    await expect(page.getByTestId("metric-unassigned-card")).toBeVisible();
-    await expect(page.getByTestId("metric-my-assigned-card")).toBeVisible();
+    // Verify all 4 staff cards are visible and responsive
+    const staffCard0 = page.getByTestId("metric-unassigned-card");
+    const staffCard1 = page.getByTestId("metric-my-assigned-card");
+    const staffCard2 = page.getByTestId("metric-today-actions-card");
+    const staffCard3 = page.getByTestId("metric-urgent-workload-card");
+    await expect(staffCard0).toBeVisible();
+    await expect(staffCard1).toBeVisible();
+    await expect(staffCard2).toBeVisible();
+    await expect(staffCard3).toBeVisible();
 
     // Navigate to Requester Dashboard on Tablet
     await loginAsRequester(page);
     await page.getByTestId("nav-requester-dashboard").click();
     await expect(page.getByTestId("requester-dashboard-page")).toBeVisible();
     await checkNoHorizontalOverflow(page);
+
+    // Verify all 4 requester cards are visible
+    const reqCard0 = page.getByTestId("requester-metric-open");
+    const reqCard1 = page.getByTestId("requester-metric-waiting");
+    const reqCard2 = page.getByTestId("requester-metric-inprogress");
+    const reqCard3 = page.getByTestId("requester-metric-resolved");
+    await expect(reqCard0).toBeVisible();
+    await expect(reqCard1).toBeVisible();
+    await expect(reqCard2).toBeVisible();
+    await expect(reqCard3).toBeVisible();
 
     // Capture Tablet screenshot
     await page.screenshot({
@@ -147,13 +170,25 @@ test.describe("TEST-RESP-01 & TEST-A11Y-01: Responsive Layouts & Accessibility Q
 
     const card0 = page.getByTestId("requester-metric-open");
     const card1 = page.getByTestId("requester-metric-waiting");
+    const card2 = page.getByTestId("requester-metric-inprogress");
+    const card3 = page.getByTestId("requester-metric-resolved");
     await expect(card0).toBeVisible();
     await expect(card1).toBeVisible();
+    await expect(card2).toBeVisible();
+    await expect(card3).toBeVisible();
 
-    // On mobile, card 0 and card 1 are vertically stacked
+    // On mobile, all 4 cards are vertically stacked in a single column
     const box0 = await card0.boundingBox();
     const box1 = await card1.boundingBox();
+    const box2 = await card2.boundingBox();
+    const box3 = await card3.boundingBox();
+    expect(box0).toBeTruthy();
+    expect(box1).toBeTruthy();
+    expect(box2).toBeTruthy();
+    expect(box3).toBeTruthy();
     expect(box1!.y).toBeGreaterThan(box0!.y);
+    expect(box2!.y).toBeGreaterThan(box1!.y);
+    expect(box3!.y).toBeGreaterThan(box2!.y);
 
     // Verify touch target heights on interactive navigation buttons
     const createBtn = page.getByTestId("nav-create-ticket");
@@ -197,13 +232,26 @@ test.describe("TEST-RESP-01 & TEST-A11Y-01: Responsive Layouts & Accessibility Q
     // 3. Non-Color Status & Priority Indicators (Textual badges alongside colors)
     await page.getByTestId("nav-it-queue").click();
     await expect(page.getByText("IT Staff Ticket Queue")).toBeVisible();
+    await expect(page.locator("table tbody tr").first()).toBeVisible();
 
-    // Verify status badges contain explicit readable text labels
-    const badges = page.locator(".badge");
+    // Verify all rendered status, priority, and role badges contain explicit readable textual labels (non-color cues)
+    const badges = page.locator(".badge:visible");
     const badgeCount = await badges.count();
-    expect(badgeCount).toBeGreaterThan(0);
-    const firstBadgeText = await badges.first().innerText();
-    expect(firstBadgeText.length).toBeGreaterThan(0);
+    expect(badgeCount).toBeGreaterThanOrEqual(4);
+    const verifiedLabels: string[] = [];
+    for (let i = 0; i < badgeCount; i++) {
+      const text = (await badges.nth(i).innerText()).trim();
+      expect(text.length).toBeGreaterThan(0);
+      verifiedLabels.push(text);
+    }
+
+    // Verify recognized system status or priority labels exist in the rendered badges
+    const validStatusOrPriorityValues = [
+      "NEW", "OPEN", "IN_PROGRESS", "WAITING_FOR_REQUESTER", "RESOLVED", "CLOSED", "REOPENED", "CANCELLED",
+      "URGENT", "HIGH", "MEDIUM", "LOW", "IT Staff", "Administrator", "Requester"
+    ];
+    const hasStatusOrPriority = verifiedLabels.some((lbl) => validStatusOrPriorityValues.includes(lbl));
+    expect(hasStatusOrPriority).toBe(true);
 
     // Save combined evidence JSON and representative screenshot
     const evidenceMetadata = {
@@ -211,15 +259,15 @@ test.describe("TEST-RESP-01 & TEST-A11Y-01: Responsive Layouts & Accessibility Q
       title: "Final Responsive Viewport & Accessibility Regression Evidence",
       timestamp: new Date().toISOString(),
       testedViewports: [
-        { name: "Desktop", resolution: "1920x1080", zeroPageOverflow: true, gridLayout: "4-column side-by-side" },
-        { name: "Tablet", resolution: "768x1024", zeroPageOverflow: true, gridLayout: "stacked responsive" },
-        { name: "Mobile", resolution: "375x812", zeroPageOverflow: true, gridLayout: "single-column stack" },
+        { name: "Desktop", resolution: "1920x1080", zeroPageOverflow: true, gridLayout: "4-column side-by-side (all 4 cards horizontally sequential)" },
+        { name: "Tablet", resolution: "768x1024", zeroPageOverflow: true, gridLayout: "stacked responsive (all 4 cards rendered on Staff & Requester)" },
+        { name: "Mobile", resolution: "375x812", zeroPageOverflow: true, gridLayout: "single-column stack (all 4 cards vertically stacked)" },
       ],
       accessibilityChecks: {
         keyboardTabNavigation: "VERIFIED",
         visibleFocusRing: "2px solid #198754 (rgb(25, 135, 84)) VERIFIED",
         ariaCurrentPage: "VERIFIED",
-        nonColorStatusCues: "Textual status/priority badges with explicit labels VERIFIED",
+        nonColorStatusCues: `Textual status/priority badges with explicit labels VERIFIED across ${badgeCount} rendered badges`,
         touchTargetMinimum: ">= 28px height / accessible touch target verified",
       },
     };
