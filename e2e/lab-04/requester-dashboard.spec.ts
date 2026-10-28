@@ -657,6 +657,37 @@ test.describe("E2E-REQBDASH: Requester Dashboard & Workload Overview (Issue #79 
     await expect(page.getByRole("alert")).not.toBeVisible();
   });
 
+  // ---------------------------------------------------------------------------
+  // E2E-REQBDASH-10: Back to My Tickets from normal Ticket Detail state navigated from Dashboard
+  // ---------------------------------------------------------------------------
+  test("E2E-REQBDASH-10: Back to My Tickets from normal Ticket Detail state navigated from Dashboard", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await loginAsUser(page, aliceUser.email);
+
+    await page.getByTestId("nav-requester-dashboard").click();
+    await expect(page.getByTestId("requester-dashboard-page")).toBeVisible();
+
+    // Click on a ticket from Recent or Attention Required list
+    const ticketLink = page.locator("[data-testid^='recent-ticket-row-'], [data-testid^='attention-ticket-row-']").first();
+    await ticketLink.click();
+
+    // Verify Ticket Detail heading is visible
+    await expect(page.getByRole("heading", { name: /Ticket Detail/i })).toBeVisible();
+    const backBtn = page.getByRole("button", { name: /Back to My Tickets/i });
+    await expect(backBtn).toBeVisible();
+
+    // Click Back to My Tickets
+    await backBtn.click();
+
+    // Verify transition to My Tickets view:
+    // 1. Heading 'My Tickets' is visible
+    // 2. Requester Dashboard is not visible
+    // 3. Ticket detail heading is not visible
+    await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
+    await expect(page.getByTestId("requester-dashboard-page")).not.toBeVisible();
+    await expect(page.getByRole("heading", { name: /Ticket Detail/i })).not.toBeVisible();
+  });
+
   test.afterAll(async () => {
     // 1. Clean up test tickets created specifically for E2E
     if (createdTicketIds.length > 0) {

@@ -16,8 +16,8 @@
       "match": true
     },
     "urgentWorkloadCount": {
-      "expectedDbQuery": 2,
-      "actualApiResponse": 2,
+      "expectedDbQuery": 3,
+      "actualApiResponse": 3,
       "match": true
     }
   },
@@ -26,7 +26,7 @@
       "unassignedCount": 54,
       "myAssignedCount": 2,
       "todayActionsCount": 1,
-      "urgentWorkloadCount": 2
+      "urgentWorkloadCount": 3
     },
     "myRecentTickets": [
       {
@@ -36,7 +36,7 @@
         "currentStatus": "IN_PROGRESS",
         "requestedPriority": "MEDIUM",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-27T20:27:23.698Z"
+        "updatedAt": "2026-10-28T08:41:45.073Z"
       },
       {
         "id": "fdb60d58-ea95-42ab-b55a-ce876b1a4d80",
@@ -45,7 +45,7 @@
         "currentStatus": "REOPENED",
         "requestedPriority": "HIGH",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-27T20:26:55.979Z"
+        "updatedAt": "2026-10-28T08:33:34.056Z"
       },
       {
         "id": "643535fa-7627-4103-89ce-c9a2fe91b11b",
@@ -54,7 +54,7 @@
         "currentStatus": "CLOSED",
         "requestedPriority": "MEDIUM",
         "itPriority": "MEDIUM",
-        "updatedAt": "2026-10-27T20:26:55.977Z"
+        "updatedAt": "2026-10-28T08:33:34.054Z"
       },
       {
         "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
@@ -63,17 +63,17 @@
         "currentStatus": "RESOLVED",
         "requestedPriority": "LOW",
         "itPriority": "LOW",
-        "updatedAt": "2026-10-27T20:26:55.971Z"
+        "updatedAt": "2026-10-28T08:33:34.045Z"
       }
     ],
     "currentStaffActions": [
       {
-        "id": "87ecc792-b91a-4013-8c6f-876355f8823a",
+        "id": "fc71d9d0-d529-4000-85db-45d713e823f9",
         "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
         "ticketNumber": "TKT-2026-000002",
         "description": "E2E Verified hardware connectivity today",
         "result": "All diagnostics passed",
-        "createdAt": "2026-10-27T20:27:23.700Z"
+        "createdAt": "2026-10-28T08:41:45.076Z"
       },
       {
         "id": "act-seed-000003",
