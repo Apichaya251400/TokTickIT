@@ -190,10 +190,11 @@ test.describe("TEST-RESP-01 & TEST-A11Y-01: Responsive Layouts & Accessibility Q
     expect(box2!.y).toBeGreaterThan(box1!.y);
     expect(box3!.y).toBeGreaterThan(box2!.y);
 
-    // Verify touch target heights on interactive navigation buttons
+    // Verify touch target dimensions on interactive navigation buttons (>= 44x44px)
     const createBtn = page.getByTestId("nav-create-ticket");
     const createBox = await createBtn.boundingBox();
-    expect(createBox!.height).toBeGreaterThanOrEqual(28);
+    expect(createBox!.width).toBeGreaterThanOrEqual(44);
+    expect(createBox!.height).toBeGreaterThanOrEqual(44);
 
     // Capture Mobile screenshot
     await page.screenshot({
@@ -268,7 +269,7 @@ test.describe("TEST-RESP-01 & TEST-A11Y-01: Responsive Layouts & Accessibility Q
         visibleFocusRing: "2px solid #198754 (rgb(25, 135, 84)) VERIFIED",
         ariaCurrentPage: "VERIFIED",
         nonColorStatusCues: `Textual status/priority badges with explicit labels VERIFIED across ${badgeCount} rendered badges`,
-        touchTargetMinimum: ">= 28px height / accessible touch target verified",
+        touchTargetMinimum: "Touch targets >= 44x44px verified (width and height >= 44px)",
       },
     };
 
@@ -319,7 +320,7 @@ test.describe("TEST-RESP-01 & TEST-A11Y-01: Responsive Layouts & Accessibility Q
                 <li><span class="check">&#10003;</span> Visible focus ring (<code>2px solid #198754</code>) on keyboard Tab navigation</li>
                 <li><span class="check">&#10003;</span> ARIA landmarks (<code>role="region"</code>, <code>aria-current="page"</code>)</li>
                 <li><span class="check">&#10003;</span> Non-color status indicators: Textual labels on all badges</li>
-                <li><span class="check">&#10003;</span> Touch targets >= 44x44px or >= 28px interactive button heights</li>
+                <li><span class="check">&#10003;</span> Touch targets &gt;= 44&times;44px verified on interactive navigation controls</li>
                 <li><span class="check">&#10003;</span> Responsive table wrappers with <code>overflow-x: auto</code></li>
               </ul>
               <div style="margin-top: 16px;">

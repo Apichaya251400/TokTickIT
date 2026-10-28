@@ -43,6 +43,8 @@ Lab 4 Pull Requests under review by [@Pilaiwan3492](https://github.com/Pilaiwan3
 - **Issue 9 (Regression)**: Added real simulated network drop & UI retry test (`page.route` abort) confirming form inputs are preserved and retry succeeds with the same `Idempotency-Key`.
 - **Issue 9 (Regression)**: Added visible focus rings (`2px solid #198754`) across all viewports to guarantee accessibility standards.
 - **Issue 9 (Regression)**: Updated test helpers in Lab 3 and Lab 4 E2E suites to navigate to target tabs from the new default dashboard viewports.
+- **Issue 9 (Regression)**: Updated test statuses in `docs/lab-04/tests.md` from `Planned` to `Pass` across all verified criteria (AC-13, AC-14, Lab 1 Foundation, Lab 2 Ticket Base, Lab 3 RBAC & Admin).
+- **Issue 9 (Regression)**: Aligned touch target assertions in `TEST-RESP-01` to test both width and height >= 44px (`>= 44×44px`), and synchronized `EVD-REG-05` evidence metadata.
 
 ---
 
