@@ -138,7 +138,7 @@ test.describe("E2E-REG: Final Regression & Product Hardening Suite (Issue #80 / 
 
     const idempotencyKey = `e2e-reg-idem-${Date.now()}`;
     const payload = {
-      description: "Hardening test: automated firmware diagnostic pass.",
+      description: `Hardening test ${idempotencyKey}`,
       result: "Firmware version 2.4.1 verified OK.",
       followUpRequired: false,
     };
@@ -170,11 +170,23 @@ test.describe("E2E-REG: Final Regression & Product Hardening Suite (Issue #80 / 
     // Assert responses are identical
     expect(body2.id).toBe(body1.id);
 
-    // Assert DB contains exactly ONE ActionTaken record with this idempotency key
+    // Assert DB contains exactly ONE IdempotencyRecord with this idempotency key
     const records = await prisma.idempotencyRecord.findMany({
       where: { idempotencyKey },
     });
     expect(records.length).toBe(1);
+
+    // Assert DB contains exactly ONE ActionTaken record with matching payload and ID
+    const actionRecords = await prisma.actionTaken.findMany({
+      where: {
+        ticketId: ticket!.id,
+        description: payload.description,
+        result: payload.result,
+      },
+    });
+    expect(actionRecords).toHaveLength(1);
+    expect(actionRecords[0].id).toBe(body1.id);
+    expect(body2.id).toBe(body1.id);
 
     // 2. Simulated Network Drop & UI Retry Check
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -246,6 +258,8 @@ test.describe("E2E-REG: Final Regression & Product Hardening Suite (Issue #80 / 
         cachedActionId: body1.id,
         identicalResponseReturned: body2.id === body1.id,
         databaseUniqueConstraintEnforced: records.length === 1,
+        databaseActionTakenCountEnforced: actionRecords.length === 1,
+        actionTakenRecordId: actionRecords[0].id,
         simulatedNetworkDropAndRetry: "VERIFIED_PASS (Transient network drop aborted, form preserved, retry succeeded)",
         status: "VERIFIED_PASS",
       },

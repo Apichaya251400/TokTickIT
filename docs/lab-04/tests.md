@@ -131,6 +131,10 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 | **BR-12 / AC-07** | Requester My Tickets 30-day resolved query parameter enforcement | `TEST-DASH-REQ-10` | Integration / API | `server/tests/lab-04/requester-dashboard.api.test.ts` | Validates `resolvedWithinDays=30` requires `currentStatus=RESOLVED` and filters Bangkok 30-day window (`updatedAt >= startOfDay AND updatedAt < startOfNextDay`) | `Pass` |
 | **Section: Recent Tickets** | Requester Dashboard ticket list | `TEST-CARD-11` | API & UI | `server/tests/lab-04/requester-dashboard.api.test.ts` & `client/tests/lab-04/RequesterDashboard.test.tsx` (E2E: `requester-dashboard.spec.ts`) | Returns max 5 requester tickets ordered by `updatedAt DESC, id ASC` | `Pass` |
 | **Section: Attention Required** | Requester Dashboard action list | `TEST-CARD-12` | API & UI | `server/tests/lab-04/requester-dashboard.api.test.ts` & `client/tests/lab-04/RequesterDashboard.test.tsx` (E2E: `requester-dashboard.spec.ts`) | Returns max 5 tickets in `WAITING_FOR_REQUESTER` ordered by `updatedAt DESC, id ASC` | `Pass` |
+| **Product Hardening / Issue #80** | Browser Console Errors QA | `TEST-HARDEN-01` | Playwright E2E | `e2e/lab-04/final-product-hardening.spec.ts` | Zero unhandled console errors and zero page exceptions across all views | `Pass` |
+| **Product Hardening / Issue #80** | Internal Hyperlinks QA | `TEST-HARDEN-02` | Playwright E2E | `e2e/lab-04/final-product-hardening.spec.ts` | Zero broken relative `<a>` links or 4xx/5xx targets | `Pass` |
+| **Product Hardening / Issue #80** | Placeholder Text QA | `TEST-HARDEN-03` | Playwright E2E | `e2e/lab-04/final-product-hardening.spec.ts` | Zero `TODO`, `TBD`, `Lorem ipsum`, `Coming Soon`, or `Not Implemented` text | `Pass` |
+| **Product Hardening / Issue #80** | Interactive Controls QA | `TEST-HARDEN-04` | Playwright E2E | `e2e/lab-04/final-product-hardening.spec.ts` | All interactive buttons have functional behaviors, valid labels, and 0 dead placeholder controls | `Pass` |
 
 ---
 
@@ -163,6 +167,8 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 - **`actions-taken-flow.spec.ts`**: E2E test for end-to-end Action Taken lifecycle: creation by Staff, assignee selection, `attachmentNotes`, status progression (`PENDING` → `IN_PROGRESS` → `COMPLETED`), edit modal content updates, Requester read-only inspection (`AC-01`, `AC-05`), and submission retry using same `Idempotency-Key` after network failure (`TEST-IDEM-03`).
 - **`ticket-resolution.spec.ts`**: E2E test for Ticket resolution flow: verifying Resolution Gate inline validation errors, successful resolution with completed ActionTaken, successful resolution with staff resolutionNote, and advisory Requester indication (`AC-09`, `AC-10`).
 - **`responsive-a11y.spec.ts`**: E2E test for visual QA and accessibility across Desktop (`1920×1080`), Tablet (`768×1024`), and Mobile (`375×812`) viewports. Separates visual responsive layout adaptation (`TEST-RESP-01`) from interactive accessibility checks (`TEST-A11Y-01`).
+- **`regression-hardening.spec.ts`**: E2E regression and hardening flow test (`TEST-FAIL-01`, `TEST-IDEM`, `E2E-REG-02`). Verifies recoverable form input preservation, database duplicate action deduplication with unique payload assertion on `ActionTaken`, and cross-role lifecycle verification (`EVD-REG-02`, `EVD-REG-04`).
+- **`final-product-hardening.spec.ts`**: E2E suite for final product hardening QA (`TEST-HARDEN-01..04`). Audits browser console errors, broken internal links, unfinished placeholders (`TODO`, `TBD`, `Lorem ipsum`), and functional button labels across all representative views (`EVD-REG-07`).
 
 ---
 

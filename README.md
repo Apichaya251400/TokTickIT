@@ -156,15 +156,16 @@ npm --prefix client run build
 |---|---|---|---|---|
 | **Server API & Integration Suite** | Vitest + Supertest | `29 / 29` files | **282 / 282 PASS** | **100% PASS** |
 | **Client UI Component Suite** | Vitest + RTL + jsdom | `17 / 17` files | **129 / 129 PASS** | **100% PASS** |
-| **Playwright Full E2E Suite** | Playwright Chromium | `10 / 10` specs | **52 / 52 PASS** | **100% PASS** |
+| **Playwright Full E2E Suite** | Playwright Chromium | `11 / 11` specs | **56 / 56 PASS** | **100% PASS** |
 | **Production Build Suite** | TypeScript + Vite | `server + client` | **0 errors / built OK** | **100% PASS** |
-| **Integrated Total** | — | **56 test files** | **463 / 463 PASS (100% GREEN)** | **100% PASS** |
+| **Integrated Total** | — | **57 test files** | **467 / 467 PASS (100% GREEN)** | **100% PASS** |
 
 ### Lab 4 Evidence Deliverables Traceability
 
-- **`EVD-REG-01`**: Full integrated terminal test run output showing passing Server (282), Client (129), and E2E (52) suites (`artifacts/lab-04/screenshots/regression/EVD-REG-01.txt`).
+- **`EVD-REG-01`**: Full integrated terminal test run output showing passing Server (282), Client (129), and E2E (56) suites, plus individual component logs (`artifacts/lab-04/screenshots/regression/EVD-REG-01.txt`).
 - **`EVD-REG-02`**: Representative regression E2E cross-role workflow screenshot (`artifacts/lab-04/screenshots/regression/EVD-REG-02.png`).
 - **`EVD-REG-03`**: Lab 1–3 regression evidence summary report for final documentation (`docs/lab-04/regression-evidence.md`).
 - **`EVD-REG-04`**: Product-hardening evidence for failure states (form data preservation `TEST-FAIL-01`) and duplicate-action protection (`TEST-IDEM-01..03`) (`artifacts/lab-04/screenshots/regression/EVD-REG-04.png`, `.json`).
 - **`EVD-REG-05`**: Visual responsive viewport (`1920x1080`, `768x1024`, `375x812`) and accessibility regression evidence (`artifacts/lab-04/screenshots/regression/EVD-REG-05.png`, `.json`).
 - **`EVD-REG-06`**: README setup, seed, migration, and production build verification record (`docs/lab-04/EVD-REG-06.md`).
+- **`EVD-REG-07`**: Product-hardening verification for zero console errors, zero broken links, zero placeholder strings, and functional controls (`artifacts/lab-04/screenshots/regression/EVD-REG-07.png`, `.json`).

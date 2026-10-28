@@ -35,7 +35,7 @@
         "summary": "Accidental duplicate ticket submission for laptop keyboard repair",
         "currentStatus": "CANCELLED",
         "requestedPriority": "LOW",
-        "updatedAt": "2026-10-28T17:19:11.889Z"
+        "updatedAt": "2026-10-28T19:56:40.523Z"
       },
       {
         "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
@@ -43,41 +43,41 @@
         "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
         "currentStatus": "IN_PROGRESS",
         "requestedPriority": "MEDIUM",
-        "updatedAt": "2026-10-28T17:19:11.864Z"
+        "updatedAt": "2026-10-28T19:56:40.497Z"
       },
       {
-        "id": "be66a1dc-5633-4186-af0f-e490971b9533",
+        "id": "18a41cd7-f56c-4aca-97a7-c9a753fe50c8",
         "ticketNumber": "TKT-2026-000035",
         "summary": "Lab 2 feature continuity under JWT Auth",
         "currentStatus": "NEW",
         "requestedPriority": "MEDIUM",
-        "updatedAt": "2026-10-28T16:29:53.185Z"
+        "updatedAt": "2026-10-28T19:56:10.647Z"
       },
       {
-        "id": "0560845d-2c15-42af-b65a-611fc9048456",
+        "id": "0e1211a8-a1f5-4856-a4e8-459cf76866f9",
         "ticketNumber": "TKT-2026-000034",
         "summary": "Alice regression ticket for ownership isolation test",
         "currentStatus": "NEW",
         "requestedPriority": "HIGH",
-        "updatedAt": "2026-10-28T16:29:52.922Z"
+        "updatedAt": "2026-10-28T19:56:10.330Z"
       },
       {
-        "id": "9e0193a5-53f3-45ee-90fd-dd27951235ba",
+        "id": "29517a8e-1288-4332-b08d-86c6f0a9ba20",
         "ticketNumber": "TKT-2026-000033",
         "summary": "Detail Test Ticket Summary",
         "currentStatus": "NEW",
         "requestedPriority": "HIGH",
-        "updatedAt": "2026-10-28T16:29:50.124Z"
+        "updatedAt": "2026-10-28T19:56:07.132Z"
       }
     ],
     "attentionRequiredTickets": [
       {
-        "id": "072d1a86-5508-4d8d-bea5-a0e37c64c14e",
-        "ticketNumber": "TKT-2026-114302",
+        "id": "bfd79872-33d4-4a55-8f0b-373d3a4b81a8",
+        "ticketNumber": "TKT-2026-917899",
         "summary": "Matrix edge IN_PROGRESS to WAITING_FOR_REQUESTER",
         "currentStatus": "WAITING_FOR_REQUESTER",
         "requestedPriority": "MEDIUM",
-        "updatedAt": "2026-10-28T16:29:04.306Z"
+        "updatedAt": "2026-10-28T19:55:17.901Z"
       }
     ]
   }
