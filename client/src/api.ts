@@ -57,6 +57,7 @@ export interface TicketQueryParams {
   relatedSystemId?: string | number;
   requestedPriority?: string;
   currentStatus?: string;
+  resolvedWithinDays?: string | number;
   sortBy?: string;
   sortOrder?: string;
   page?: number;
@@ -201,6 +202,7 @@ export async function fetchMyTickets(
     if (params.relatedSystemId) searchParams.set("relatedSystemId", String(params.relatedSystemId));
     if (params.requestedPriority) searchParams.set("requestedPriority", params.requestedPriority);
     if (params.currentStatus) searchParams.set("currentStatus", params.currentStatus);
+    if (params.resolvedWithinDays) searchParams.set("resolvedWithinDays", String(params.resolvedWithinDays));
     if (params.sortBy) searchParams.set("sortBy", params.sortBy);
     if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
     if (params.page) searchParams.set("page", String(params.page));
@@ -765,5 +767,52 @@ export async function fetchStaffDashboard(): Promise<StaffDashboardResponse> {
 }
 
 export const fetchStaffDashboardApi = fetchStaffDashboard;
+
+// ---------------------------------------------------------------------------
+// Requester Dashboard API (Lab 4 Sprint 4)
+// ---------------------------------------------------------------------------
+
+export interface RequesterDashboardMetrics {
+  openTicketsCount: number;
+  waitingForRequesterCount: number;
+  inProgressCount: number;
+  recentlyResolvedCount: number;
+}
+
+export interface RequesterRecentTicket {
+  id: string;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: string;
+  requestedPriority: string;
+  updatedAt: string;
+}
+
+export interface RequesterAttentionTicket {
+  id: string;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: string;
+  requestedPriority: string;
+  updatedAt: string;
+}
+
+export interface RequesterDashboardResponse {
+  metrics: RequesterDashboardMetrics;
+  recentTickets: RequesterRecentTicket[];
+  attentionRequiredTickets: RequesterAttentionTicket[];
+}
+
+export async function fetchRequesterDashboard(): Promise<RequesterDashboardResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/dashboards/requester`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export const fetchRequesterDashboardApi = fetchRequesterDashboard;
+
 
 

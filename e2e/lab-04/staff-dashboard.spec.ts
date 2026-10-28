@@ -508,9 +508,10 @@ test.describe("E2E-STAFFDASH: IT Staff & Administrator Dashboard (Issue #78 / La
     const reqJson = await requesterDashRes.json();
     expect(reqJson.error).toBe("FORBIDDEN");
 
-    // 4. Verify Requester UI does not render Dashboard navigation tab
+    // 4. Verify Requester UI does not render IT Staff Dashboard or Queue navigation tabs
     await loginAsStaff(page, "alice@example.com");
-    await expect(page.getByRole("button", { name: "Dashboard" })).not.toBeVisible();
+    await expect(page.getByTestId("nav-staff-dashboard")).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "IT Queue" })).not.toBeVisible();
     await expect(page.getByRole("button", { name: "My Tickets" })).toBeVisible();
   });
 });

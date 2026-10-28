@@ -1,7 +1,7 @@
 import React from "react";
 import { User, logoutApi } from "../api";
 
-export type NavTab = "my-tickets" | "create-ticket" | "staff-queue" | "user-management" | "ticket-lookup" | "staff-dashboard";
+export type NavTab = "my-tickets" | "create-ticket" | "staff-queue" | "user-management" | "ticket-lookup" | "staff-dashboard" | "requester-dashboard";
 
 interface AppHeaderProps {
   user: User;
@@ -64,9 +64,19 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
             <>
               <button
                 type="button"
+                className={`btn btn-sm ${activeTab === "requester-dashboard" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "requester-dashboard" ? "page" : undefined}
+                onClick={() => onTabChange("requester-dashboard")}
+                data-testid="nav-requester-dashboard"
+              >
+                Dashboard
+              </button>
+              <button
+                type="button"
                 className={`btn btn-sm ${activeTab === "my-tickets" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "my-tickets" ? "page" : undefined}
                 onClick={() => onTabChange("my-tickets")}
+                data-testid="nav-my-tickets"
               >
                 My Tickets
               </button>
@@ -75,6 +85,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 className={`btn btn-sm ${activeTab === "create-ticket" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "create-ticket" ? "page" : undefined}
                 onClick={() => onTabChange("create-ticket")}
+                data-testid="nav-create-ticket"
               >
                 Create Ticket
               </button>
@@ -88,6 +99,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 className={`btn btn-sm ${activeTab === "staff-dashboard" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "staff-dashboard" ? "page" : undefined}
                 onClick={() => onTabChange("staff-dashboard")}
+                data-testid="nav-staff-dashboard"
               >
                 Dashboard
               </button>
@@ -96,6 +108,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 className={`btn btn-sm ${activeTab === "staff-queue" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "staff-queue" ? "page" : undefined}
                 onClick={() => onTabChange("staff-queue")}
+                data-testid="nav-it-queue"
               >
                 IT Queue
               </button>
@@ -109,6 +122,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 className={`btn btn-sm ${activeTab === "staff-dashboard" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "staff-dashboard" ? "page" : undefined}
                 onClick={() => onTabChange("staff-dashboard")}
+                data-testid="nav-staff-dashboard"
               >
                 Dashboard
               </button>
@@ -117,6 +131,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 className={`btn btn-sm ${activeTab === "staff-queue" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "staff-queue" ? "page" : undefined}
                 onClick={() => onTabChange("staff-queue")}
+                data-testid="nav-it-queue"
               >
                 IT Queue
               </button>

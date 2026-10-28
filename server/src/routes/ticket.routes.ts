@@ -8,7 +8,7 @@ import { validateSummary, validateDescription, validateFileSize, sanitizeFileNam
 import { generateTicketNumber, getNextTicketSequence } from "../utils/ticketNumber.js";
 import { sanitizeHtml } from "../utils/sanitizer.js";
 import { Priority } from "@prisma/client";
-import { getBangkokDayBoundaries } from "../utils/timezone.js";
+import { getBangkokDayBoundaries, getBangkokDaysAgoBoundaries } from "../utils/timezone.js";
 
 export const ticketRouter = Router();
 
@@ -288,7 +288,17 @@ const QUEUE_ALLOWED_VIEWS = new Set([
 const ALLOWED_SORT_BY = new Set(["createdAt", "updatedAt", "ticketNumber", "requestedPriority"]);
 const ALLOWED_SORT_ORDER = new Set(["asc", "desc"]);
 const ALLOWED_PAGE_SIZES = new Set([10, 20, 50]);
-const ALLOWED_STATUSES = new Set(["NEW"]);
+const ALLOWED_STATUSES = new Set([
+  "NEW",
+  "OPEN",
+  "IN_PROGRESS",
+  "WAITING_FOR_REQUESTER",
+  "RESOLVED",
+  "CLOSED",
+  "REOPENED",
+  "CANCELLED",
+  "open",
+]);
 
 export async function handleMyTickets(req: AuthenticatedRequest, res: Response): Promise<void> {
   const {
@@ -297,6 +307,7 @@ export async function handleMyTickets(req: AuthenticatedRequest, res: Response):
     relatedSystemId,
     requestedPriority,
     currentStatus,
+    resolvedWithinDays,
     sortBy: sortByRaw,
     sortOrder: sortOrderRaw,
     page: pageRaw,
@@ -423,6 +434,26 @@ export async function handleMyTickets(req: AuthenticatedRequest, res: Response):
       strStatus = s;
     }
 
+    let parsedResolvedWithinDays: number | undefined;
+    if (resolvedWithinDays !== undefined) {
+      const days = Number(resolvedWithinDays);
+      if (
+        !Number.isInteger(days) ||
+        days !== 30 ||
+        strStatus !== "RESOLVED" ||
+        String(resolvedWithinDays).trim() === ""
+      ) {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid query parameter value.",
+          },
+        });
+        return;
+      }
+      parsedResolvedWithinDays = days;
+    }
+
     const requesterId = (req as any).requesterId!;
     const prisma = getPrisma();
 
@@ -442,7 +473,22 @@ export async function handleMyTickets(req: AuthenticatedRequest, res: Response):
     if (parsedCatId !== undefined) where.categoryId = parsedCatId;
     if (parsedSysId !== undefined) where.relatedSystemId = parsedSysId;
     if (strPriority !== undefined) where.requestedPriority = strPriority;
-    if (strStatus !== undefined) where.currentStatus = strStatus;
+    if (strStatus !== undefined) {
+      if (strStatus === "open") {
+        where.currentStatus = {
+          notIn: ["RESOLVED", "CLOSED", "CANCELLED"],
+        };
+      } else {
+        where.currentStatus = strStatus;
+        if (strStatus === "RESOLVED" && parsedResolvedWithinDays === 30) {
+          const { startOfDay, startOfNextDay } = getBangkokDaysAgoBoundaries(29);
+          where.updatedAt = {
+            gte: startOfDay,
+            lt: startOfNextDay,
+          };
+        }
+      }
+    }
 
     const orderBy: any[] = [];
     if (sortBy === "requestedPriority") {

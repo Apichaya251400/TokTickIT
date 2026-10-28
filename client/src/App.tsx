@@ -26,6 +26,7 @@ import { StaffTicketDetail } from "./components/StaffTicketDetail";
 import StaffDashboard from "./components/StaffDashboard";
 import UserManagement from "./components/UserManagement";
 import { ActionsTakenWorkspace } from "./components/ActionsTakenWorkspace";
+import RequesterDashboard from "./components/RequesterDashboard";
 
 type UiState = "idle" | "loading" | "success" | "error";
 
@@ -79,6 +80,7 @@ export default function App() {
   const [filterRelatedSystemId, setFilterRelatedSystemId] = useState<string>("");
   const [filterRequestedPriority, setFilterRequestedPriority] = useState<string>("");
   const [filterCurrentStatus, setFilterCurrentStatus] = useState<string>("");
+  const [filterResolvedWithinDays, setFilterResolvedWithinDays] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("createdAt");
   const [sortOrder, setSortOrder] = useState<string>("desc");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -182,6 +184,7 @@ export default function App() {
     filterRelatedSystemId,
     filterRequestedPriority,
     filterCurrentStatus,
+    filterResolvedWithinDays,
     sortBy,
     sortOrder,
     currentPage,
@@ -222,6 +225,7 @@ export default function App() {
         relatedSystemId: filterRelatedSystemId,
         requestedPriority: filterRequestedPriority,
         currentStatus: filterCurrentStatus,
+        resolvedWithinDays: filterResolvedWithinDays || undefined,
         sortBy,
         sortOrder,
         page: pageToLoad,
@@ -686,6 +690,26 @@ export default function App() {
         onLogout={handleLogout}
       />
 
+      {/* Requester Dashboard */}
+      {activeTab === "requester-dashboard" && !selectedTicketId && (
+        <section className="mb-5">
+          <RequesterDashboard
+            currentUser={currentUser}
+            onNavigateToMyTickets={(status, resolvedWithinDays) => {
+              setFilterCurrentStatus(status || "");
+              setFilterResolvedWithinDays(resolvedWithinDays ? String(resolvedWithinDays) : "");
+              setSelectedTicketId(null);
+              setActiveTab("my-tickets");
+            }}
+            onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+            onCreateTicket={() => {
+              setSelectedTicketId(null);
+              setActiveTab("create-ticket");
+            }}
+          />
+        </section>
+      )}
+
       {/* IT Staff & Administrator Dashboard */}
       {activeTab === "staff-dashboard" && !selectedTicketId && (
         <section className="mb-5">
@@ -795,7 +819,10 @@ export default function App() {
             <button
               type="button"
               className="btn btn-outline-secondary btn-sm"
-              onClick={() => setSelectedTicketId(null)}
+              onClick={() => {
+                setSelectedTicketId(null);
+                setActiveTab("my-tickets");
+              }}
               style={{ outlineColor: "#0B7A46" }}
             >
               Back to My Tickets
@@ -809,8 +836,19 @@ export default function App() {
           )}
 
           {detailError && (
-            <div className="alert alert-danger mb-4" role="alert">
-              {detailError}
+            <div className="alert alert-danger mb-4 d-flex justify-content-between align-items-center" role="alert">
+              <span>{detailError}</span>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger"
+                onClick={() => {
+                  setSelectedTicketId(null);
+                  setDetailError(null);
+                  setActiveTab("my-tickets");
+                }}
+              >
+                Return to My Tickets &rarr;
+              </button>
             </div>
           )}
 
@@ -1157,12 +1195,21 @@ export default function App() {
                     value={filterCurrentStatus}
                     onChange={(e) => {
                       setFilterCurrentStatus(e.target.value);
+                      setFilterResolvedWithinDays("");
                       setCurrentPage(1);
                     }}
                     style={{ outlineColor: "#0B7A46" }}
                   >
                     <option value="">All Statuses</option>
+                    <option value="open">Open Workload</option>
                     <option value="NEW">NEW</option>
+                    <option value="OPEN">OPEN</option>
+                    <option value="IN_PROGRESS">IN_PROGRESS</option>
+                    <option value="WAITING_FOR_REQUESTER">WAITING_FOR_REQUESTER</option>
+                    <option value="RESOLVED">RESOLVED</option>
+                    <option value="CLOSED">CLOSED</option>
+                    <option value="REOPENED">REOPENED</option>
+                    <option value="CANCELLED">CANCELLED</option>
                   </select>
                 </div>
 

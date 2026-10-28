@@ -418,6 +418,54 @@ describe("Issue #29: My Tickets & Ticket Detail Requester UI Suite", () => {
       await waitFor(() => {
         expect(screen.getByText(/Ticket not found/i)).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /Back to My Tickets/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /Return to My Tickets/i })).toBeInTheDocument();
+      });
+    });
+
+    it("navigates back to My Tickets list when clicking 'Back to My Tickets' from normal detail view", async () => {
+      await renderAppWithRequester("1");
+
+      const viewDetailsBtns = await screen.findAllByRole("button", { name: /View Details|View/i });
+      fireEvent.click(viewDetailsBtns[0]);
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /Ticket Detail/i })).toBeInTheDocument();
+      });
+
+      const backBtn = screen.getByRole("button", { name: /Back to My Tickets/i });
+      fireEvent.click(backBtn);
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /My Tickets/i })).toBeInTheDocument();
+        expect(screen.queryByRole("heading", { name: /Ticket Detail/i })).not.toBeInTheDocument();
+      });
+    });
+
+    it("navigates back to My Tickets list when clicking 'Return to My Tickets →' from 404 error banner", async () => {
+      await renderAppWithRequester("2", (url: string) => {
+        if (url.includes("/api/tickets/c3b8a1e2-5f6d-4e2b-9f1c-8d7e6a5b4c3d")) {
+          return Promise.resolve({
+            ok: false,
+            status: 404,
+            json: () => Promise.resolve({ error: { code: "TICKET_NOT_FOUND", message: "Ticket not found." } }),
+          } as Response);
+        }
+        return undefined;
+      });
+
+      const viewDetailsBtns = await screen.findAllByRole("button", { name: /View Details|View/i });
+      fireEvent.click(viewDetailsBtns[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Ticket not found/i)).toBeInTheDocument();
+      });
+
+      const returnBtn = screen.getByRole("button", { name: /Return to My Tickets/i });
+      fireEvent.click(returnBtn);
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /My Tickets/i })).toBeInTheDocument();
+        expect(screen.queryByText(/Ticket not found/i)).not.toBeInTheDocument();
       });
     });
   });

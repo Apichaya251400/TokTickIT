@@ -81,7 +81,14 @@ Lab 4 preserves and extends the **Zen Green Design System** introduced in Labs 2
 - **Empty State**: Displays `0` for empty metrics and clear explanatory text for empty lists (e.g. `"No recent tickets"`, `"No tickets require attention"`).
 - **Forbidden State**: Displays safe `403 Access Denied` UI feedback if unauthorized access is attempted.
 - **Failure State**: Displays generic retryable error alert banner with a `[ Retry ]` button.
-- **Not Found State**: Navigates gracefully to fallback list view if a targeted ticket has been removed.
+- **Not Found State**: Displays safe `404 Ticket not found.` alert banner with prominent direct fallback button `[ Return to My Tickets → ]` allowing the user to gracefully navigate back to the fallback list view if a targeted ticket has been removed.
+
+### Requester Metric Drill-Down Navigation
+- Clicking **My Open Tickets Card** → Navigates to `/tickets/my-tickets?currentStatus=open`.
+- Clicking **Waiting for My Response Card** → Navigates to `/tickets/my-tickets?currentStatus=WAITING_FOR_REQUESTER`.
+- Clicking **In Progress Card** → Navigates to `/tickets/my-tickets?currentStatus=IN_PROGRESS`.
+- Clicking **Recently Resolved Card** → Navigates to `/tickets/my-tickets?currentStatus=RESOLVED&resolvedWithinDays=30`.
+- Clicking any ticket row in **Recent Tickets** or **Attention Required** → Navigates directly to `/tickets/:id`.
 
 ---
 
