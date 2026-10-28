@@ -153,9 +153,9 @@ describe("RequesterDashboard Component (RequesterDashboard.test.tsx)", () => {
     fireEvent.click(screen.getByTestId("requester-metric-inprogress"));
     expect(mockOnNavigateToMyTickets).toHaveBeenCalledWith("IN_PROGRESS");
 
-    // 4. Recently Resolved Card Click -> status="RESOLVED"
+    // 4. Recently Resolved Card Click -> status="RESOLVED", resolvedWithinDays=30
     fireEvent.click(screen.getByTestId("requester-metric-resolved"));
-    expect(mockOnNavigateToMyTickets).toHaveBeenCalledWith("RESOLVED");
+    expect(mockOnNavigateToMyTickets).toHaveBeenCalledWith("RESOLVED", 30);
 
     // 5. View All Recent Tickets Click -> resets filter (calls with no argument/undefined)
     fireEvent.click(screen.getByRole("button", { name: /View All/i }));

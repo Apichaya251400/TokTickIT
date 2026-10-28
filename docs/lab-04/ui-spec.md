@@ -87,7 +87,7 @@ Lab 4 preserves and extends the **Zen Green Design System** introduced in Labs 2
 - Clicking **My Open Tickets Card** → Navigates to `/tickets/my-tickets?currentStatus=open`.
 - Clicking **Waiting for My Response Card** → Navigates to `/tickets/my-tickets?currentStatus=WAITING_FOR_REQUESTER`.
 - Clicking **In Progress Card** → Navigates to `/tickets/my-tickets?currentStatus=IN_PROGRESS`.
-- Clicking **Recently Resolved Card** → Navigates to `/tickets/my-tickets?currentStatus=RESOLVED`.
+- Clicking **Recently Resolved Card** → Navigates to `/tickets/my-tickets?currentStatus=RESOLVED&resolvedWithinDays=30`.
 - Clicking any ticket row in **Recent Tickets** or **Attention Required** → Navigates directly to `/tickets/:id`.
 
 ---

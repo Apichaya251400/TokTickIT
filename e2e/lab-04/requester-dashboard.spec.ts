@@ -394,6 +394,33 @@ test.describe("E2E-REQBDASH: Requester Dashboard & Workload Overview (Issue #79 
   });
 
   // ---------------------------------------------------------------------------
+  // E2E-REQBDASH-05B: Drill-Down to Recently Resolved (resolvedWithinDays=30)
+  // ---------------------------------------------------------------------------
+  test("E2E-REQBDASH-05B: Drill-Down Navigation to Recently Resolved with 30-day parameter", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await loginAsUser(page, aliceUser.email);
+
+    await page.getByTestId("nav-requester-dashboard").click();
+    await expect(page.getByTestId("requester-dashboard-page")).toBeVisible();
+
+    // Click Recently Resolved card and intercept /api/tickets/my-tickets request
+    const [request] = await Promise.all([
+      page.waitForRequest((req) => req.url().includes("/api/tickets/my-tickets")),
+      page.getByTestId("requester-metric-resolved").click(),
+    ]);
+
+    expect(request.url()).toContain("currentStatus=RESOLVED");
+    expect(request.url()).toContain("resolvedWithinDays=30");
+
+    // Verify navigation to My Tickets view
+    await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
+
+    // Verify filterStatus is set to "RESOLVED"
+    const statusSelect = page.locator("#filterStatus");
+    await expect(statusSelect).toHaveValue("RESOLVED");
+  });
+
+  // ---------------------------------------------------------------------------
   // EVD-REQBDASH-06: Zero-Count Workload & Empty States Evidence
   // ---------------------------------------------------------------------------
   test("E2E-REQBDASH-06: Zero-Count Workload & Empty States (EVD-REQBDASH-06)", async ({ page }) => {
@@ -579,6 +606,55 @@ test.describe("E2E-REQBDASH: Requester Dashboard & Workload Overview (Issue #79 
     const evidencePath = path.join(artifactsBase, "EVD-REQBDASH-08.json");
     fs.writeFileSync(evidencePath, JSON.stringify(isolationEvidence, null, 2), "utf8");
     copyToBrain("EVD-REQBDASH-08.json");
+  });
+
+  // ---------------------------------------------------------------------------
+  // E2E-REQBDASH-09: Return to My Tickets from Ticket Not Found state (Issue #79 Reviewer Feedback)
+  // ---------------------------------------------------------------------------
+  test("E2E-REQBDASH-09: Return to My Tickets from Ticket Not Found state", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await loginAsUser(page, aliceUser.email);
+
+    await page.getByTestId("nav-requester-dashboard").click();
+    await expect(page.getByTestId("requester-dashboard-page")).toBeVisible();
+
+    // Intercept ticket detail request to simulate 404 Not Found
+    await page.route("**/api/tickets/**", async (route) => {
+      const url = route.request().url();
+      if (url.includes("/api/tickets/my-tickets") || url.endsWith("/api/tickets")) {
+        return route.continue();
+      }
+      return route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "TICKET_NOT_FOUND",
+            message: "Ticket not found.",
+          },
+        }),
+      });
+    });
+
+    // Click on a ticket from Recent or Attention Required list
+    const ticketLink = page.locator("[data-testid^='recent-ticket-row-'], [data-testid^='attention-ticket-row-']").first();
+    await ticketLink.click();
+
+    // Verify Ticket Not Found alert banner is visible with fallback button
+    await expect(page.getByRole("alert")).toContainText("Ticket not found.");
+    const returnBtn = page.getByRole("button", { name: /Return to My Tickets/i });
+    await expect(returnBtn).toBeVisible();
+
+    // Click Return to My Tickets
+    await returnBtn.click();
+
+    // Verify transition to My Tickets view:
+    // 1. Heading 'My Tickets' is visible
+    // 2. Requester Dashboard is not visible
+    // 3. Ticket detail / error banner is not visible
+    await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
+    await expect(page.getByTestId("requester-dashboard-page")).not.toBeVisible();
+    await expect(page.getByRole("alert")).not.toBeVisible();
   });
 
   test.afterAll(async () => {

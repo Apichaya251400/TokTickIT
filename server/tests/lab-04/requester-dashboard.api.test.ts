@@ -535,4 +535,90 @@ describe("LAB4-08 / Requester Dashboard REST API Suite (requester-dashboard.api.
       expect(invalidStatuses.includes(ticket.currentStatus)).toBe(false);
     }
   });
+
+  // ---------------------------------------------------------------------------
+  // TEST-DASH-REQ-10: My Tickets currentStatus=RESOLVED&resolvedWithinDays=30 semantics
+  // ---------------------------------------------------------------------------
+  it("TEST-DASH-REQ-10: Enforces 30-day semantics for resolvedWithinDays parameter (Issue #79)", async () => {
+    // 1. Create a ticket resolved today (within 30 days window)
+    const recentResolved = await prisma.ticket.create({
+      data: {
+        ticketNumber: "TKT-2026-RESREC01",
+        requesterId: requesterUser.id,
+        ownerId: staffUser.id,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "LOW",
+        summary: "[TEST-REQDASH] Resolved within 30 days",
+        description: "Resolved recently",
+        currentStatus: "RESOLVED",
+        updatedAt: new Date(),
+      },
+    });
+
+    // 2. Create a ticket resolved 35 days ago (outside 30 days window)
+    const oldResolved = await prisma.ticket.create({
+      data: {
+        ticketNumber: "TKT-2026-RESOLD01",
+        requesterId: requesterUser.id,
+        ownerId: staffUser.id,
+        categoryId: testCategory.id,
+        relatedSystemId: testSystem.id,
+        requestedPriority: "MEDIUM",
+        summary: "[TEST-REQDASH] Resolved 35 days ago",
+        description: "Resolved long ago",
+        currentStatus: "RESOLVED",
+        updatedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    // 3. Query with currentStatus=RESOLVED&resolvedWithinDays=30
+    const resFiltered = await request(app)
+      .get("/api/tickets/my-tickets?currentStatus=RESOLVED&resolvedWithinDays=30")
+      .set("Cookie", `token=${requesterToken}`);
+
+    expect(resFiltered.status).toBe(200);
+    const ids = resFiltered.body.data.map((t: any) => t.id);
+    expect(ids).toContain(recentResolved.id);
+    expect(ids).not.toContain(oldResolved.id);
+
+    // 4. Query with currentStatus=RESOLVED without resolvedWithinDays returns both
+    const resAllResolved = await request(app)
+      .get("/api/tickets/my-tickets?currentStatus=RESOLVED")
+      .set("Cookie", `token=${requesterToken}`);
+
+    expect(resAllResolved.status).toBe(200);
+    const allIds = resAllResolved.body.data.map((t: any) => t.id);
+    expect(allIds).toContain(recentResolved.id);
+    expect(allIds).toContain(oldResolved.id);
+
+    // 5. Query with invalid resolvedWithinDays values returns 400
+    const resInvalidVal = await request(app)
+      .get("/api/tickets/my-tickets?currentStatus=RESOLVED&resolvedWithinDays=15")
+      .set("Cookie", `token=${requesterToken}`);
+    expect(resInvalidVal.status).toBe(400);
+    expect(resInvalidVal.body).toEqual({
+      error: {
+        code: "INVALID_QUERY_PARAMETER",
+        message: "Invalid query parameter value.",
+      },
+    });
+
+    // 6. Query with resolvedWithinDays=30 but currentStatus != RESOLVED returns 400
+    const resWrongStatus = await request(app)
+      .get("/api/tickets/my-tickets?currentStatus=open&resolvedWithinDays=30")
+      .set("Cookie", `token=${requesterToken}`);
+    expect(resWrongStatus.status).toBe(400);
+    expect(resWrongStatus.body).toEqual({
+      error: {
+        code: "INVALID_QUERY_PARAMETER",
+        message: "Invalid query parameter value.",
+      },
+    });
+
+    // Clean up created tickets
+    await prisma.ticket.deleteMany({
+      where: { id: { in: [recentResolved.id, oldResolved.id] } },
+    });
+  });
 });

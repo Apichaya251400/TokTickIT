@@ -239,7 +239,8 @@ Unauthenticated authentication endpoints such as login remain governed by the ex
     This parameter directly powers the **My Open Tickets** metric card drill-down navigation from the Requester Dashboard (`/tickets/my-tickets?currentStatus=open`).
   - `currentStatus=WAITING_FOR_REQUESTER`: Powers the **Waiting for My Response** card drill-down (`/tickets/my-tickets?currentStatus=WAITING_FOR_REQUESTER`).
   - `currentStatus=IN_PROGRESS`: Powers the **In Progress** card drill-down (`/tickets/my-tickets?currentStatus=IN_PROGRESS`).
-  - `currentStatus=RESOLVED`: Powers the **Recently Resolved** card drill-down (`/tickets/my-tickets?currentStatus=RESOLVED`).
+  - `currentStatus=RESOLVED&resolvedWithinDays=30`: Powers the **Recently Resolved** card drill-down (`/tickets/my-tickets?currentStatus=RESOLVED&resolvedWithinDays=30`). Filters tickets resolved within the current day plus the past 29 calendar days in Asia/Bangkok UTC+7 (`updatedAt >= startOfDay AND updatedAt < startOfNextDay`). Strict parameter validation enforces that `resolvedWithinDays` must be an integer equal to `30`, and requires `currentStatus=RESOLVED`; any deviation returns `400 INVALID_QUERY_PARAMETER`.
+  - `currentStatus=RESOLVED`: Standard status filter returning all resolved tickets without the 30-day time restriction.
   - Other supported status filters: `NEW`, `OPEN`, `CLOSED`, `REOPENED`, `CANCELLED`.
 - **Success Response (`200 OK`)**: Standard paginated ticket list:
 ```json

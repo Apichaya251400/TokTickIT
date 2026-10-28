@@ -80,6 +80,7 @@ export default function App() {
   const [filterRelatedSystemId, setFilterRelatedSystemId] = useState<string>("");
   const [filterRequestedPriority, setFilterRequestedPriority] = useState<string>("");
   const [filterCurrentStatus, setFilterCurrentStatus] = useState<string>("");
+  const [filterResolvedWithinDays, setFilterResolvedWithinDays] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("createdAt");
   const [sortOrder, setSortOrder] = useState<string>("desc");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -183,6 +184,7 @@ export default function App() {
     filterRelatedSystemId,
     filterRequestedPriority,
     filterCurrentStatus,
+    filterResolvedWithinDays,
     sortBy,
     sortOrder,
     currentPage,
@@ -223,6 +225,7 @@ export default function App() {
         relatedSystemId: filterRelatedSystemId,
         requestedPriority: filterRequestedPriority,
         currentStatus: filterCurrentStatus,
+        resolvedWithinDays: filterResolvedWithinDays || undefined,
         sortBy,
         sortOrder,
         page: pageToLoad,
@@ -692,8 +695,9 @@ export default function App() {
         <section className="mb-5">
           <RequesterDashboard
             currentUser={currentUser}
-            onNavigateToMyTickets={(status) => {
+            onNavigateToMyTickets={(status, resolvedWithinDays) => {
               setFilterCurrentStatus(status || "");
+              setFilterResolvedWithinDays(resolvedWithinDays ? String(resolvedWithinDays) : "");
               setSelectedTicketId(null);
               setActiveTab("my-tickets");
             }}
@@ -815,7 +819,10 @@ export default function App() {
             <button
               type="button"
               className="btn btn-outline-secondary btn-sm"
-              onClick={() => setSelectedTicketId(null)}
+              onClick={() => {
+                setSelectedTicketId(null);
+                setActiveTab("my-tickets");
+              }}
               style={{ outlineColor: "#0B7A46" }}
             >
               Back to My Tickets
@@ -837,6 +844,7 @@ export default function App() {
                 onClick={() => {
                   setSelectedTicketId(null);
                   setDetailError(null);
+                  setActiveTab("my-tickets");
                 }}
               >
                 Return to My Tickets &rarr;
@@ -1187,6 +1195,7 @@ export default function App() {
                     value={filterCurrentStatus}
                     onChange={(e) => {
                       setFilterCurrentStatus(e.target.value);
+                      setFilterResolvedWithinDays("");
                       setCurrentPage(1);
                     }}
                     style={{ outlineColor: "#0B7A46" }}

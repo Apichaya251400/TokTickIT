@@ -9,7 +9,7 @@ import {
 
 export interface RequesterDashboardProps {
   currentUser: User;
-  onNavigateToMyTickets: (status?: string) => void;
+  onNavigateToMyTickets: (status?: string, resolvedWithinDays?: number) => void;
   onSelectTicket: (ticketId: string) => void;
   onCreateTicket?: () => void;
 }
@@ -286,11 +286,11 @@ export default function RequesterDashboard({
                 role="button"
                 tabIndex={0}
                 data-testid="requester-metric-resolved"
-                onClick={() => onNavigateToMyTickets("RESOLVED")}
+                onClick={() => onNavigateToMyTickets("RESOLVED", 30)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    onNavigateToMyTickets("RESOLVED");
+                    onNavigateToMyTickets("RESOLVED", 30);
                   }
                 }}
               >

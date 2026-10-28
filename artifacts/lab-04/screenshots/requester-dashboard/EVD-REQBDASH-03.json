@@ -30,12 +30,20 @@
     },
     "recentTickets": [
       {
+        "id": "35ce9582-e4e1-4010-bc69-0d2fdac06c76",
+        "ticketNumber": "TKT-2026-000008",
+        "summary": "Accidental duplicate ticket submission for laptop keyboard repair",
+        "currentStatus": "CANCELLED",
+        "requestedPriority": "LOW",
+        "updatedAt": "2026-10-28T07:42:07.226Z"
+      },
+      {
         "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
         "ticketNumber": "TKT-2026-000002",
         "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
         "currentStatus": "IN_PROGRESS",
         "requestedPriority": "MEDIUM",
-        "updatedAt": "2026-10-27T20:27:23.698Z"
+        "updatedAt": "2026-10-28T07:42:07.206Z"
       },
       {
         "id": "85719f51-3382-49e5-82d9-1b1243e0b5db",
@@ -44,14 +52,6 @@
         "currentStatus": "NEW",
         "requestedPriority": "MEDIUM",
         "updatedAt": "2026-10-27T20:26:56.066Z"
-      },
-      {
-        "id": "35ce9582-e4e1-4010-bc69-0d2fdac06c76",
-        "ticketNumber": "TKT-2026-000008",
-        "summary": "Accidental duplicate ticket submission for laptop keyboard repair",
-        "currentStatus": "CANCELLED",
-        "requestedPriority": "LOW",
-        "updatedAt": "2026-10-27T20:26:55.981Z"
       },
       {
         "id": "a9040c07-92af-405f-a50d-cd45c99f4ca1",
