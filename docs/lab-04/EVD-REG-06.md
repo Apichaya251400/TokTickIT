@@ -3,6 +3,8 @@
 - **System Name**: TokTickIT
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Increment Goal**: Verify that README setup, seed, migration, test, and demonstration instructions are current and fully reproducible from a clean environment.
+- **Verification Timestamp**: `2026-10-29T03:25:00+07:00`
+- **Branch**: `feature/lab4-regression`
 
 ---
 
@@ -116,9 +118,9 @@ Result: **0 errors**; optimized production bundle generated in `client/dist/`.
 
 | Test Domain | Executed Command | Passing Count | Duration |
 |---|---|---|---|
-| **Server Tests** | `npm --prefix server test` | **282 / 282 PASS** | ~61s |
+| **Server Tests** | `npm --prefix server test` | **282 / 282 PASS** | ~65s |
 | **Client Tests** | `npm --prefix client test` | **129 / 129 PASS** | ~5s |
-| **Playwright E2E Tests** | `npx playwright test` | **52 / 52 PASS** | ~45s |
-| **Total Automated** | — | **463 / 463 PASS (100% GREEN)** | — |
+| **Playwright E2E Tests** | `npx playwright test` | **56 / 56 PASS** | ~50s |
+| **Total Automated** | — | **467 / 467 PASS (100% GREEN)** | — |
 
 All setup, migration, seed, build, and test instructions in `README.md` are verified to be fully accurate and operational.
