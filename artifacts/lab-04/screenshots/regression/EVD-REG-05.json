@@ -1,0 +1,32 @@
+{
+  "evidenceId": "EVD-REG-05",
+  "title": "Final Responsive Viewport & Accessibility Regression Evidence",
+  "timestamp": "2026-10-28T16:31:00.856Z",
+  "testedViewports": [
+    {
+      "name": "Desktop",
+      "resolution": "1920x1080",
+      "zeroPageOverflow": true,
+      "gridLayout": "4-column side-by-side"
+    },
+    {
+      "name": "Tablet",
+      "resolution": "768x1024",
+      "zeroPageOverflow": true,
+      "gridLayout": "stacked responsive"
+    },
+    {
+      "name": "Mobile",
+      "resolution": "375x812",
+      "zeroPageOverflow": true,
+      "gridLayout": "single-column stack"
+    }
+  ],
+  "accessibilityChecks": {
+    "keyboardTabNavigation": "VERIFIED",
+    "visibleFocusRing": "2px solid #198754 (rgb(25, 135, 84)) VERIFIED",
+    "ariaCurrentPage": "VERIFIED",
+    "nonColorStatusCues": "Textual status/priority badges with explicit labels VERIFIED",
+    "touchTargetMinimum": ">= 28px height / accessible touch target verified"
+  }
+}

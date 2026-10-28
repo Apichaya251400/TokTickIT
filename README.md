@@ -1,21 +1,24 @@
 # TokTickIT
 
-IT Service Desk Application — CPE 334 Software Engineering Lab 3 (Sprint 3).
+IT Service Desk Application — CPE 334 Software Engineering Lab 4 (Sprint 4).
 
-TokTickIT is a full-stack IT service desk application built for Requesters, IT Staff, and Administrators to create, process, manage, and audit IT support tickets, internal notes, attachments, and system users. Lab 3 delivers a role-based multi-user architecture with JWT authentication, operational controls, safety guards, responsive visual design (Zen Green), and automated test suites.
+TokTickIT is a production-grade full-stack IT service desk application built for Requesters, IT Staff, and Administrators to create, process, manage, and audit IT support tickets, internal notes, attachments, action histories, operational dashboards, and system users. Lab 4 delivers advanced operational dashboards, Actions Taken workspace, formal Resolution Gate workflow controls, optimistic concurrency protection, backend idempotency, responsive visual design (Zen Green), and comprehensive automated regression suites.
 
 ---
 
 ## 1. Project Overview
 
-Lab 3 expands TokTickIT into a production-grade multi-role IT service desk:
-- **Authentication & Security**: JWT authentication (cookie/header `Bearer`), server-side token revocation blocklist (`/api/auth/logout`), real-time DB identity verification (`isActive = true`), and mandatory initial password change enforcement (`requiresPasswordChange`).
-- **Role-Based Navigation & Shell**: Role-specific navigation header and profile badge (`REQUESTER`, `IT_STAFF`, `ADMINISTRATOR`), with complete removal of the legacy Development Requester Selector.
-- **IT Staff Ticket Queue (`/staff/queue`)**: Filterable and sortable queue supporting full-text search, status filters (`NEW`, `OPEN`, `IN_PROGRESS`, `WAITING_FOR_REQUESTER`, `RESOLVED`, `CLOSED`, `REOPENED`, `CANCELLED`), priority filters, ownership tabs (`All`, `My Queue`, `Unassigned`), sorting, and pagination.
-- **IT Staff Operational Controls & Details (`/staff/tickets/:id`)**: Grouped problem information, ticket claim/reassignment dropdowns, status transition matrix enforcement, and requester signal banners (`requesterResolvedIndicatedAt`, `requesterReopenRequestedAt`).
-- **Communication & Isolation**: Public Comments (green border) vs Internal Notes (amber private warning style, hidden from Requesters). Strict resource ownership isolation for Requesters and read-only ticket detail access for Administrators.
-- **Administrator User Management (`/admin/users`)**: Full User CRUD table, search/filter bar, modal dialogs for create/edit/reset initial password, self-deactivation blocking guard, and atomic Last Active Administrator protection.
-- **Responsive Design & Visual QA**: Verified layout consistency across Desktop (`1920x1080`), Tablet (`768x1024`), and Mobile (`375x812`) viewports without horizontal overflow, supported by 21 screenshot artifacts.
+TokTickIT provides an end-to-end IT service desk experience across three distinct system roles:
+
+- **Authentication & Security (Lab 3 Foundation)**: JWT authentication (cookie/header `Bearer`), server-side token revocation blocklist (`/api/auth/logout`), real-time DB identity verification (`isActive = true`), and mandatory initial password change enforcement (`requiresPasswordChange`).
+- **Role-Based Navigation & Landing (Lab 4)**: IT Staff and Administrators automatically land on the Operational Dashboard (`staff-dashboard`), while Requesters land on My Tickets / Requester Dashboard. Role badges and context are strictly verified.
+- **IT Staff Dashboard (`/api/dashboards/staff`)**: Aggregate metrics (Unassigned Active, My Active Workload, Actions Recorded Today, Urgent Unresolved), quick action shortcuts, recent tickets, and drill-down links to filtered queue views.
+- **Requester Dashboard (`/api/dashboards/requester`)**: Owned metric cards (My Open Tickets, Waiting for Response, In Progress, Recently Resolved in last 30 days), attention required queues, and drill-down navigation to My Tickets.
+- **Actions Taken Workspace (`/api/tickets/:id/actions`)**: Structured operational activity recording. Staff record technical diagnosis, assignees, duration, status progression (`PENDING` → `IN_PROGRESS` → `COMPLETED` / `CANCELLED`), attachments, and conditional follow-up notes. Requesters have strict read-only inspection (`AC-04`).
+- **Ticket Workflow & Resolution Gate (`/api/tickets/:id/status`)**: State machine transitions (`NEW` → `OPEN` → `IN_PROGRESS` ⇄ `WAITING_FOR_REQUESTER` → `RESOLVED` → `CLOSED` / `REOPENED`). Enforces Resolution Gate requiring >= 1 completed ActionTaken or a mandatory staff `resolutionNote`. Terminal status transition and action creation protection on `CANCELLED` tickets.
+- **Concurrency & Race-Condition Protection**: Optimistic concurrency control via `expectedUpdatedAt` / atomic conditional updates (`WHERE id=:id AND updatedAt=:expectedUpdatedAt`) rejecting stale concurrent mutations with `409 Conflict`.
+- **Backend Idempotency Protection**: Header-based `Idempotency-Key` deduplication on action mutations, caching identical `201 Created` responses and preventing double-submission on network retries.
+- **Responsive Viewports & Accessibility**: Verified adaptation across Desktop (`1920×1080`), Tablet (`768×1024`), and Mobile (`375×812`) viewports without page-level horizontal overflow, visible focus rings (`2px solid #198754`), touch targets >= 44×44px, and non-color status/priority cues.
 
 ---
 
@@ -86,7 +89,14 @@ npm run prisma:migrate
 npm run prisma:seed
 ```
 
-`prisma/seed.ts` is idempotent and seeds 4 active Requesters, 1 inactive Requester, 3 active IT Staff, 1 inactive IT Staff, 2 active Administrators, 4 Categories, 7 Related Systems, 8 sample tickets across all statuses, attachments, public comments, and internal notes.
+`prisma/seed.ts` is idempotent and seeds:
+- 4 active Requesters, 1 inactive Requester
+- 3 active IT Staff, 1 inactive IT Staff
+- 2 active Administrators
+- 4 Categories, 7 Related Systems
+- 8 sample tickets across all statuses with attachments, public comments, internal notes
+- Sample Actions Taken (0, 1, and multiple action scenarios across various statuses)
+- Synchronizes `ticket_number_seq` dynamically to max ticket number suffix (`TEST-DB-SEQ-01`)
 
 ---
 
@@ -110,86 +120,51 @@ Open `http://localhost:5173` in your web browser.
 
 ---
 
-## 7. Testing & Verification
+## 7. Automated Testing & Verification
 
-Run the automated test suites using the following commands:
+Run the full regression test suites using the following commands:
 
-### Server Unit & API Integration Tests (Vitest + Supertest)
+### 1. Server Unit & API Integration Tests (Vitest + Supertest)
 ```bash
 cd server
 npm run prisma:seed
-npx vitest run --fileParallelism=false
+npm test
 ```
 
-### Client UI & Component Tests (Vitest + React Testing Library)
+### 2. Client UI & Component Tests (Vitest + React Testing Library)
 ```bash
 cd client
 npm test
 ```
 
-### Playwright End-to-End (E2E) Browser Tests
+### 3. Playwright End-to-End (E2E) Regression Suites
 ```bash
-$env:NODE_PATH="server/node_modules" ; npx playwright test
+npx playwright test
 ```
 
-### Playwright Visual QA Screenshot Capture Suite
+### 4. Production Build Verification
 ```bash
-$env:NODE_PATH="server/node_modules" ; npx playwright test scratch/capture_screenshots.spec.ts
+npm --prefix server run build
+npm --prefix client run build
 ```
 
 ---
 
-## 8. Lab 3 Test Evidence Summary
+## 8. Final Test Evidence Summary (Lab 4 Increment)
 
 | Suite / Level | Tooling | Test Files | Automated Tests Passed | Status |
 |---|---|---|---|---|
-| **Server API & Unit Suite** | Vitest + Supertest | `20 / 20` files | **177 / 177 PASS** | **PASS** |
-| **Client UI & Component Suite** | Vitest + RTL + jsdom | `13 / 13` files | **85 / 85 PASS** | **PASS** |
-| **Playwright Lab 3 E2E Suite** | Playwright | `4 / 4` specs | **13 / 13 PASS** | **PASS** |
-| **Playwright Visual QA Suite** | Playwright | `1 / 1` spec | **15 / 15 PASS** *(21/21 screenshots generated)* | **PASS** |
-| **Lab 3 Automated Total** | — | **38 / 38 files** | **290 / 290 PASS (100%)** | **PASS** |
+| **Server API & Integration Suite** | Vitest + Supertest | `29 / 29` files | **282 / 282 PASS** | **100% PASS** |
+| **Client UI Component Suite** | Vitest + RTL + jsdom | `17 / 17` files | **129 / 129 PASS** | **100% PASS** |
+| **Playwright Full E2E Suite** | Playwright Chromium | `10 / 10` specs | **52 / 52 PASS** | **100% PASS** |
+| **Production Build Suite** | TypeScript + Vite | `server + client` | **0 errors / built OK** | **100% PASS** |
+| **Integrated Total** | — | **56 test files** | **463 / 463 PASS (100% GREEN)** | **100% PASS** |
 
----
+### Lab 4 Evidence Deliverables Traceability
 
-## 9. Lab 3 Documentation Links
-
-- [`docs/lab-03/specification.md`](docs/lab-03/specification.md) — Canonical Sprint Engineering Specification (AC-01..25, BR-01..28)
-- [`docs/lab-03/api-spec.md`](docs/lab-03/api-spec.md) — REST API Specification, Authorization Matrix & Status Transition Matrix
-- [`docs/lab-03/ui-spec.md`](docs/lab-03/ui-spec.md) — Zen Green UI Specification, Screen Modes & Visual Inspection Checklist
-- [`docs/lab-03/tests.md`](docs/lab-03/tests.md) — Test Strategy, Traceability Matrix & Test Suite Inventory
-- [`docs/lab-03/ai-use.md`](docs/lab-03/ai-use.md) — AI Tool Usage, Representative Prompts & Reflection
-- [`docs/lab-03/reviewer.md`](docs/lab-03/reviewer.md) — Peer Review Records, Approval Evidence & Repository Audit
-
----
-
-## 10. Project Structure
-
-```text
-TokTickIT/
-├── artifacts/
-│   └── lab-03/screenshots/     # 21 PNG visual QA screenshot artifacts (3 viewports)
-├── client/                      # React + TypeScript + Vite + Bootstrap Frontend
-│   ├── src/                     # App.tsx, main.tsx, api.ts, components/, pages/
-│   └── tests/                   # 13 client component & page test files (85 tests)
-├── server/                      # Express + TypeScript + Prisma Backend
-│   ├── prisma/                  # schema.prisma, migrations/, seed.ts
-│   ├── src/                     # app.ts, index.ts, prisma.ts, routes/, middleware/, utils/
-│   ├── uploads/                 # Uploaded attachment storage directory
-│   └── tests/                   # 20 server unit & API test files (177 tests)
-├── e2e/                         # Playwright End-to-End Tests
-│   └── lab-03/                  # authentication, staff-ticket-flow, user-administration, lab2-regression
-├── scratch/                     # Visual QA Playwright capture script (capture_screenshots.spec.ts)
-├── docs/
-│   ├── lab-01/                  # Lab 1 baseline documentation
-│   ├── lab-02/                  # Lab 2 baseline documentation
-│   └── lab-03/                  # specification.md, api-spec.md, ui-spec.md, tests.md, ai-use.md, reviewer.md
-├── playwright.config.ts         # Playwright test runner configuration
-└── README.md                    # Project documentation
-```
-
----
-
-## 11. Scope & Security Notes
-
-- **JWT Authentication & Authorization**: Session state is managed via JWT tokens stored in HTTP-Only cookies or `Bearer` headers. Token revocation blocklist is enforced server-side.
-- **Role Scoping & Safety Guards**: Strict server-side RBAC enforced across `REQUESTER`, `IT_STAFF`, and `ADMINISTRATOR` roles. Self-deactivation and Last Active Administrator protection guards operate atomically within database transactions.
+- **`EVD-REG-01`**: Full integrated terminal test run output showing passing Server (282), Client (129), and E2E (52) suites (`artifacts/lab-04/screenshots/regression/EVD-REG-01.txt`).
+- **`EVD-REG-02`**: Representative regression E2E cross-role workflow screenshot (`artifacts/lab-04/screenshots/regression/EVD-REG-02.png`).
+- **`EVD-REG-03`**: Lab 1–3 regression evidence summary report for final documentation (`docs/lab-04/regression-evidence.md`).
+- **`EVD-REG-04`**: Product-hardening evidence for failure states (form data preservation `TEST-FAIL-01`) and duplicate-action protection (`TEST-IDEM-01..03`) (`artifacts/lab-04/screenshots/regression/EVD-REG-04.png`, `.json`).
+- **`EVD-REG-05`**: Visual responsive viewport (`1920x1080`, `768x1024`, `375x812`) and accessibility regression evidence (`artifacts/lab-04/screenshots/regression/EVD-REG-05.png`, `.json`).
+- **`EVD-REG-06`**: README setup, seed, migration, and production build verification record (`docs/lab-04/EVD-REG-06.md`).

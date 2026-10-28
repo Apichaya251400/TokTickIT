@@ -1,8 +1,8 @@
 {
   "queryVerification": {
     "unassignedCount": {
-      "expectedDbQuery": 54,
-      "actualApiResponse": 54,
+      "expectedDbQuery": 56,
+      "actualApiResponse": 56,
       "match": true
     },
     "myAssignedCount": {
@@ -16,17 +16,17 @@
       "match": true
     },
     "urgentWorkloadCount": {
-      "expectedDbQuery": 3,
-      "actualApiResponse": 3,
+      "expectedDbQuery": 2,
+      "actualApiResponse": 2,
       "match": true
     }
   },
   "apiResponse": {
     "metrics": {
-      "unassignedCount": 54,
+      "unassignedCount": 56,
       "myAssignedCount": 2,
       "todayActionsCount": 1,
-      "urgentWorkloadCount": 3
+      "urgentWorkloadCount": 2
     },
     "myRecentTickets": [
       {
@@ -36,7 +36,7 @@
         "currentStatus": "IN_PROGRESS",
         "requestedPriority": "MEDIUM",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-28T08:41:45.073Z"
+        "updatedAt": "2026-10-28T16:31:01.183Z"
       },
       {
         "id": "fdb60d58-ea95-42ab-b55a-ce876b1a4d80",
@@ -45,7 +45,7 @@
         "currentStatus": "REOPENED",
         "requestedPriority": "HIGH",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-28T08:33:34.056Z"
+        "updatedAt": "2026-10-28T16:30:27.150Z"
       },
       {
         "id": "643535fa-7627-4103-89ce-c9a2fe91b11b",
@@ -54,7 +54,7 @@
         "currentStatus": "CLOSED",
         "requestedPriority": "MEDIUM",
         "itPriority": "MEDIUM",
-        "updatedAt": "2026-10-28T08:33:34.054Z"
+        "updatedAt": "2026-10-28T16:30:27.147Z"
       },
       {
         "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
@@ -63,17 +63,17 @@
         "currentStatus": "RESOLVED",
         "requestedPriority": "LOW",
         "itPriority": "LOW",
-        "updatedAt": "2026-10-28T08:33:34.045Z"
+        "updatedAt": "2026-10-28T16:30:27.139Z"
       }
     ],
     "currentStaffActions": [
       {
-        "id": "fc71d9d0-d529-4000-85db-45d713e823f9",
+        "id": "60a67919-6743-4cb8-821a-60b1d817610a",
         "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
         "ticketNumber": "TKT-2026-000002",
         "description": "E2E Verified hardware connectivity today",
         "result": "All diagnostics passed",
-        "createdAt": "2026-10-28T08:41:45.076Z"
+        "createdAt": "2026-10-28T16:31:01.184Z"
       },
       {
         "id": "act-seed-000003",

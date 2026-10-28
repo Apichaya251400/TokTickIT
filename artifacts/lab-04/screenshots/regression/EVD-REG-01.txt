@@ -1,0 +1,97 @@
+================================================================================
+EVD-REG-01: TokTickIT Lab 4 Full Integrated Regression Test Suites Output
+Branch: feature/lab4-regression
+Timestamp: 2026-10-28T23:35:00+07:00
+================================================================================
+
+1. SERVER TEST SUITE (npm --prefix server test)
+--------------------------------------------------------------------------------
+Test Files  29 passed (29)
+     Tests  282 passed (282)
+  Duration  61.60s
+
+Detailed passing suites:
+  ✓ tests/lab-01/API-01.health.test.ts (1 test)
+  ✓ tests/lab-01/API-02.categories.test.ts (1 test)
+  ✓ tests/lab-02/reference-data.test.ts (3 tests)
+  ✓ tests/lab-03/auth.api.test.ts (11 tests)
+  ✓ tests/lab-03/comments.api.test.ts (8 tests)
+  ✓ tests/lab-03/db-schema.test.ts (5 tests)
+  ✓ tests/lab-03/migration.test.ts (3 tests)
+  ✓ tests/lab-03/notes.api.test.ts (10 tests)
+  ✓ tests/lab-03/requester-regression.api.test.ts (2 tests)
+  ✓ tests/lab-03/seed.test.ts (10 tests)
+  ✓ tests/lab-03/signalling.api.test.ts (8 tests)
+  ✓ tests/lab-03/staff-queue.api.test.ts (16 tests)
+  ✓ tests/lab-03/staff-ticket-detail.api.test.ts (14 tests)
+  ✓ tests/lab-03/user-admin.api.test.ts (24 tests)
+  ✓ tests/lab-04/actions.api.test.ts (28 tests)
+  ✓ tests/lab-04/concurrency.api.test.ts (12 tests)
+  ✓ tests/lab-04/db-schema.test.ts (6 tests)
+  ✓ tests/lab-04/migration.test.ts (3 tests)
+  ✓ tests/lab-04/requester-dashboard.api.test.ts (21 tests)
+  ✓ tests/lab-04/seed.test.ts (4 tests)
+  ✓ tests/lab-04/staff-dashboard.api.test.ts (27 tests)
+  ✓ tests/lab-04/ticket-workflow.api.test.ts (32 tests)
+  ✓ tests/unit/jwt.test.ts (2 tests)
+  ✓ tests/unit/password.test.ts (2 tests)
+  ✓ tests/unit/sanitizer.test.ts (4 tests)
+  ✓ tests/unit/ticketNumber.test.ts (2 tests)
+  ✓ tests/unit/timezone.test.ts (6 tests)
+  ✓ tests/unit/validation.test.ts (9 tests)
+
+
+2. CLIENT COMPONENT TEST SUITE (npm --prefix client test)
+--------------------------------------------------------------------------------
+Test Files  17 passed (17)
+     Tests  129 passed (129)
+  Duration  4.70s
+
+Detailed passing suites:
+  ✓ tests/lab-01/UI-01.heading.test.tsx (1 test)
+  ✓ tests/lab-01/UI-02.form.test.tsx (1 test)
+  ✓ tests/lab-01/UI-03.error.test.tsx (1 test)
+  ✓ tests/lab-02/CreateTicket.test.tsx (26 tests)
+  ✓ tests/lab-02/MyTicketsAndDetail.test.tsx (16 tests)
+  ✓ tests/lab-02/RequesterSelection.test.tsx (1 test)
+  ✓ tests/lab-03/ChangePassword.test.tsx (5 tests)
+  ✓ tests/lab-03/Login.test.tsx (5 tests)
+  ✓ tests/lab-03/PublicComments.test.tsx (8 tests)
+  ✓ tests/lab-03/StaffTicketDetail.test.tsx (6 tests)
+  ✓ tests/lab-03/StaffTicketQueue.test.tsx (7 tests)
+  ✓ tests/lab-03/UserManagement.test.tsx (11 tests)
+  ✓ tests/lab-04/ActionsTaken.test.tsx (17 tests)
+  ✓ tests/lab-04/RequesterDashboard.test.tsx (6 tests)
+  ✓ tests/lab-04/StaffDashboard.test.tsx (9 tests)
+  ✓ tests/lab-04/TicketWorkflow.test.tsx (10 tests)
+  ✓ tests/unit/api.test.ts (4 tests)
+
+
+3. PLAYWRIGHT END-TO-END (E2E) TEST SUITE (npx playwright test)
+--------------------------------------------------------------------------------
+Test Files  10 passed (10)
+     Tests  52 passed (52)
+  Duration  44.5s
+
+Detailed passing suites:
+  ✓ e2e/lab-03/authentication.spec.ts (5 tests)
+  ✓ e2e/lab-03/lab2-regression.spec.ts (1 test)
+  ✓ e2e/lab-03/staff-ticket-flow.spec.ts (2 tests)
+  ✓ e2e/lab-03/user-administration.spec.ts (5 tests)
+  ✓ e2e/lab-04/actions-taken-flow.spec.ts (6 tests)
+  ✓ e2e/lab-04/regression-hardening.spec.ts (3 tests)
+  ✓ e2e/lab-04/requester-dashboard.spec.ts (11 tests)
+  ✓ e2e/lab-04/responsive-a11y.spec.ts (4 tests)
+  ✓ e2e/lab-04/staff-dashboard.spec.ts (7 tests)
+  ✓ e2e/lab-04/ticket-resolution.spec.ts (8 tests)
+
+
+================================================================================
+GRAND TOTAL SUMMARY:
+================================================================================
+  Server API & Unit Tests:   282 PASSED / 0 FAILED (100%)
+  Client Component Tests:    129 PASSED / 0 FAILED (100%)
+  Playwright E2E Tests:       52 PASSED / 0 FAILED (100%)
+  ---------------------------------------------------
+  TOTAL TESTS EXECUTED:      463 PASSED / 0 FAILED (100% GREEN)
+================================================================================

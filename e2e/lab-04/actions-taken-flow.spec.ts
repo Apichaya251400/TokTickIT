@@ -33,6 +33,11 @@ async function loginAsStaff(page: Page) {
       page.click("button[type='submit']"),
     ]);
   }
+
+  const itQueueNav = page.getByTestId("nav-it-queue");
+  if (await itQueueNav.isVisible()) {
+    await itQueueNav.click();
+  }
 }
 
 async function loginAsRequester(page: Page) {

@@ -22,6 +22,11 @@ async function loginAsStaff(page: Page) {
       page.click("button[type='submit']"),
     ]);
   }
+
+  const itQueueNav = page.getByTestId("nav-it-queue");
+  if (await itQueueNav.isVisible()) {
+    await itQueueNav.click();
+  }
 }
 
 test.describe("E2E-02: Staff Ticket Flow (Lab 3)", () => {

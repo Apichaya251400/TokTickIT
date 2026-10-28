@@ -140,6 +140,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 className={`btn btn-sm ${activeTab === "user-management" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "user-management" ? "page" : undefined}
                 onClick={() => onTabChange("user-management")}
+                data-testid="nav-user-management"
               >
                 User Management
               </button>

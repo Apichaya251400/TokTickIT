@@ -1,5 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../server/node_modules/@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -24,6 +24,11 @@ async function loginAsAdmin(page: Page) {
       page.waitForResponse((res) => res.url().includes("/api/auth/change-password")),
       page.click("button[type='submit']"),
     ]);
+  }
+
+  const userMgmtNav = page.getByTestId("nav-user-management");
+  if (await userMgmtNav.isVisible()) {
+    await userMgmtNav.click();
   }
 }
 
@@ -147,6 +152,10 @@ test.describe("E2E-03: User Administration & Safety Guards (Lab 3)", () => {
         page2.waitForResponse((res) => res.url().includes("/api/auth/login")),
         page2.click("button[type='submit']"),
       ]);
+      const userMgmt2 = page2.getByTestId("nav-user-management");
+      if (await userMgmt2.isVisible()) {
+        await userMgmt2.click();
+      }
       await expect(page2.getByRole("heading", { name: "User Management" })).toBeVisible();
 
       // Page 1 (Admin A): Open Edit modal for Admin B (admin2@toktick.it) and uncheck Active
