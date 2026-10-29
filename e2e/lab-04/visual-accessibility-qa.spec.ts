@@ -56,6 +56,17 @@ async function checkNoHorizontalOverflow(page: Page) {
   ).toBe(true);
 }
 
+// Helper to detect 2D bounding box overlap
+function boxesOverlap(
+  b1: { x: number; y: number; width: number; height: number },
+  b2: { x: number; y: number; width: number; height: number },
+  tolerance = 1
+): boolean {
+  const horizontalOverlap = !(b1.x + b1.width <= b2.x + tolerance || b2.x + b2.width <= b1.x + tolerance);
+  const verticalOverlap = !(b1.y + b1.height <= b2.y + tolerance || b2.y + b2.height <= b1.y + tolerance);
+  return horizontalOverlap && verticalOverlap;
+}
+
 // Markdown-to-HTML converter for rendering ui-spec.md standalone
 function markdownToHtml(md: string): string {
   const lines = md.split("\n");
@@ -489,9 +500,23 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
         layoutType = "Responsive flex grid";
       }
 
-      // Assert non-overlapping cards
-      const noOverlap = (boxes[0].x + boxes[0].width <= boxes[1].x + 2) || (boxes[0].y + boxes[0].height <= boxes[1].y + 2);
-      expect(noOverlap, `Cards must not overlap on ${vp.name}`).toBe(true);
+      // Assert expected layout per breakpoint
+      const expectedLayout: Record<string, string> = {
+        Desktop: "4-column side-by-side grid",
+        Tablet: "2x2 stacked metric grid",
+        Mobile: "Single-column vertical stack",
+      };
+      expect(layoutType, `Layout on ${vp.name} must be ${expectedLayout[vp.name]}`).toBe(expectedLayout[vp.name]);
+
+      // Assert pairwise non-overlapping cards across all 4 cards
+      for (let i = 0; i < boxes.length; i++) {
+        for (let j = i + 1; j < boxes.length; j++) {
+          expect(
+            boxesOverlap(boxes[i], boxes[j]),
+            `Cards ${metricCardIds[i]} and ${metricCardIds[j]} must not overlap on ${vp.name}`
+          ).toBe(false);
+        }
+      }
 
       await page.screenshot({
         path: path.join(qaArtifactsBase, `EVD-QA-06-${vp.name.toLowerCase()}.png`),
@@ -579,30 +604,75 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
       const resultInput = page.getByTestId("action-result-input");
       const assigneeSelect = page.getByTestId("action-assignee-select");
       const followUpSwitch = page.getByTestId("follow-up-switch");
+      const attachNotesInput = page.getByTestId("attachment-notes-input");
       await expect(descInput).toBeVisible();
       await expect(resultInput).toBeVisible();
       await expect(assigneeSelect).toBeVisible();
       await expect(followUpSwitch).toBeVisible();
+      await expect(attachNotesInput).toBeVisible();
 
-      // Measure bounding boxes & verify fields do not collide
-      const descBox = await descInput.boundingBox();
-      const resultBox = await resultInput.boundingBox();
-      expect(descBox).not.toBeNull();
-      expect(resultBox).not.toBeNull();
-      expect(descBox!.y + descBox!.height).toBeLessThanOrEqual(resultBox!.y + 4);
+      // Measure bounding boxes & verify all form fields do not collide (top-to-bottom vertical order)
+      const formFields = [
+        { name: "Description", locator: descInput },
+        { name: "Result", locator: resultInput },
+        { name: "Assignee", locator: assigneeSelect },
+        { name: "FollowUp", locator: followUpSwitch },
+        { name: "AttachmentNotes", locator: attachNotesInput },
+      ];
+
+      const fieldBoxes: any[] = [];
+      for (const f of formFields) {
+        const box = await f.locator.boundingBox();
+        expect(box, `${f.name} bounding box must be available`).not.toBeNull();
+        fieldBoxes.push({ name: f.name, ...box! });
+      }
+
+      // Assert vertical ordering and non-collision between consecutive form fields
+      for (let i = 0; i < fieldBoxes.length - 1; i++) {
+        const curr = fieldBoxes[i];
+        const next = fieldBoxes[i + 1];
+        expect(
+          curr.y + curr.height,
+          `Field ${curr.name} must not collide with ${next.name} (bottom: ${curr.y + curr.height}, next top: ${next.y})`
+        ).toBeLessThanOrEqual(next.y + 4);
+      }
+
+      // Assert pairwise non-overlapping for all form fields
+      for (let i = 0; i < fieldBoxes.length; i++) {
+        for (let j = i + 1; j < fieldBoxes.length; j++) {
+          expect(
+            boxesOverlap(fieldBoxes[i], fieldBoxes[j]),
+            `Form fields ${fieldBoxes[i].name} and ${fieldBoxes[j].name} must not overlap`
+          ).toBe(false);
+        }
+      }
 
       // Check zero horizontal overflow
       await checkNoHorizontalOverflow(page);
 
-      // Check mobile touch targets
+      // Check mobile touch targets across all visible interactive controls (buttons, select, switch)
       const touchTargetResults: any[] = [];
       if (vp.width <= 768) {
-        const submitBtn = page.locator("button[type='submit']:visible").first();
-        const submitBox = await submitBtn.boundingBox();
-        if (submitBox) {
-          expect(submitBox.height).toBeGreaterThanOrEqual(44);
-          expect(submitBox.width).toBeGreaterThanOrEqual(44);
-          touchTargetResults.push({ control: "Submit Action Button", width: Math.round(submitBox.width), height: Math.round(submitBox.height), status: "PASS" });
+        const interactiveControls = [
+          { name: "Submit Action Button", locator: createCard.locator("button[type='submit']") },
+          { name: "Cancel Action Button", locator: createCard.locator("button:has-text('Cancel')") },
+          { name: "Close Form Button", locator: createCard.locator(".btn-close") },
+          { name: "Assignee Selector", locator: assigneeSelect },
+          { name: "Follow-up Switch", locator: followUpSwitch },
+        ];
+
+        for (const ctrl of interactiveControls) {
+          await expect(ctrl.locator).toBeVisible();
+          const box = await ctrl.locator.boundingBox();
+          expect(box, `Control ${ctrl.name} must have a bounding box`).not.toBeNull();
+          expect(box!.width, `${ctrl.name} width (${box!.width}px) must be >= 44px`).toBeGreaterThanOrEqual(44);
+          expect(box!.height, `${ctrl.name} height (${box!.height}px) must be >= 44px`).toBeGreaterThanOrEqual(44);
+          touchTargetResults.push({
+            control: ctrl.name,
+            width: Math.round(box!.width),
+            height: Math.round(box!.height),
+            status: "PASS",
+          });
         }
       }
 
@@ -771,31 +841,76 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
 
   // TEST-QA-07: Machine-Readable Completed Visual & Accessibility Checklist (EVD-QA-04)
   test("TEST-QA-07: Machine-Readable Completed Visual & Accessibility Checklist (EVD-QA-04)", async ({ page }) => {
-    // 1. Automated Semantic Labels Check
+    // 1. Automated Semantic Labels & Adjacent Validation Feedback across Representative Forms
+    // A. Login Form
     await page.context().clearCookies();
     await page.goto("/");
     await page.evaluate(() => localStorage.clear());
     await page.goto("/");
-    const emailLabel = await page.locator("label[for='login-email']").count();
-    const passwordLabel = await page.locator("label[for='login-password']").count();
-    expect(emailLabel).toBeGreaterThan(0);
-    expect(passwordLabel).toBeGreaterThan(0);
+    const loginEmailLabel = await page.locator("label[for='login-email']").count();
+    const loginPasswordLabel = await page.locator("label[for='login-password']").count();
+    expect(loginEmailLabel).toBeGreaterThan(0);
+    expect(loginPasswordLabel).toBeGreaterThan(0);
 
-    // 2. Automated Validation Error Placement Check
+    // Validation Alert Banner Placement on Login Form
     await page.fill("#login-email", "invalid@user.com");
     await page.fill("#login-password", "wrongpass");
     await page.click("button[type='submit']");
-    const alertBox = page.getByRole("alert");
-    await expect(alertBox).toBeVisible();
-    const alertBounding = await alertBox.boundingBox();
-    const formBounding = await page.locator("form").boundingBox();
+    const loginAlert = page.getByRole("alert");
+    await expect(loginAlert).toBeVisible();
+    const alertBounding = await loginAlert.boundingBox();
+    const emailBounding = await page.locator("#login-email").boundingBox();
     expect(alertBounding).not.toBeNull();
-    expect(formBounding).not.toBeNull();
-    // Alert appears within/adjacent to form container
-    expect(alertBounding!.y).toBeGreaterThanOrEqual(formBounding!.y - 100);
+    expect(emailBounding).not.toBeNull();
+    // Validation alert banner placed directly adjacent to the input controls (< 120px)
+    expect(Math.abs(alertBounding!.y - emailBounding!.y)).toBeLessThanOrEqual(120);
 
-    // 3. Automated Non-Overlap Check (adjacent header navigation items)
+    // B. Preserved Create Ticket Form Semantic Labels
+    await loginAsRequester(page);
+    await page.getByTestId("nav-create-ticket").click();
+    await expect(page.getByRole("heading", { name: /Create.*Ticket/i })).toBeVisible();
+    const categoryLabel = await page.locator("label[for='category']").count();
+    const summaryLabel = await page.locator("label[for='summary']").count();
+    const descLabel = await page.locator("label[for='description']").count();
+    expect(categoryLabel).toBeGreaterThan(0);
+    expect(summaryLabel).toBeGreaterThan(0);
+    expect(descLabel).toBeGreaterThan(0);
+
+    // C. Actions Taken Form Semantic Labels & Inline Validation Placement
     await loginAsStaff(page);
+    await page.getByTestId("nav-it-queue").click();
+    await expect(page.getByTestId("staff-queue-page")).toBeVisible();
+    const activeTicket = page.locator("[data-testid^='ticket-item-']:visible").filter({ hasText: /OPEN|IN_PROGRESS/ }).first();
+    await expect(activeTicket).toBeVisible();
+    await activeTicket.click();
+    await expect(page.getByTestId("actions-taken-workspace")).toBeVisible();
+
+    const createCard = page.getByTestId("create-action-card");
+    if (!(await createCard.isVisible().catch(() => false))) {
+      const recordBtn = page.getByTestId("record-action-btn");
+      await expect(recordBtn).toBeVisible();
+      await recordBtn.click();
+    }
+    await expect(createCard).toBeVisible();
+    const actDescLabel = await page.locator("label[for='action-description']").count();
+    const actResultLabel = await page.locator("label[for='action-result']").count();
+    const actAssigneeLabel = await page.locator("label[for='action-assignee']").count();
+    expect(actDescLabel).toBeGreaterThan(0);
+    expect(actResultLabel).toBeGreaterThan(0);
+    expect(actAssigneeLabel).toBeGreaterThan(0);
+
+    // Trigger inline validation in Actions Taken form
+    await createCard.locator("button[type='submit']").click();
+    const invalidFeedback = createCard.locator(".invalid-feedback:visible").first();
+    await expect(invalidFeedback).toBeVisible();
+    const feedbackBox = await invalidFeedback.boundingBox();
+    const actDescBox = await page.locator("#action-description").boundingBox();
+    expect(feedbackBox).not.toBeNull();
+    expect(actDescBox).not.toBeNull();
+    // Inline error feedback is positioned directly adjacent below description textarea
+    expect(feedbackBox!.y).toBeGreaterThanOrEqual(actDescBox!.y + actDescBox!.height - 5);
+
+    // 2. Automated Non-Overlap Check (adjacent header navigation items)
     const nav1 = page.getByTestId("nav-staff-dashboard");
     const nav2 = page.getByTestId("nav-it-queue");
     await expect(nav1).toBeVisible();
@@ -804,8 +919,7 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
     const nav2Box = await nav2.boundingBox();
     expect(nav1Box).not.toBeNull();
     expect(nav2Box).not.toBeNull();
-    const navsDisjoint = (nav1Box!.x + nav1Box!.width <= nav2Box!.x + 1) || (nav1Box!.y + nav1Box!.height <= nav2Box!.y + 1);
-    expect(navsDisjoint).toBe(true);
+    expect(boxesOverlap(nav1Box!, nav2Box!)).toBe(false);
 
     const checklist = {
       evidenceId: "EVD-QA-04",
@@ -836,9 +950,9 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
         visibleFocusStates: { method: "Automated", status: "PASS", description: "Verified 2px solid rgb(25, 135, 84) outline with 2px offset on keyboard navigation" },
         nonColorStatusCues: { method: "Automated & Visual", status: "PASS", description: "Explicit textual badges for all statuses (NEW, OPEN, IN_PROGRESS, etc.) and priorities" },
         mobileTouchTargets: { method: "Automated", status: "PASS", description: "All interactive controls verify >= 44x44px dimensions on mobile viewports" },
-        semanticLabels: { method: "Automated", status: "PASS", description: "Accessible label[for] associations and accessible button names verified" },
+        semanticLabels: { method: "Automated", status: "PASS", description: "Representative forms (Login, Create Ticket, Actions Taken) verify explicit label[for] associations and accessible button names" },
         editableVsReadOnly: { method: "Automated & Visual", status: "PASS", description: "Clear visual distinction: readOnly attributes and #F0F4F2 vs #FFFFFF styling" },
-        validationPlacement: { method: "Automated", status: "PASS", description: "Alert banners positioned directly adjacent to form controls" },
+        validationPlacement: { method: "Automated", status: "PASS", description: "Validation alert banners and inline invalid-feedback elements positioned directly adjacent to relevant form inputs" },
       },
       conclusion: "All major Lab 4 screens and preserved Lab 1-3 screens satisfy the approved Zen Green visual, responsive, and accessibility contract.",
     };

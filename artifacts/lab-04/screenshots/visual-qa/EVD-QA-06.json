@@ -1,7 +1,7 @@
 {
   "evidenceId": "EVD-QA-06",
   "title": "Staff Dashboard Multi-Device Responsive Evidence (Dynamic Inspection)",
-  "timestamp": "2026-10-29T16:35:06.116Z",
+  "timestamp": "2026-10-29T17:12:05.033Z",
   "measuredBreakpoints": [
     {
       "viewport": "Desktop (1920x1080)",

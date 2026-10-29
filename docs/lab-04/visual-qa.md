@@ -95,10 +95,10 @@ To satisfy the sprint increment requirement of complete visual & regression hard
 | **No Horizontal Overflow** | Automated | **PASS** | Verified across Desktop (1920), Tablet (768), and Mobile (375) without masking rules. Root-cause fixes applied (`flex-wrap`). |
 | **Visible Focus States** | Automated | **PASS** | Verified `outline: 2px solid rgb(25, 135, 84)` with `2px` offset on `#login-email`, `#login-password`, submit buttons, and navigation links. |
 | **Non-Color Status Cues** | Automated & Visual | **PASS** | Explicit textual badges on all statuses and priorities ensure distinguishability without relying on color alone. |
-| **Mobile Touch Targets** | Automated | **PASS** | All interactive buttons and navigation controls strictly meet `>= 44×44px` on mobile viewports (`<= 768px`). |
-| **Accessible Semantic Labels** | Automated | **PASS** | Inputs bound with explicit `<label for="...">` associations and buttons have clear text or `aria-label`. |
+| **Mobile Touch Targets** | Automated | **PASS** | All interactive controls (buttons, select, switches, navigation) strictly meet `>= 44×44px` on mobile viewports (`<= 768px`). |
+| **Accessible Semantic Labels** | Automated | **PASS** | Representative forms (Login, Create Ticket, Actions Taken) verify explicit `<label for="...">` associations and accessible button names. |
 | **Editable vs. Read-Only** | Automated & Visual | **PASS** | Read-only fields shaded `#F0F4F2` with `readOnly` attributes, visually separated from white `#FFFFFF` editable inputs. |
-| **Validation Placement** | Automated | **PASS** | Validation alert banners and inline errors rendered directly adjacent to the relevant interactive controls. |
+| **Validation Placement** | Automated | **PASS** | Validation alert banners and inline invalid-feedback elements positioned directly adjacent to relevant form inputs. |
 
 ---
 
@@ -111,6 +111,6 @@ To satisfy the sprint increment requirement of complete visual & regression hard
 | **`EVD-QA-03`** | Mobile screenshots across all major and preserved screens (`375×812`) | `artifacts/lab-04/screenshots/visual-qa/mobile/` | **VERIFIED** |
 | **`EVD-QA-04`** | Completed visual & accessibility checklist report (Markdown & JSON) | `docs/lab-04/visual-qa.md` & `EVD-QA-04.json` | **VERIFIED** |
 | **`EVD-QA-05`** | Rendered UI specification full-page screenshot & markdown document | `artifacts/lab-04/screenshots/visual-qa/EVD-QA-05.png` & `docs/lab-04/ui-spec.md` | **VERIFIED** |
-| **`EVD-QA-06`** | Dedicated Dashboard multi-device responsive evidence (Dynamic measurements) | `EVD-QA-06.png`, `EVD-QA-06-*.png` & `EVD-QA-06.json` | **VERIFIED** |
+| **`EVD-QA-06`** | Dedicated Staff Dashboard multi-device responsive evidence (Dynamic measurements) | `EVD-QA-06.png`, `EVD-QA-06-*.png` & `EVD-QA-06.json` | **VERIFIED** |
 | **`EVD-QA-07`** | Dedicated Actions Taken multi-device responsive evidence (Dynamic measurements) | `EVD-QA-07.png`, `EVD-QA-07-*.png` & `EVD-QA-07.json` | **VERIFIED** |
 | **`EVD-QA-08`** | Dedicated Focus indicator & keyboard navigation evidence (Dynamic measurements) | `EVD-QA-08.png` & `EVD-QA-08.json` | **VERIFIED** |
