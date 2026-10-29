@@ -1,8 +1,8 @@
 {
   "queryVerification": {
     "unassignedCount": {
-      "expectedDbQuery": 56,
-      "actualApiResponse": 56,
+      "expectedDbQuery": 54,
+      "actualApiResponse": 54,
       "match": true
     },
     "myAssignedCount": {
@@ -11,8 +11,8 @@
       "match": true
     },
     "todayActionsCount": {
-      "expectedDbQuery": 2,
-      "actualApiResponse": 2,
+      "expectedDbQuery": 1,
+      "actualApiResponse": 1,
       "match": true
     },
     "urgentWorkloadCount": {
@@ -23,9 +23,9 @@
   },
   "apiResponse": {
     "metrics": {
-      "unassignedCount": 56,
+      "unassignedCount": 54,
       "myAssignedCount": 2,
-      "todayActionsCount": 2,
+      "todayActionsCount": 1,
       "urgentWorkloadCount": 2
     },
     "myRecentTickets": [
@@ -36,7 +36,7 @@
         "currentStatus": "IN_PROGRESS",
         "requestedPriority": "MEDIUM",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-28T20:18:14.151Z"
+        "updatedAt": "2026-10-29T07:20:45.037Z"
       },
       {
         "id": "fdb60d58-ea95-42ab-b55a-ce876b1a4d80",
@@ -45,7 +45,7 @@
         "currentStatus": "REOPENED",
         "requestedPriority": "HIGH",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-28T20:17:34.025Z"
+        "updatedAt": "2026-10-29T07:20:05.067Z"
       },
       {
         "id": "643535fa-7627-4103-89ce-c9a2fe91b11b",
@@ -54,7 +54,7 @@
         "currentStatus": "CLOSED",
         "requestedPriority": "MEDIUM",
         "itPriority": "MEDIUM",
-        "updatedAt": "2026-10-28T20:17:34.022Z"
+        "updatedAt": "2026-10-29T07:20:05.064Z"
       },
       {
         "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
@@ -63,25 +63,17 @@
         "currentStatus": "RESOLVED",
         "requestedPriority": "LOW",
         "itPriority": "LOW",
-        "updatedAt": "2026-10-28T20:17:34.013Z"
+        "updatedAt": "2026-10-29T07:20:05.056Z"
       }
     ],
     "currentStaffActions": [
       {
-        "id": "1a791391-ee4e-4fb1-898c-05848d849c07",
+        "id": "5a883149-adbf-4411-9186-a4d77703c6f6",
         "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
         "ticketNumber": "TKT-2026-000002",
         "description": "E2E Verified hardware connectivity today",
         "result": "All diagnostics passed",
-        "createdAt": "2026-10-28T20:18:14.156Z"
-      },
-      {
-        "id": "4923e025-3780-4baa-83cb-383062303b41",
-        "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
-        "ticketNumber": "TKT-2026-000002",
-        "description": "E2E Verified hardware connectivity today",
-        "result": "All diagnostics passed",
-        "createdAt": "2026-10-28T19:57:19.454Z"
+        "createdAt": "2026-10-29T07:20:45.040Z"
       },
       {
         "id": "act-seed-000003",

@@ -167,8 +167,19 @@ test.describe("E2E-REG: Final Regression & Product Hardening Suite (Issue #80 / 
     expect(res2.status()).toBe(201);
     const body2 = await res2.json();
 
-    // Assert responses are identical
-    expect(body2.id).toBe(body1.id);
+    // Assert the idempotency response contract is identical
+    expect(body1).toMatchObject({
+      id: expect.any(String),
+      ticketId: ticket!.id,
+      description: payload.description,
+      result: payload.result,
+      status: "PENDING",
+      followUpRequired: false,
+      followUpNote: null,
+      attachmentNotes: null,
+    });
+
+    expect(body2).toEqual(body1);
 
     // Assert DB contains exactly ONE IdempotencyRecord with this idempotency key
     const records = await prisma.idempotencyRecord.findMany({
@@ -186,7 +197,6 @@ test.describe("E2E-REG: Final Regression & Product Hardening Suite (Issue #80 / 
     });
     expect(actionRecords).toHaveLength(1);
     expect(actionRecords[0].id).toBe(body1.id);
-    expect(body2.id).toBe(body1.id);
 
     // 2. Simulated Network Drop & UI Retry Check
     await page.setViewportSize({ width: 1280, height: 800 });

@@ -151,74 +151,99 @@ test.describe("HARDEN-01..04: Console Errors, Broken Links, Placeholder Text & U
     expect(consoleErrors).toEqual([]);
   });
 
-  // 2. Broken Internal Hyperlinks Check across All Representative Views
-  test("TEST-HARDEN-02: Zero broken internal hyperlinks or 4xx/5xx navigation targets across all representative views", async ({ page, request }) => {
-    const discoveredLinks = new Set<string>();
+  // 2. Real Links & SPA Navigation Destinations Verification
+  test("TEST-HARDEN-02: Verify real links and SPA navigation destinations", async ({ page }) => {
+    // Helper to discover actual <a> tags and verify real destination renders without 404
+    async function collectAndVerifyRealLinks(targetPage: Page) {
+      const anchors = targetPage.locator("a[href]");
+      const count = await anchors.count();
 
-    const collectLinks = async () => {
-      const links = await page.locator('a[href^="/"]').evaluateAll((anchors) =>
-        anchors.map((a) => (a as HTMLAnchorElement).getAttribute("href") || "")
-      );
-      for (const l of links) {
-        if (l && !l.startsWith("javascript:")) {
-          discoveredLinks.add(l);
+      for (let i = 0; i < count; i++) {
+        const href = await anchors.nth(i).getAttribute("href");
+
+        if (
+          !href ||
+          href.startsWith("#") ||
+          href.startsWith("mailto:") ||
+          href.startsWith("javascript:")
+        ) {
+          continue;
+        }
+
+        if (href.startsWith("/")) {
+          const linkPage = await targetPage.context().newPage();
+
+          try {
+            await linkPage.goto(`http://localhost:5173${href}`);
+            await expect(linkPage.locator("#root")).toBeVisible();
+
+            const bodyText = await linkPage.locator("body").innerText();
+
+            expect(bodyText).not.toMatch(
+              /404|Page Not Found|Cannot GET|Internal Server Error/i
+            );
+          } finally {
+            await linkPage.close();
+          }
         }
       }
-    };
 
-    // 2.1 Requester Dashboard
+      return count;
+    }
+
+    // 2.1 Requester Dashboard -> My Tickets
     await loginAsRequester(page);
     await page.getByTestId("nav-requester-dashboard").click();
     await expect(page.getByTestId("requester-dashboard-page")).toBeVisible();
-    await collectLinks();
+    await collectAndVerifyRealLinks(page);
 
-    // 2.2 My Tickets
     await page.getByTestId("nav-my-tickets").click();
     await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
-    await collectLinks();
+    await collectAndVerifyRealLinks(page);
 
-    // 2.3 Ticket Detail
-    const viewDetailBtn = page.getByRole("button", { name: "View Details" }).first();
-    if (await viewDetailBtn.isVisible()) {
-      await viewDetailBtn.click();
-      await expect(page.getByRole("heading", { name: /Ticket Detail/i })).toBeVisible();
-      await collectLinks();
-    }
+    // 2.2 My Tickets -> Ticket Detail
+    const requesterDetailButton = page.getByRole("button", { name: "View Details" }).first();
+    await expect(requesterDetailButton).toBeVisible();
+    await requesterDetailButton.click();
+    await expect(page.getByRole("heading", { name: /Ticket Detail/i })).toBeVisible();
+    await collectAndVerifyRealLinks(page);
+
+    // 2.3 Ticket Detail -> Back to My Tickets
+    const backToMyTickets = page.getByRole("button", { name: "Back to My Tickets" });
+    await expect(backToMyTickets).toBeVisible();
+    await backToMyTickets.click();
+    await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
 
     // 2.4 Create Ticket Form
     await page.getByTestId("nav-create-ticket").click();
     await expect(page.getByRole("heading", { name: /Create.*Ticket/i })).toBeVisible();
-    await collectLinks();
+    await collectAndVerifyRealLinks(page);
 
-    // 2.5 Staff Dashboard
+    // 2.5 Staff Dashboard -> Queue
     await loginAsStaff(page);
     await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
-    await collectLinks();
+    await collectAndVerifyRealLinks(page);
 
-    // 2.6 Staff Queue
     await page.getByTestId("nav-it-queue").click();
-    await expect(page.getByText("IT Staff Ticket Queue")).toBeVisible();
-    await collectLinks();
+    await expect(page.getByTestId("staff-queue-page")).toBeVisible();
+    await collectAndVerifyRealLinks(page);
 
-    // 2.7 Staff Ticket Detail & Actions Workspace
+    // 2.6 Queue -> Staff Ticket Detail & Actions Workspace
     const staffTicketItem = page.locator("[data-testid^='ticket-item-']:visible").first();
-    if (await staffTicketItem.isVisible()) {
-      await staffTicketItem.click();
-      await expect(page.getByTestId("actions-taken-workspace")).toBeVisible();
-      await collectLinks();
-    }
+    await expect(staffTicketItem).toBeVisible();
+    await staffTicketItem.click();
+    await expect(page.getByTestId("actions-taken-workspace")).toBeVisible();
+    await collectAndVerifyRealLinks(page);
 
-    // 2.8 User Management
+    // 2.7 Back to Queue Button
+    await page.getByTestId("back-to-queue-btn").click();
+    await expect(page.getByTestId("staff-queue-page")).toBeVisible();
+
+    // 2.8 Admin -> User Management
     await loginAsAdmin(page);
     await page.getByTestId("nav-user-management").click();
     await expect(page.getByRole("heading", { name: "User Management" })).toBeVisible();
-    await collectLinks();
-
-    // Verify all discovered internal links return HTTP < 400
-    for (const link of discoveredLinks) {
-      const response = await request.get(`http://localhost:5173${link}`);
-      expect(response.status(), `Broken link found: ${link}`).toBeLessThan(400);
-    }
+    await collectAndVerifyRealLinks(page);
   });
 
   // 3. Placeholder Text, TODO, TBD, and Lorem Ipsum Audit

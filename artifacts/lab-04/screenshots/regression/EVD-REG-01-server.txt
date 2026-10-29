@@ -293,8 +293,8 @@
 [90mstdout[2m | tests/lab-04/staff-dashboard.api.test.ts[2m > [22m[2mLAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)[2m > [22m[2mTEST-DASH-DRILL-03: Urgent Workload Drill-Down excludes non-actionable statuses (view=urgent_workload)
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-04/staff-dashboard.api.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 3172[2mms[22m[39m
-   [33m[2mโ“[22m[39m LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)[2m > [22mTEST-DASH-01: Accurately calculates 4 operational metrics and recent lists for IT Staff (AC-06, BR-11, BR-12, BR-13) [33m326[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/staff-dashboard.api.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 3504[2mms[22m[39m
+   [33m[2mโ“[22m[39m LAB4-07 / Staff Dashboard REST API Suite (staff-dashboard.api.test.ts)[2m > [22mTEST-DASH-01: Accurately calculates 4 operational metrics and recent lists for IT Staff (AC-06, BR-11, BR-12, BR-13) [33m396[2mms[22m[39m
 [90mstdout[2m | tests/lab-04/actions.api.test.ts[2m > [22m[2mLAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)[2m > [22m[2mTEST-ACT-01: Creates an Action Taken on active ticket with auto performedById session identity (AC-01, BR-03)
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -529,7 +529,8 @@
 [90mstdout[2m | tests/lab-04/actions.api.test.ts[2m > [22m[2mLAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)[2m > [22m[2mTEST-ACT-12-RACE: Prevents Action creation on CANCELLED ticket under concurrent status cancellation race condition (MUST FIX 4)
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-04/actions.api.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 2774[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/actions.api.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 3175[2mms[22m[39m
+   [33m[2mโ“[22m[39m LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)[2m > [22mTEST-ACT-08: Updates Action Taken content with expectedUpdatedAt and rejects stale timestamp with 409 STALE_UPDATE (AC-17, BR-10) [33m310[2mms[22m[39m
 [90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mTEST-FLOW-01: Permits valid status transition NEW -> OPEN (AC-09, FR-09)
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -723,117 +724,117 @@
 [22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
 
 [90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> RESOLVED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> RESOLVED
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> RESOLVED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> RESOLVED
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> REOPENED[2m > [22m[2msuccessfully transitions RESOLVED -> REOPENED
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> REOPENED[2m > [22m[2msuccessfully transitions RESOLVED -> REOPENED
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> REOPENED[2m > [22m[2msuccessfully transitions RESOLVED -> REOPENED
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> REOPENED[2m > [22m[2msuccessfully transitions RESOLVED -> REOPENED
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> REOPENED[2m > [22m[2msuccessfully transitions RESOLVED -> REOPENED
 [22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
 Sprint 4 Idempotent Database Seed completed cleanly!
 
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: IN_PROGRESS -> CANCELLED[2m > [22m[2msuccessfully transitions IN_PROGRESS -> CANCELLED
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> IN_PROGRESS[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> IN_PROGRESS
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> RESOLVED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> RESOLVED
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: WAITING_FOR_REQUESTER -> CANCELLED[2m > [22m[2msuccessfully transitions WAITING_FOR_REQUESTER -> CANCELLED
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> CLOSED[2m > [22m[2msuccessfully transitions RESOLVED -> CLOSED
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> REOPENED[2m > [22m[2msuccessfully transitions RESOLVED -> REOPENED
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> REOPENED[2m > [22m[2msuccessfully transitions RESOLVED -> REOPENED
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> REOPENED[2m > [22m[2msuccessfully transitions RESOLVED -> REOPENED
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> REOPENED[2m > [22m[2msuccessfully transitions RESOLVED -> REOPENED
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> REOPENED[2m > [22m[2msuccessfully transitions RESOLVED -> REOPENED
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: RESOLVED -> REOPENED[2m > [22m[2msuccessfully transitions RESOLVED -> REOPENED
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
 [90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: CLOSED -> REOPENED[2m > [22m[2msuccessfully transitions CLOSED -> REOPENED
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -883,116 +884,116 @@ Sprint 4 Idempotent Database Seed completed cleanly!
 [22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
 
 [90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: REOPENED -> CANCELLED[2m > [22m[2msuccessfully transitions REOPENED -> CANCELLED
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Permitted Matrix Edge: REOPENED -> CANCELLED[2m > [22m[2msuccessfully transitions REOPENED -> CANCELLED
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> CLOSED[2m > [22m[2mrejects invalid transition OPEN -> CLOSED with 400 INVALID_TRANSITION
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> CLOSED[2m > [22m[2mrejects invalid transition OPEN -> CLOSED with 400 INVALID_TRANSITION
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> CLOSED[2m > [22m[2mrejects invalid transition OPEN -> CLOSED with 400 INVALID_TRANSITION
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> CLOSED[2m > [22m[2mrejects invalid transition OPEN -> CLOSED with 400 INVALID_TRANSITION
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> CLOSED[2m > [22m[2mrejects invalid transition OPEN -> CLOSED with 400 INVALID_TRANSITION
 [22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
 Sprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> IN_PROGRESS[2m > [22m[2mrejects invalid transition NEW -> IN_PROGRESS with 400 INVALID_TRANSITION
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> RESOLVED[2m > [22m[2mrejects invalid transition NEW -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> CLOSED[2m > [22m[2mrejects invalid transition NEW -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: NEW -> REOPENED[2m > [22m[2mrejects invalid transition NEW -> REOPENED with 400 INVALID_TRANSITION
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> RESOLVED[2m > [22m[2mrejects invalid transition OPEN -> RESOLVED with 400 INVALID_TRANSITION
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> CLOSED[2m > [22m[2mrejects invalid transition OPEN -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> CLOSED[2m > [22m[2mrejects invalid transition OPEN -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> CLOSED[2m > [22m[2mrejects invalid transition OPEN -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> CLOSED[2m > [22m[2mrejects invalid transition OPEN -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> CLOSED[2m > [22m[2mrejects invalid transition OPEN -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> CLOSED[2m > [22m[2mrejects invalid transition OPEN -> CLOSED with 400 INVALID_TRANSITION
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
 [90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mTicket Status Transition Matrix (Section 8.1 / FR-09 / AC-09)[2m > [22m[2mParameterized Forbidden Jumps: OPEN -> REOPENED[2m > [22m[2mrejects invalid transition OPEN -> REOPENED with 400 INVALID_TRANSITION
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
@@ -1152,7 +1153,9 @@ Sprint 4 Idempotent Database Seed completed cleanly!
 
 [90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mServer-Side Resolution Gate Enforcement (FR-10, BR-08 / AC-09)[2m > [22m[2mTEST-GATE-01: Rejects whitespace-only resolutionNote when 0 completed actions exist (BR-08, BR-17)
 [22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-Sprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mServer-Side Resolution Gate Enforcement (FR-10, BR-08 / AC-09)[2m > [22m[2mTEST-GATE-01: Rejects whitespace-only resolutionNote when 0 completed actions exist (BR-08, BR-17)
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
 [90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mServer-Side Resolution Gate Enforcement (FR-10, BR-08 / AC-09)[2m > [22m[2mTEST-FLOW-04: Permits transition to RESOLVED when 0 completed actions exist but non-empty resolutionNote is provided (AC-09, BR-08)
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
@@ -1298,7 +1301,7 @@ Sprint 4 Idempotent Database Seed completed cleanly!
 [90mstdout[2m | tests/lab-04/ticket-workflow.api.test.ts[2m > [22m[2mLAB4-06 / Ticket Workflow & Resolution Gate REST API Suite (ticket-workflow.api.test.ts)[2m > [22m[2mRequester Advisory Indicator (BR-07 / AC-10)[2m > [22m[2mTEST-GATE-02: Requester 'Problem Appears Resolved' sets requesterResolvedIndicatedAt without mutating ticket status (AC-10, BR-07)
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-04/ticket-workflow.api.test.ts [2m([22m[2m43 tests[22m[2m)[22m[33m 8293[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/ticket-workflow.api.test.ts [2m([22m[2m43 tests[22m[2m)[22m[33m 8104[2mms[22m[39m
 [90mstdout[2m | tests/lab-04/requester-dashboard.api.test.ts[2m > [22m[2mLAB4-08 / Requester Dashboard REST API Suite (requester-dashboard.api.test.ts)[2m > [22m[2mTEST-DASH-REQ-01: Accurately calculates 4 operational metrics and recent lists for Requester (AC-07, BR-11, BR-12, BR-13)
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -1479,8 +1482,7 @@ Sprint 4 Idempotent Database Seed completed cleanly!
 [90mstdout[2m | tests/lab-04/requester-dashboard.api.test.ts[2m > [22m[2mLAB4-08 / Requester Dashboard REST API Suite (requester-dashboard.api.test.ts)[2m > [22m[2mTEST-DASH-REQ-10: Enforces 30-day semantics for resolvedWithinDays parameter (Issue #79)
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-04/requester-dashboard.api.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 2266[2mms[22m[39m
-   [33m[2mโ“[22m[39m LAB4-08 / Requester Dashboard REST API Suite (requester-dashboard.api.test.ts)[2m > [22mTEST-DASH-REQ-01: Accurately calculates 4 operational metrics and recent lists for Requester (AC-07, BR-11, BR-12, BR-13) [33m326[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/requester-dashboard.api.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 2221[2mms[22m[39m
 [90mstdout[2m | tests/lab-03/staff-ticket-detail.api.test.ts[2m > [22m[2mIssue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-detail.api.test.ts)[2m > [22m[2mGET /api/tickets/:id Authorization & Response Details[2m > [22m[2mallows IT Staff to view any ticket detail
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -1603,7 +1605,9 @@ Sprint 4 Idempotent Database Seed completed cleanly!
 
 [90mstdout[2m | tests/lab-03/staff-ticket-detail.api.test.ts[2m > [22m[2mIssue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-detail.api.test.ts)[2m > [22m[2mPOST /api/tickets/:id/claim (Atomic Concurrency & Double-Claim Protection / BR-16)[2m > [22m[2mallows IT Staff to claim an unassigned ticket
 [22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-Sprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-03/staff-ticket-detail.api.test.ts[2m > [22m[2mIssue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-detail.api.test.ts)[2m > [22m[2mPOST /api/tickets/:id/claim (Atomic Concurrency & Double-Claim Protection / BR-16)[2m > [22m[2mallows IT Staff to claim an unassigned ticket
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
 [90mstdout[2m | tests/lab-03/staff-ticket-detail.api.test.ts[2m > [22m[2mIssue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-detail.api.test.ts)[2m > [22m[2mPOST /api/tickets/:id/claim (Atomic Concurrency & Double-Claim Protection / BR-16)[2m > [22m[2mallows Administrator to claim an unassigned ticket
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
@@ -1911,8 +1915,8 @@ Sprint 4 Idempotent Database Seed completed cleanly!
 [90mstdout[2m | tests/lab-03/staff-ticket-detail.api.test.ts[2m > [22m[2mIssue 8: Staff Ticket Detail & Operations API Suite (staff-ticket-detail.api.test.ts)[2m > [22m[2mPublic Comments & Internal Notes RBAC Matrix (Administrator & Requester Restrictions / BR-04)[2m > [22m[2mdenies Requester from posting internal note (403 Forbidden without note leakage)
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-03/staff-ticket-detail.api.test.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 4994[2mms[22m[39m
- [32mโ“[39m tests/lab-02/attachments.api.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 713[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/staff-ticket-detail.api.test.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 4736[2mms[22m[39m
+ [32mโ“[39m tests/lab-02/attachments.api.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 607[2mms[22m[39m
 [90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mAuthorization & Access Control[2m > [22m[2mallows Administrator to access GET /api/admin/users
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -2142,81 +2146,81 @@ Sprint 4 Idempotent Database Seed completed cleanly!
 [22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
 
 [90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects user editing with invalid parameters (400 Bad Request)
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects user editing with invalid parameters (400 Bad Request)
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
-[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mhandles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0
-[22m[39mStarting Sprint 3 Idempotent Database Seed...
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mhandles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0
-[22m[39mSeeded 4 active categories successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mhandles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0
-[22m[39mSeeded 7 active related systems successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mhandles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0
-[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
-
-[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mhandles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0
 [22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
 Sprint 4 Idempotent Database Seed completed cleanly!
 
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mrejects email edit to an already existing user email (409 Conflict DUPLICATE_EMAIL)
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents Administrator from deactivating their own account (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mprevents deactivating or demoting the last active Administrator (400 Bad Request INVALID_ADMIN_ACTION)
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mhandles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0
+[22m[39mStarting Sprint 3 Idempotent Database Seed...
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mhandles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0
+[22m[39mSeeded 4 active categories successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mhandles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0
+[22m[39mSeeded 7 active related systems successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mhandles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0
+[22m[39mSeeded sample tickets across 8 statuses, attachments, public comments, and internal notes successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mhandles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0
+[22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
+
+[90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPUT /api/admin/users/:id (Edit User Details & Safety Guards)[2m > [22m[2mhandles concurrent demotion/deactivation requests safely so active Administrator count never drops to 0
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
+
 [90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPOST /api/admin/users/:id/password (Reset Initial Password & Password Change Behavior)[2m > [22m[2mallows Administrator to reset initial password, hashing password and setting requiresPasswordChange = true
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -2253,9 +2257,8 @@ Sprint 4 Idempotent Database Seed completed cleanly!
 [90mstdout[2m | tests/lab-03/users-admin.api.test.ts[2m > [22m[2mIssue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22m[2mPOST /api/admin/users/:id/password (Reset Initial Password & Password Change Behavior)[2m > [22m[2mverifies user with newly set initial password is blocked on protected endpoints with 403 MUST_CHANGE_PASSWORD after login, until completing password change
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-03/users-admin.api.test.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 4429[2mms[22m[39m
-   [33m[2mโ“[22m[39m Issue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22mPOST /api/admin/users/:id/password (Reset Initial Password & Password Change Behavior)[2m > [22mallows Administrator to reset initial password, hashing password and setting requiresPasswordChange = true [33m338[2mms[22m[39m
-   [33m[2mโ“[22m[39m Issue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22mPOST /api/admin/users/:id/password (Reset Initial Password & Password Change Behavior)[2m > [22mverifies user with newly set initial password is blocked on protected endpoints with 403 MUST_CHANGE_PASSWORD after login, until completing password change [33m482[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/users-admin.api.test.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 4487[2mms[22m[39m
+   [33m[2mโ“[22m[39m Issue 9: Administrator User Management & Safety Guards API Suite (users-admin.api.test.ts)[2m > [22mPOST /api/admin/users/:id/password (Reset Initial Password & Password Change Behavior)[2m > [22mverifies user with newly set initial password is blocked on protected endpoints with 403 MUST_CHANGE_PASSWORD after login, until completing password change [33m475[2mms[22m[39m
 [90mstdout[2m | tests/lab-03/staff-queue.api.test.ts[2m > [22m[2mIssue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)[2m > [22m[2mAuthorization & Security Controls[2m > [22m[2mpermits IT Staff access (200 OK)
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -2594,7 +2597,9 @@ Sprint 4 Idempotent Database Seed completed cleanly!
 
 [90mstdout[2m | tests/lab-03/staff-queue.api.test.ts[2m > [22m[2mIssue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)[2m > [22m[2mSorting Options & Order Verification[2m > [22m[2msorts by itPriority desc (URGENT > HIGH > MEDIUM > LOW)
 [22m[39mSeeded Actions Taken (0, 1, and multiple action scenarios) successfully.
-Sprint 4 Idempotent Database Seed completed cleanly!
+
+[90mstdout[2m | tests/lab-03/staff-queue.api.test.ts[2m > [22m[2mIssue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)[2m > [22m[2mSorting Options & Order Verification[2m > [22m[2msorts by itPriority desc (URGENT > HIGH > MEDIUM > LOW)
+[22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
 [90mstdout[2m | tests/lab-03/staff-queue.api.test.ts[2m > [22m[2mIssue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)[2m > [22m[2mSorting Options & Order Verification[2m > [22m[2msorts by itPriority asc (LOW < MEDIUM < HIGH < URGENT)
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
@@ -2812,8 +2817,8 @@ Sprint 4 Idempotent Database Seed completed cleanly!
 [90mstdout[2m | tests/lab-03/staff-queue.api.test.ts[2m > [22m[2mIssue 7: IT Staff Ticket Queue API Suite (staff-queue.api.test.ts)[2m > [22m[2mRequester Regression Continuity[2m > [22m[2mallows Requester to fetch owned tickets via /api/tickets/my-tickets
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-03/staff-queue.api.test.ts [2m([22m[2m31 tests[22m[2m)[22m[33m 6520[2mms[22m[39m
- [32mโ“[39m tests/lab-02/my-tickets.api.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 414[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/staff-queue.api.test.ts [2m([22m[2m31 tests[22m[2m)[22m[33m 5963[2mms[22m[39m
+ [32mโ“[39m tests/lab-02/my-tickets.api.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 398[2mms[22m[39m
 [90mstdout[2m | tests/lab-03/migration.test.ts[2m > [22m[2mLab 3 Database Migration & Idempotent Seed Suite[2m > [22m[2mAPI-MIG-01: Verifies User model schema evolution, Role enum, and initial password bcrypt verification
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -2938,11 +2943,11 @@ Starting Sprint 3 Idempotent Database Seed...
 [90mstdout[2m | tests/lab-03/migration.test.ts[2m > [22m[2mLab 3 Database Migration & Idempotent Seed Suite[2m > [22m[2mAPI-MIG-04: Demonstrates pre-existing data preservation across seed migration flow
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-03/migration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 10923[2mms[22m[39m
-   [33m[2mโ“[22m[39m Lab 3 Database Migration & Idempotent Seed Suite[2m > [22mAPI-MIG-01: Verifies User model schema evolution, Role enum, and initial password bcrypt verification [33m9570[2mms[22m[39m
-   [33m[2mโ“[22m[39m Lab 3 Database Migration & Idempotent Seed Suite[2m > [22mAPI-MIG-02: Verifies idempotent seed execution by running seed multiple times with zero duplicate creation [33m615[2mms[22m[39m
-   [33m[2mโ“[22m[39m Lab 3 Database Migration & Idempotent Seed Suite[2m > [22mAPI-MIG-04: Demonstrates pre-existing data preservation across seed migration flow [33m451[2mms[22m[39m
- [32mโ“[39m tests/lab-02/create-ticket.api.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 322[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/migration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 9757[2mms[22m[39m
+   [33m[2mโ“[22m[39m Lab 3 Database Migration & Idempotent Seed Suite[2m > [22mAPI-MIG-01: Verifies User model schema evolution, Role enum, and initial password bcrypt verification [33m8576[2mms[22m[39m
+   [33m[2mโ“[22m[39m Lab 3 Database Migration & Idempotent Seed Suite[2m > [22mAPI-MIG-02: Verifies idempotent seed execution by running seed multiple times with zero duplicate creation [33m558[2mms[22m[39m
+   [33m[2mโ“[22m[39m Lab 3 Database Migration & Idempotent Seed Suite[2m > [22mAPI-MIG-04: Demonstrates pre-existing data preservation across seed migration flow [33m432[2mms[22m[39m
+ [32mโ“[39m tests/lab-02/create-ticket.api.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 277[2mms[22m[39m
 [90mstdout[2m | tests/lab-04/concurrency.api.test.ts[2m > [22m[2mLAB4-06 / Optimistic Concurrency & Stale Update Protection (concurrency.api.test.ts)[2m > [22m[2mValidation of expectedUpdatedAt (BR-10 / Section 4.1)[2m > [22m[2mRejects PUT /status when expectedUpdatedAt is omitted with 400 MISSING_EXPECTED_UPDATED_AT
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -3015,7 +3020,7 @@ Starting Sprint 3 Idempotent Database Seed...
 [90mstdout[2m | tests/lab-04/concurrency.api.test.ts[2m > [22m[2mLAB4-06 / Optimistic Concurrency & Stale Update Protection (concurrency.api.test.ts)[2m > [22m[2mConcurrent Race Condition (TEST-CONCUR-01 / BR-10 / AC-11)[2m > [22m[2mTEST-CONCUR-01: Serializes concurrent resolution requests via Promise.all: exactly one succeeds with 200, one fails with 409 STALE_UPDATE, and DB state is verified (AC-11, EVD-WORKFLOW-06, EVD-WORKFLOW-07)
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-04/concurrency.api.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 862[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/concurrency.api.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 837[2mms[22m[39m
 [90mstdout[2m | tests/lab-03/auth.api.test.ts[2m > [22m[2mIssue 4: Authentication Foundation, Session Invalidation & Password API Tests[2m > [22m[2mAPI-AUTH-01: Authenticates active user with valid credentials (AC-01 / FR-01 / BR-01)
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -3142,9 +3147,9 @@ Starting Sprint 3 Idempotent Database Seed...
 [90mstdout[2m | tests/lab-03/auth.api.test.ts[2m > [22m[2mIssue 4: Authentication Foundation, Session Invalidation & Password API Tests[2m > [22m[2mAPI-AUTH-07: Prevents prefix-matching bypass on allowed paths when requiresPasswordChange is true
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-03/auth.api.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2194[2mms[22m[39m
-   [33m[2mโ“[22m[39m Issue 4: Authentication Foundation, Session Invalidation & Password API Tests[2m > [22mAPI-AUTH-01: Authenticates active user with valid credentials (AC-01 / FR-01 / BR-01) [33m325[2mms[22m[39m
-   [33m[2mโ“[22m[39m Issue 4: Authentication Foundation, Session Invalidation & Password API Tests[2m > [22mAPI-AUTH-06: Changes initial password and updates requiresPasswordChange flag [33m569[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/auth.api.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2083[2mms[22m[39m
+   [33m[2mโ“[22m[39m Issue 4: Authentication Foundation, Session Invalidation & Password API Tests[2m > [22mAPI-AUTH-01: Authenticates active user with valid credentials (AC-01 / FR-01 / BR-01) [33m301[2mms[22m[39m
+   [33m[2mโ“[22m[39m Issue 4: Authentication Foundation, Session Invalidation & Password API Tests[2m > [22mAPI-AUTH-06: Changes initial password and updates requiresPasswordChange flag [33m521[2mms[22m[39m
 [90mstdout[2m | tests/lab-03/comments-notes.api.test.ts[2m > [22m[2mIssue 6: Public Comments & Internal Notes API Tests (API-NOTE-01, API-NOTE-02)[2m > [22m[2mAPI-NOTE-01: Public Comments creation and listing for Requester and IT Staff (BR-04)
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -3235,9 +3240,8 @@ Starting Sprint 3 Idempotent Database Seed...
 [90mstdout[2m | tests/lab-03/comments-notes.api.test.ts[2m > [22m[2mIssue 6: Public Comments & Internal Notes API Tests (API-NOTE-01, API-NOTE-02)[2m > [22m[2mAPI-OPS-04: Requester reopen request signalling without status mutation (FR-13, BR-05)
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-03/comments-notes.api.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1487[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/comments-notes.api.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1320[2mms[22m[39m
    [33m[2mโ“[22m[39m Issue 6: Public Comments & Internal Notes API Tests (API-NOTE-01, API-NOTE-02)[2m > [22mAPI-NOTE-01: Public Comments creation and listing for Requester and IT Staff (BR-04) [33m357[2mms[22m[39m
-   [33m[2mโ“[22m[39m Issue 6: Public Comments & Internal Notes API Tests (API-NOTE-01, API-NOTE-02)[2m > [22mAPI-NOTE-02: Internal Notes endpoint protection for Requesters (403 Forbidden / BR-04) [33m310[2mms[22m[39m
 [90mstdout[2m | tests/lab-03/authorization.api.test.ts[2m > [22m[2mIssue 4: Authorization Matrix & Resource Ownership Isolation API Tests[2m > [22m[2mAPI-AUTH-07: Rejects unauthenticated requests with HTTP 401 Unauthorized
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -3346,9 +3350,8 @@ Starting Sprint 3 Idempotent Database Seed...
 [90mstdout[2m | tests/lab-03/authorization.api.test.ts[2m > [22m[2mIssue 4: Authorization Matrix & Resource Ownership Isolation API Tests[2m > [22m[2mAPI-AUTH-12: Returns 404 NOT_FOUND for non-existent attachment UUID
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-03/authorization.api.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1463[2mms[22m[39m
-   [33m[2mโ“[22m[39m Issue 4: Authorization Matrix & Resource Ownership Isolation API Tests[2m > [22mAPI-AUTH-07: Rejects unauthenticated requests with HTTP 401 Unauthorized [33m308[2mms[22m[39m
- [32mโ“[39m tests/lab-02/ticket-detail.api.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 203[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/authorization.api.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1241[2mms[22m[39m
+ [32mโ“[39m tests/lab-02/ticket-detail.api.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 187[2mms[22m[39m
 [90mstdout[2m | tests/lab-04/seed.test.ts[2m > [22m[2mLAB4-03 / TEST-DB-03: Idempotent Seed & Fixture Verification[2m > [22m[2mexecutes seed database idempotently without creating duplicate records
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -3421,12 +3424,12 @@ Starting Sprint 3 Idempotent Database Seed...
 [90mstdout[2m | tests/lab-04/seed.test.ts[2m > [22m[2mLAB4-03 / TEST-DB-03: Idempotent Seed & Fixture Verification[2m > [22m[2mTEST-DB-SEQ-01: verifies ticket_number_seq is dynamically synchronized to the max ticket number suffix and subsequent nextval() produces the next integer
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-04/seed.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 929[2mms[22m[39m
-   [33m[2mโ“[22m[39m LAB4-03 / TEST-DB-03: Idempotent Seed & Fixture Verification[2m > [22mexecutes seed database idempotently without creating duplicate records [33m523[2mms[22m[39m
-   [33m[2mโ“[22m[39m LAB4-03 / TEST-DB-03: Idempotent Seed & Fixture Verification[2m > [22mTEST-DB-SEQ-01: verifies ticket_number_seq is dynamically synchronized to the max ticket number suffix and subsequent nextval() produces the next integer [33m357[2mms[22m[39m
- [32mโ“[39m tests/lab-04/db-schema.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 93[2mms[22m[39m
- [32mโ“[39m tests/lab-04/migration.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 83[2mms[22m[39m
- [32mโ“[39m tests/unit/timezone.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/seed.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 779[2mms[22m[39m
+   [33m[2mโ“[22m[39m LAB4-03 / TEST-DB-03: Idempotent Seed & Fixture Verification[2m > [22mexecutes seed database idempotently without creating duplicate records [33m404[2mms[22m[39m
+   [33m[2mโ“[22m[39m LAB4-03 / TEST-DB-03: Idempotent Seed & Fixture Verification[2m > [22mTEST-DB-SEQ-01: verifies ticket_number_seq is dynamically synchronized to the max ticket number suffix and subsequent nextval() produces the next integer [33m336[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/db-schema.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 107[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/migration.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 98[2mms[22m[39m
+ [32mโ“[39m tests/unit/timezone.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 3[2mms[22m[39m
 [90mstdout[2m | tests/lab-03/requester-regression.api.test.ts[2m > [22m[2mIssue 6: Requester Regression & Ownership Isolation API Tests (API-REQ-01, API-REQ-02)[2m > [22m[2mAPI-REQ-01: Requester ticket ownership isolation on My Tickets & Detail (AC-03, FR-06, BR-03)
 [22m[39mStarting Sprint 3 Idempotent Database Seed...
 
@@ -3463,19 +3466,19 @@ Starting Sprint 3 Idempotent Database Seed...
 [90mstdout[2m | tests/lab-03/requester-regression.api.test.ts[2m > [22m[2mIssue 6: Requester Regression & Ownership Isolation API Tests (API-REQ-01, API-REQ-02)[2m > [22m[2mAPI-REQ-02: Lab 2 Requester ticket creation and attachment flow under JWT Auth (BR-15, FR-12)
 [22m[39mSprint 4 Idempotent Database Seed completed cleanly!
 
- [32mโ“[39m tests/lab-03/requester-regression.api.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 744[2mms[22m[39m
-   [33m[2mโ“[22m[39m Issue 6: Requester Regression & Ownership Isolation API Tests (API-REQ-01, API-REQ-02)[2m > [22mAPI-REQ-01: Requester ticket ownership isolation on My Tickets & Detail (AC-03, FR-06, BR-03) [33m465[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/requester-regression.api.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 575[2mms[22m[39m
+   [33m[2mโ“[22m[39m Issue 6: Requester Regression & Ownership Isolation API Tests (API-REQ-01, API-REQ-02)[2m > [22mAPI-REQ-01: Requester ticket ownership isolation on My Tickets & Detail (AC-03, FR-06, BR-03) [33m324[2mms[22m[39m
  [32mโ“[39m tests/unit/validation.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 3[2mms[22m[39m
- [32mโ“[39m tests/lab-02/reference-data.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 63[2mms[22m[39m
- [32mโ“[39m tests/unit/password.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 202[2mms[22m[39m
- [32mโ“[39m tests/unit/jwt.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32mโ“[39m tests/lab-02/reference-data.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 64[2mms[22m[39m
+ [32mโ“[39m tests/unit/password.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 193[2mms[22m[39m
+ [32mโ“[39m tests/unit/jwt.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 5[2mms[22m[39m
  [32mโ“[39m tests/unit/sanitizer.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 2[2mms[22m[39m
- [32mโ“[39m tests/unit/ticketNumber.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 2[2mms[22m[39m
- [32mโ“[39m tests/lab-01/API-02.categories.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 42[2mms[22m[39m
- [32mโ“[39m tests/lab-01/API-01.health.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32mโ“[39m tests/unit/ticketNumber.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32mโ“[39m tests/lab-01/API-02.categories.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32mโ“[39m tests/lab-01/API-01.health.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 16[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m29 passed[39m[22m[90m (29)[39m
 [2m      Tests [22m [1m[32m282 passed[39m[22m[90m (282)[39m
-[2m   Start at [22m 02:55:08
-[2m   Duration [22m 65.30s[2m (transform 475ms, setup 0ms, collect 5.78s, tests 53.22s, environment 5ms, prepare 1.93s)[22m
+[2m   Start at [22m 14:18:10
+[2m   Duration [22m 63.99s[2m (transform 447ms, setup 0ms, collect 6.73s, tests 50.79s, environment 4ms, prepare 2.30s)[22m
 

@@ -5,21 +5,22 @@
 
 [1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/Users/User/Desktop/Software/TokTickIT/client[39m
 
- [32mโ“[39m tests/lab-03/PublicComments.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[90m 230[2mms[22m[39m
- [32mโ“[39m tests/lab-03/Login.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 329[2mms[22m[39m
- [32mโ“[39m tests/lab-03/ChangePassword.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 371[2mms[22m[39m
- [32mโ“[39m tests/lab-04/StaffDashboard.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 365[2mms[22m[39m
- [32mโ“[39m tests/lab-03/AppHeader.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 375[2mms[22m[39m
- [32mโ“[39m tests/lab-01/UI-03.error.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 326[2mms[22m[39m
-   [33m[2mโ“[22m[39m UI-03: Error Handling State Rendering[2m > [22mdisplays System Status Offline and error message on API failure [33m325[2mms[22m[39m
- [32mโ“[39m tests/lab-01/UI-02.loading.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 327[2mms[22m[39m
-   [33m[2mโ“[22m[39m UI-02: Loading State and Category List Rendering[2m > [22mshows loading state then displays System Status Online and categories [33m325[2mms[22m[39m
- [32mโ“[39m tests/lab-03/StaffTicketDetail.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 586[2mms[22m[39m
- [32mโ“[39m tests/lab-04/RequesterDashboard.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 591[2mms[22m[39m
- [32mโ“[39m tests/lab-03/StaffTicketQueue.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 631[2mms[22m[39m
- [32mโ“[39m tests/lab-03/UserManagement.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[33m 712[2mms[22m[39m
- [32mโ“[39m tests/lab-04/TicketWorkflow.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 1010[2mms[22m[39m
- [32mโ“[39m tests/lab-04/ActionsTaken.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 1127[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/Login.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[90m 244[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/PublicComments.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[90m 279[2mms[22m[39m
+ [32mโ“[39m tests/lab-01/UI-03.error.test.tsx [2m([22m[2m1 test[22m[2m)[22m[90m 279[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/AppHeader.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 370[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/ChangePassword.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 407[2mms[22m[39m
+ [32mโ“[39m tests/lab-01/UI-02.loading.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 360[2mms[22m[39m
+   [33m[2mโ“[22m[39m UI-02: Loading State and Category List Rendering[2m > [22mshows loading state then displays System Status Online and categories [33m358[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/StaffDashboard.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 506[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/StaffTicketDetail.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 656[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/RequesterDashboard.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 733[2mms[22m[39m
+   [33m[2mโ“[22m[39m RequesterDashboard Component (RequesterDashboard.test.tsx)[2m > [22mTEST-CARD-07..10: Renders welcome greeting, role badge, quick action, and 4 metric cards [33m300[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/StaffTicketQueue.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 742[2mms[22m[39m
+   [33m[2mโ“[22m[39m StaffTicketQueue Component Suite (StaffTicketQueue.test.tsx)[2m > [22mrenders error failure state and handles Retry click [33m313[2mms[22m[39m
+ [32mโ“[39m tests/lab-03/UserManagement.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[33m 1003[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/TicketWorkflow.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 1183[2mms[22m[39m
+ [32mโ“[39m tests/lab-04/ActionsTaken.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 1360[2mms[22m[39m
 node.exe : [90mstderr[2m | tests/lab-02/CreateTicket.test.tsx[2m > [22m[2mIssue #28: Create Ticket Requester UI & 
 Validation Suite[2m > [22m[2m7. Requester Context Header & In-Flight Race Protection (AC-01, BR-23)[2m > 
 [22m[2mattaches X-Requester-Id header matching selected requester (Alice ID 1) and protects in-flight POST from 
@@ -170,7 +171,7 @@ act(() => {
   /* fire events that update state */
 });
 /* assert on the output */
- [32mโ“[39m tests/lab-02/MyTicketsAndDetail.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[33m 1457[2mms[22m[39m
+ [32mโ“[39m tests/lab-02/MyTicketsAndDetail.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[33m 1585[2mms[22m[39m
 
 This ensures that you're testing the behavior the user would see in the browser. Learn more at 
 https://reactjs.org/link/wrap-tests-with-act
@@ -200,13 +201,13 @@ This ensures that you're testing the behavior the user would see in the browser.
 https://reactjs.org/link/wrap-tests-with-act
     at App (C:\Users\User\Desktop\Software\TokTickIT\client\src\App.tsx:42:63)
 
- [32mโ“[39m tests/lab-02/RequesterSelection.test.tsx [2m([22m[2m1 test[22m[2m)[22m[90m 84[2mms[22m[39m
- [32mโ“[39m tests/lab-01/UI-01.heading.test.tsx [2m([22m[2m1 test[22m[2m)[22m[90m 98[2mms[22m[39m
- [32mโ“[39m tests/lab-02/CreateTicket.test.tsx [2m([22m[2m26 tests[22m[2m)[22m[33m 2234[2mms[22m[39m
-   [33m[2mโ“[22m[39m Issue #28: Create Ticket Requester UI & Validation Suite[2m > [22m1. Navigation & App Shell Integration (UI-01)[2m > [22mnavigates to Create Ticket form from Application Shell and sets aria-current='page' on active tab [33m389[2mms[22m[39m
+ [32mโ“[39m tests/lab-02/RequesterSelection.test.tsx [2m([22m[2m1 test[22m[2m)[22m[90m 85[2mms[22m[39m
+ [32mโ“[39m tests/lab-01/UI-01.heading.test.tsx [2m([22m[2m1 test[22m[2m)[22m[90m 111[2mms[22m[39m
+ [32mโ“[39m tests/lab-02/CreateTicket.test.tsx [2m([22m[2m26 tests[22m[2m)[22m[33m 2364[2mms[22m[39m
+   [33m[2mโ“[22m[39m Issue #28: Create Ticket Requester UI & Validation Suite[2m > [22m1. Navigation & App Shell Integration (UI-01)[2m > [22mnavigates to Create Ticket form from Application Shell and sets aria-current='page' on active tab [33m473[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m17 passed[39m[22m[90m (17)[39m
 [2m      Tests [22m [1m[32m129 passed[39m[22m[90m (129)[39m
-[2m   Start at [22m 02:56:26
-[2m   Duration [22m 4.86s[2m (transform 2.06s, setup 2.77s, collect 7.19s, tests 10.85s, environment 21.03s, prepare 2.91s)[22m
+[2m   Start at [22m 14:19:30
+[2m   Duration [22m 21.89s[2m (transform 2.86s, setup 44.58s, collect 30.18s, tests 12.27s, environment 209.17s, prepare 5.52s)[22m
 
