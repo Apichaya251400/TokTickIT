@@ -1,0 +1,31 @@
+{
+  "evidenceId": "EVD-QA-06",
+  "title": "Dashboard Multi-Device Responsive Evidence (Staff & Requester)",
+  "timestamp": "2026-10-29T14:59:36.451Z",
+  "verifiedBreakpoints": [
+    {
+      "viewport": "Desktop (1920x1080)",
+      "metricLayout": "4-column side-by-side grid",
+      "overflowStatus": "ZERO_HORIZONTAL_OVERFLOW"
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "metricLayout": "2x2 stacked metric grid",
+      "overflowStatus": "ZERO_HORIZONTAL_OVERFLOW"
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "metricLayout": "Single-column vertical stack with touch targets >= 44x44px",
+      "overflowStatus": "ZERO_HORIZONTAL_OVERFLOW"
+    }
+  ],
+  "compliance": {
+    "clipping": "NONE",
+    "overlap": "NONE",
+    "horizontalOverflow": "NONE",
+    "zenGreenTokens": {
+      "brandColor": "#198754",
+      "lightAccent": "#E8F5E9"
+    }
+  }
+}

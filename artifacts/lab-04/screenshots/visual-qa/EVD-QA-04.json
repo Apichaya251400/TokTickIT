@@ -1,0 +1,71 @@
+{
+  "evidenceId": "EVD-QA-04",
+  "title": "TokTickIT Sprint 4 Visual and Accessibility QA Checklist",
+  "timestamp": "2026-10-29T14:59:38.693Z",
+  "inspectedScreens": [
+    "Authentication (Login & Mandatory Password Change)",
+    "IT Staff Ticket Queue",
+    "IT Staff Ticket Detail & Actions Taken Workspace",
+    "Ticket Workflow & Resolution States",
+    "IT Staff Dashboard",
+    "Requester Dashboard",
+    "Requester Ticket Detail",
+    "Administrator User Management"
+  ],
+  "viewports": [
+    {
+      "name": "Desktop",
+      "dimensions": "1920x1080",
+      "status": "PASS"
+    },
+    {
+      "name": "Tablet",
+      "dimensions": "768x1024",
+      "status": "PASS"
+    },
+    {
+      "name": "Mobile",
+      "dimensions": "375x812",
+      "status": "PASS"
+    }
+  ],
+  "checklistItems": {
+    "noClipping": {
+      "status": "PASS",
+      "description": "Zero text or control clipping across viewports"
+    },
+    "noOverlap": {
+      "status": "PASS",
+      "description": "Sufficient spacing between buttons, cards, and labels"
+    },
+    "noHorizontalOverflow": {
+      "status": "PASS",
+      "description": "Document scrollWidth strictly <= window.innerWidth"
+    },
+    "visibleFocusStates": {
+      "status": "PASS",
+      "description": "2px solid #198754 focus ring on all interactive elements"
+    },
+    "nonColorStatusCues": {
+      "status": "PASS",
+      "description": "Explicit readable textual badges for status, priority, and role"
+    },
+    "mobileTouchTargets": {
+      "status": "PASS",
+      "description": "All interactive controls >= 44x44px on mobile viewports"
+    },
+    "semanticLabels": {
+      "status": "PASS",
+      "description": "Accessible form labels, button labels, and landmark regions"
+    },
+    "editableVsReadOnly": {
+      "status": "PASS",
+      "description": "Clear visual distinction between input fields and read-only displays"
+    },
+    "validationPlacement": {
+      "status": "PASS",
+      "description": "Inline errors and alert banners positioned directly with controls"
+    }
+  },
+  "conclusion": "All major Lab 4 screens satisfy the approved Zen Green visual, responsive, and accessibility contract."
+}

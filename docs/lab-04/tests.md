@@ -3,7 +3,7 @@
 - **System Name**: TokTickIT
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Document Status**: Approved Engineering Test Strategy & Traceability Matrix
-- **Repository Branch**: `feature/lab4-regression`
+- **Repository Branch**: `feature/lab4-visual-qa`
 
 ---
 
@@ -132,9 +132,16 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 | **Section: Recent Tickets** | Requester Dashboard ticket list | `TEST-CARD-11` | API & UI | `server/tests/lab-04/requester-dashboard.api.test.ts` & `client/tests/lab-04/RequesterDashboard.test.tsx` (E2E: `requester-dashboard.spec.ts`) | Returns max 5 requester tickets ordered by `updatedAt DESC, id ASC` | `Pass` |
 | **Section: Attention Required** | Requester Dashboard action list | `TEST-CARD-12` | API & UI | `server/tests/lab-04/requester-dashboard.api.test.ts` & `client/tests/lab-04/RequesterDashboard.test.tsx` (E2E: `requester-dashboard.spec.ts`) | Returns max 5 tickets in `WAITING_FOR_REQUESTER` ordered by `updatedAt DESC, id ASC` | `Pass` |
 | **Product Hardening / Issue #80** | Browser Console Errors QA | `TEST-HARDEN-01` | Playwright E2E | `e2e/lab-04/final-product-hardening.spec.ts` | Zero unhandled console errors and zero page exceptions across all views | `Pass` |
-| **Product Hardening / Issue #80** | Internal Hyperlinks QA | `TEST-HARDEN-02` | Playwright E2E | `e2e/lab-04/final-product-hardening.spec.ts` | Zero broken relative `<a>` links or 4xx/5xx targets | `Pass` |
+| **Product Hardening / Issue #80** | Internal Hyperlinks QA | `TEST-HARDEN-02` | Playwright E2E | `e2e/lab-04/final-product-hardening.spec.ts` | Zero broken relative `<a>` links or 4xx/5xx targets; actual links verified | `Pass` |
 | **Product Hardening / Issue #80** | Placeholder Text QA | `TEST-HARDEN-03` | Playwright E2E | `e2e/lab-04/final-product-hardening.spec.ts` | Zero `TODO`, `TBD`, `Lorem ipsum`, `Coming Soon`, or `Not Implemented` text | `Pass` |
 | **Product Hardening / Issue #80** | Interactive Controls QA | `TEST-HARDEN-04` | Playwright E2E | `e2e/lab-04/final-product-hardening.spec.ts` | All interactive buttons have functional behaviors, valid labels, and 0 dead placeholder controls | `Pass` |
+| **Visual QA / Issue #81** | Desktop Viewport Inspection (`1920×1080` - `EVD-QA-01`) | `TEST-QA-01` | Playwright E2E | `e2e/lab-04/visual-accessibility-qa.spec.ts` | All 8 major screens inspected with 0 horizontal overflow and no clipping | `Pass` |
+| **Visual QA / Issue #81** | Tablet Viewport Inspection (`768×1024` - `EVD-QA-02`) | `TEST-QA-02` | Playwright E2E | `e2e/lab-04/visual-accessibility-qa.spec.ts` | Responsive 2×2 metric grids, table scroll wrappers, 0 body overflow | `Pass` |
+| **Visual QA / Issue #81** | Mobile Viewport Inspection (`375×812` - `EVD-QA-03`) | `TEST-QA-03` | Playwright E2E | `e2e/lab-04/visual-accessibility-qa.spec.ts` | Single-column stacks, touch targets >= 44×44px, 0 horizontal overflow | `Pass` |
+| **Visual QA / Issue #81** | Dashboard Responsive Evidence (`EVD-QA-06`) | `TEST-QA-04` | Playwright E2E | `e2e/lab-04/visual-accessibility-qa.spec.ts` | Dedicated Staff & Requester dashboard multi-device comparison | `Pass` |
+| **Visual QA / Issue #81** | Actions Taken Responsive Evidence (`EVD-QA-07`) | `TEST-QA-05` | Playwright E2E | `e2e/lab-04/visual-accessibility-qa.spec.ts` | Dedicated Actions Taken workspace, form, and modal responsive audit | `Pass` |
+| **Visual QA / Issue #81** | Focus Ring & Keyboard Accessibility (`EVD-QA-08`) | `TEST-QA-06` | Playwright E2E | `e2e/lab-04/visual-accessibility-qa.spec.ts` | Focus ring `outline: 2px solid #198754`, keyboard tab navigation, non-color cues | `Pass` |
+| **Visual QA / Issue #81** | Visual & Accessibility Checklist (`EVD-QA-04`) | `TEST-QA-07` | Playwright E2E | `e2e/lab-04/visual-accessibility-qa.spec.ts` | Complete machine-readable checklist in `EVD-QA-04.json` | `Pass` |
 
 ---
 
