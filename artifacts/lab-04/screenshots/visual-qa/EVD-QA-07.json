@@ -1,7 +1,7 @@
 {
   "evidenceId": "EVD-QA-07",
   "title": "Actions Taken Workspace Multi-Device Responsive Evidence",
-  "timestamp": "2026-10-29T17:12:07.076Z",
+  "timestamp": "2026-10-29T19:09:43.818Z",
   "measuredViewports": {
     "desktop": {
       "viewport": "Desktop (1920x1080)",
@@ -43,6 +43,24 @@
         {
           "control": "Follow-up Switch",
           "width": 50,
+          "height": 44,
+          "status": "PASS"
+        },
+        {
+          "control": "Description Input",
+          "width": 283,
+          "height": 73,
+          "status": "PASS"
+        },
+        {
+          "control": "Result Input",
+          "width": 283,
+          "height": 52,
+          "status": "PASS"
+        },
+        {
+          "control": "Attachment Notes Input",
+          "width": 283,
           "height": 44,
           "status": "PASS"
         }

@@ -659,6 +659,9 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
           { name: "Close Form Button", locator: createCard.locator(".btn-close") },
           { name: "Assignee Selector", locator: assigneeSelect },
           { name: "Follow-up Switch", locator: followUpSwitch },
+          { name: "Description Input", locator: descInput },
+          { name: "Result Input", locator: resultInput },
+          { name: "Attachment Notes Input", locator: attachNotesInput },
         ];
 
         for (const ctrl of interactiveControls) {
@@ -791,10 +794,11 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
     expect(submitInfo?.outlineColor).toContain("25, 135, 84");
     testedControls.push({ control: "Sign In Submit Button", ...submitInfo, status: "PASS" });
 
-    // 4. Log in and test navigation focus
+    // 4. Log in and test realistic Tab key navigation between navigation items
     await loginAsStaff(page);
-    await page.getByTestId("nav-staff-dashboard").focus();
-    const navInfo = await page.evaluate(() => {
+    await page.locator("a.navbar-brand").focus();
+    await page.keyboard.press("Tab");
+    const navDashboardInfo = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
       if (!el) return null;
       const s = window.getComputedStyle(el);
@@ -807,11 +811,34 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
         outlineOffset: s.outlineOffset,
       };
     });
-    expect(navInfo?.testId).toBe("nav-staff-dashboard");
-    expect(navInfo?.outlineStyle).toBe("solid");
-    expect(navInfo?.outlineWidth).toBe("2px");
-    expect(navInfo?.outlineColor).toContain("25, 135, 84");
-    testedControls.push({ control: "Navigation Tab (Dashboard)", ...navInfo, status: "PASS" });
+    expect(navDashboardInfo?.testId).toBe("nav-staff-dashboard");
+    expect(navDashboardInfo?.outlineStyle).toBe("solid");
+    expect(navDashboardInfo?.outlineWidth).toBe("2px");
+    expect(navDashboardInfo?.outlineColor).toContain("25, 135, 84");
+    expect(navDashboardInfo?.outlineOffset).toBe("2px");
+    testedControls.push({ control: "Navigation Tab (Dashboard)", ...navDashboardInfo, status: "PASS" });
+
+    // Press Tab key again to traverse to IT Queue
+    await page.keyboard.press("Tab");
+    const navQueueInfo = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement | null;
+      if (!el) return null;
+      const s = window.getComputedStyle(el);
+      return {
+        testId: el.getAttribute("data-testid"),
+        tagName: el.tagName.toLowerCase(),
+        outlineStyle: s.outlineStyle,
+        outlineWidth: s.outlineWidth,
+        outlineColor: s.outlineColor,
+        outlineOffset: s.outlineOffset,
+      };
+    });
+    expect(navQueueInfo?.testId).toBe("nav-it-queue");
+    expect(navQueueInfo?.outlineStyle).toBe("solid");
+    expect(navQueueInfo?.outlineWidth).toBe("2px");
+    expect(navQueueInfo?.outlineColor).toContain("25, 135, 84");
+    expect(navQueueInfo?.outlineOffset).toBe("2px");
+    testedControls.push({ control: "Navigation Tab (IT Queue)", ...navQueueInfo, status: "PASS" });
 
     await page.screenshot({
       path: path.join(qaArtifactsBase, "EVD-QA-08.png"),
@@ -860,10 +887,15 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
     await expect(loginAlert).toBeVisible();
     const alertBounding = await loginAlert.boundingBox();
     const emailBounding = await page.locator("#login-email").boundingBox();
+    const emailLabelBounding = await page.locator("label[for='login-email']").boundingBox();
     expect(alertBounding).not.toBeNull();
     expect(emailBounding).not.toBeNull();
-    // Validation alert banner placed directly adjacent to the input controls (< 120px)
-    expect(Math.abs(alertBounding!.y - emailBounding!.y)).toBeLessThanOrEqual(120);
+    expect(emailLabelBounding).not.toBeNull();
+    // Validation alert banner placed directly above the email input controls
+    expect(alertBounding!.y + alertBounding!.height).toBeLessThanOrEqual(emailLabelBounding!.y);
+    expect(emailLabelBounding!.y - (alertBounding!.y + alertBounding!.height)).toBeLessThanOrEqual(30);
+    expect(alertBounding!.y + alertBounding!.height).toBeLessThanOrEqual(emailBounding!.y);
+    expect(emailBounding!.y - (alertBounding!.y + alertBounding!.height)).toBeLessThanOrEqual(75);
 
     // B. Preserved Create Ticket Form Semantic Labels
     await loginAsRequester(page);

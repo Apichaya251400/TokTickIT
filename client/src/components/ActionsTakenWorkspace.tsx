@@ -509,7 +509,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
         [data-testid="edit-action-modal"] .form-control:focus,
         [data-testid="edit-action-modal"] .form-select:focus {
           outline: 2px solid #198754 !important;
-          outline-offset: 1px !important;
+          outline-offset: 2px !important;
           box-shadow: 0 0 0 2px rgba(25, 135, 84, 0.25) !important;
         }
       `}</style>

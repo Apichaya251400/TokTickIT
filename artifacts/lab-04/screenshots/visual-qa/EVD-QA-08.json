@@ -1,7 +1,7 @@
 {
   "evidenceId": "EVD-QA-08",
   "title": "Focus Indicator & Keyboard Accessibility Verification",
-  "timestamp": "2026-10-29T17:12:07.920Z",
+  "timestamp": "2026-10-29T19:09:45.099Z",
   "specification": {
     "expectedStyle": "outline: 2px solid #198754 !important; outline-offset: 2px;",
     "brandColor": "#198754",
@@ -44,6 +44,16 @@
     {
       "control": "Navigation Tab (Dashboard)",
       "testId": "nav-staff-dashboard",
+      "tagName": "button",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px",
+      "outlineColor": "rgb(25, 135, 84)",
+      "outlineOffset": "2px",
+      "status": "PASS"
+    },
+    {
+      "control": "Navigation Tab (IT Queue)",
+      "testId": "nav-it-queue",
       "tagName": "button",
       "outlineStyle": "solid",
       "outlineWidth": "2px",

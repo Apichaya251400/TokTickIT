@@ -59,9 +59,11 @@ Lab 4 Pull Requests under review by [@Pilaiwan3492](https://github.com/Pilaiwan3
 - **Issue 10 / PR #94 (Visual & Accessibility QA)**:
   - Generated full-page rendered screenshot artifact `artifacts/lab-04/screenshots/visual-qa/EVD-QA-05.png` directly from `docs/lab-04/ui-spec.md`.
   - Added explicit layout assertions (`expectedLayout[vp.name]`) and pairwise card non-overlap checks (`boxesOverlap`) across Desktop (4-column), Tablet (2x2 grid), and Mobile (single-column vertical stack) in `TEST-QA-04`.
-  - Added complete top-to-bottom vertical collision checks across all Actions Taken form fields and asserted mobile touch targets >= 44×44px on all interactive controls (Submit, Cancel, Close, Select, Switch) in `TEST-QA-05`.
-  - Tightened focus state assertions in `TEST-QA-06` to verify exact 2px solid rgb(25, 135, 84) with 2px offset during keyboard Tab traversal.
-  - Automated semantic labels (`<label for="...">`) across representative forms (Login, Create Ticket, Actions Taken) and verified adjacent validation alert/feedback placement in `TEST-QA-07`.
+  - Added complete top-to-bottom vertical collision checks across all Actions Taken form fields and asserted mobile touch targets >= 44×44px on all interactive controls (Submit, Cancel, Close, Select, Switch, Description, Result, Attachment Notes) in `TEST-QA-05`.
+  - Enforced `.form-control { min-height: 44px !important; }` in `client/index.html` on mobile viewports (`<= 768px`).
+  - Aligned focus ring in `ActionsTakenWorkspace.tsx` to `outline-offset: 2px !important;` matching `ui-spec.md` and `EVD-QA-08`.
+  - Implemented realistic keyboard navigation in `TEST-QA-06` via `Tab` key traversal from navbar brand to Dashboard tab and then to IT Queue tab, asserting focus and Zen Green outline with 2px offset.
+  - Automated semantic labels (`<label for="...">`) across representative forms (Login, Create Ticket, Actions Taken) and tightened adjacent validation alert/feedback placement in `TEST-QA-07` using relative DOM bounding coordinates.
   - Removed global `overflow-x: hidden` masking and fixed root-cause layout overflow on 375px mobile viewports via responsive flex-wrap across navigation bars, ticket detail headers, work logs, and comments.
   - Included preserved Lab 1–3 screens (Create Ticket, My Tickets) across all viewports with cross-reference to PR #93 regression hardening evidence.
   - Aligned `EVD-QA-06` title in `tests.md` to `Dedicated Staff Dashboard dynamic multi-device audit`.
