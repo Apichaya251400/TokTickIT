@@ -515,7 +515,7 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
       `}</style>
       {/* Workspace Header */}
       <div className="card-header bg-light d-flex flex-wrap align-items-center justify-content-between gap-2 py-2">
-        <div className="d-flex align-items-center gap-2">
+        <div className="d-flex flex-wrap align-items-center gap-2">
           <h3 className="h6 fw-bold mb-0 text-success" style={{ color: "#198754" }}>
             Actions Taken Work Log
           </h3>

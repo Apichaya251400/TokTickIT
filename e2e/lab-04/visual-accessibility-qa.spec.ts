@@ -26,10 +26,34 @@ function ensureDirSync(dirPath: string) {
 
 // Helper to assert no horizontal overflow
 async function checkNoHorizontalOverflow(page: Page) {
-  const isBounded = await page.evaluate(() => {
-    return document.documentElement.scrollWidth <= window.innerWidth + 1;
+  const overflowInfo = await page.evaluate(() => {
+    const docWidth = document.documentElement.scrollWidth;
+    const winWidth = window.innerWidth;
+    const isBounded = docWidth <= winWidth + 1;
+    let offendingElement = null;
+    if (!isBounded) {
+      const all = document.querySelectorAll("*");
+      for (const el of Array.from(all)) {
+        const rect = el.getBoundingClientRect();
+        if (rect.right > winWidth + 1) {
+          offendingElement = {
+            tag: el.tagName,
+            id: el.id,
+            className: (el as HTMLElement).className,
+            text: (el.textContent || "").substring(0, 50),
+            right: rect.right,
+            width: rect.width,
+          };
+          break;
+        }
+      }
+    }
+    return { isBounded, docWidth, winWidth, offendingElement };
   });
-  expect(isBounded, "Page body must not have horizontal overflow").toBe(true);
+  expect(
+    overflowInfo.isBounded,
+    `Page body must not have horizontal overflow (scrollWidth=${overflowInfo.docWidth}, innerWidth=${overflowInfo.winWidth}, offending=${JSON.stringify(overflowInfo.offendingElement)})`
+  ).toBe(true);
 }
 
 // Markdown-to-HTML converter for rendering ui-spec.md standalone

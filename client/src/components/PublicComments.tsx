@@ -95,7 +95,7 @@ export default function PublicComments({ ticketId, currentUser }: PublicComments
                 className="p-3 bg-light rounded-3 border-start border-4 border-success shadow-sm"
               >
                 <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-                  <div className="d-flex align-items-center gap-2">
+                  <div className="d-flex flex-wrap align-items-center gap-2">
                     <span className="fw-semibold text-dark">
                       {comment.author?.name || `User #${comment.authorId}`}
                     </span>
