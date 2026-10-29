@@ -50,9 +50,20 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
       <div className="container-fluid p-0 d-flex flex-wrap align-items-center justify-content-between gap-3">
         {/* Brand & Title */}
         <div className="d-flex align-items-center me-3">
-          <span className="navbar-brand fw-bold fs-4 mb-0 text-success me-2">
+          <a
+            href="/"
+            className="navbar-brand fw-bold fs-4 mb-0 text-success me-2 text-decoration-none"
+            onClick={(e) => {
+              e.preventDefault();
+              if (user.role === "REQUESTER") {
+                onTabChange("requester-dashboard");
+              } else {
+                onTabChange("staff-dashboard");
+              }
+            }}
+          >
             TokTick<span className="text-dark">IT</span>
-          </span>
+          </a>
           <span className="text-muted small border-start ps-2 d-none d-sm-inline">
             IT Service Desk
           </span>

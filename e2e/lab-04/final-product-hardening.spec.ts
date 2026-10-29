@@ -191,22 +191,24 @@ test.describe("HARDEN-01..04: Console Errors, Broken Links, Placeholder Text & U
       return count;
     }
 
+    const discoveredLinkCounts: number[] = [];
+
     // 2.1 Requester Dashboard -> My Tickets
     await loginAsRequester(page);
     await page.getByTestId("nav-requester-dashboard").click();
     await expect(page.getByTestId("requester-dashboard-page")).toBeVisible();
-    await collectAndVerifyRealLinks(page);
+    discoveredLinkCounts.push(await collectAndVerifyRealLinks(page));
 
     await page.getByTestId("nav-my-tickets").click();
     await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
-    await collectAndVerifyRealLinks(page);
+    discoveredLinkCounts.push(await collectAndVerifyRealLinks(page));
 
     // 2.2 My Tickets -> Ticket Detail
     const requesterDetailButton = page.getByRole("button", { name: "View Details" }).first();
     await expect(requesterDetailButton).toBeVisible();
     await requesterDetailButton.click();
     await expect(page.getByRole("heading", { name: /Ticket Detail/i })).toBeVisible();
-    await collectAndVerifyRealLinks(page);
+    discoveredLinkCounts.push(await collectAndVerifyRealLinks(page));
 
     // 2.3 Ticket Detail -> Back to My Tickets
     const backToMyTickets = page.getByRole("button", { name: "Back to My Tickets" });
@@ -217,23 +219,23 @@ test.describe("HARDEN-01..04: Console Errors, Broken Links, Placeholder Text & U
     // 2.4 Create Ticket Form
     await page.getByTestId("nav-create-ticket").click();
     await expect(page.getByRole("heading", { name: /Create.*Ticket/i })).toBeVisible();
-    await collectAndVerifyRealLinks(page);
+    discoveredLinkCounts.push(await collectAndVerifyRealLinks(page));
 
     // 2.5 Staff Dashboard -> Queue
     await loginAsStaff(page);
     await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
-    await collectAndVerifyRealLinks(page);
+    discoveredLinkCounts.push(await collectAndVerifyRealLinks(page));
 
     await page.getByTestId("nav-it-queue").click();
     await expect(page.getByTestId("staff-queue-page")).toBeVisible();
-    await collectAndVerifyRealLinks(page);
+    discoveredLinkCounts.push(await collectAndVerifyRealLinks(page));
 
     // 2.6 Queue -> Staff Ticket Detail & Actions Workspace
     const staffTicketItem = page.locator("[data-testid^='ticket-item-']:visible").first();
     await expect(staffTicketItem).toBeVisible();
     await staffTicketItem.click();
     await expect(page.getByTestId("actions-taken-workspace")).toBeVisible();
-    await collectAndVerifyRealLinks(page);
+    discoveredLinkCounts.push(await collectAndVerifyRealLinks(page));
 
     // 2.7 Back to Queue Button
     await page.getByTestId("back-to-queue-btn").click();
@@ -243,7 +245,18 @@ test.describe("HARDEN-01..04: Console Errors, Broken Links, Placeholder Text & U
     await loginAsAdmin(page);
     await page.getByTestId("nav-user-management").click();
     await expect(page.getByRole("heading", { name: "User Management" })).toBeVisible();
-    await collectAndVerifyRealLinks(page);
+    discoveredLinkCounts.push(await collectAndVerifyRealLinks(page));
+
+    // Assert that real <a href> links were actually discovered and verified across views
+    const totalDiscoveredLinks = discoveredLinkCounts.reduce(
+      (sum, count) => sum + count,
+      0
+    );
+
+    expect(
+      totalDiscoveredLinks,
+      "Expected at least one real <a href> link to be discovered across representative views"
+    ).toBeGreaterThan(0);
   });
 
   // 3. Placeholder Text, TODO, TBD, and Lorem Ipsum Audit
