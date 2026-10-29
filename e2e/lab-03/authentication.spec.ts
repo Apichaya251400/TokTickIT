@@ -1,6 +1,6 @@
 import { test, expect, Page } from "@playwright/test";
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import { PrismaClient } from "../../server/node_modules/@prisma/client";
+import bcrypt from "../../server/node_modules/bcryptjs";
 
 const prisma = new PrismaClient();
 

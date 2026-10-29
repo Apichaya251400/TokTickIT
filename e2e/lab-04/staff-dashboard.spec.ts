@@ -17,7 +17,7 @@ function copyToBrain(filename: string) {
   try {
     const src = path.join(artifactsBase, filename);
     const dest = path.join(brainBase, filename);
-    if (fs.existsSync(src)) {
+    if (fs.existsSync(brainBase) && fs.existsSync(src)) {
       fs.copyFileSync(src, dest);
     }
   } catch (err) {

@@ -5,6 +5,7 @@ on:
     branches:
       - lab4-staging
       - feature/lab4-actions-ui
+      - feature/lab4-regression
   pull_request:
     branches:
       - lab4-staging
@@ -88,3 +89,63 @@ jobs:
 
       - name: Run server integration tests
         run: npm test
+
+  e2e:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: toktickit
+          POSTGRES_DB: toktickit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:toktickit@localhost:5432/toktickit?schema=public
+      JWT_SECRET: github-actions-test-secret
+      PORT: 3000
+      CI: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install server dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Install Playwright test runner
+        run: npm install @playwright/test@^1.62.1 --no-save
+
+      - name: Install Playwright browsers & dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        working-directory: server
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+        working-directory: server
+
+      - name: Seed database
+        run: npm run prisma:seed
+        working-directory: server
+
+      - name: Run Playwright E2E tests
+        run: npx playwright test
