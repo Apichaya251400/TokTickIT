@@ -2,9 +2,21 @@ import { test, expect, Page } from "@playwright/test";
 import path from "path";
 import fs from "fs";
 import { PrismaClient } from "../../server/node_modules/@prisma/client";
+import bcrypt from "../../server/node_modules/bcryptjs";
 
 const prisma = new PrismaClient();
 const qaArtifactsBase = path.resolve(process.cwd(), "artifacts/lab-04/screenshots/visual-qa");
+
+async function resetSarahStaff() {
+  const hash = bcrypt.hashSync("InitialPassword123!", 10);
+  await prisma.user.updateMany({
+    where: { email: "sarah.staff@toktick.it" },
+    data: {
+      requiresPasswordChange: true,
+      passwordHash: hash,
+    },
+  });
+}
 
 function ensureDirSync(dirPath: string) {
   if (!fs.existsSync(dirPath)) {
@@ -130,6 +142,7 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
 
       // 2. Authentication: Mandatory Password Change Screen
       // Login with Sarah Staff whose initial account requires password change
+      await resetSarahStaff();
       await page.fill("#login-email", "sarah.staff@toktick.it");
       await page.fill("#login-password", "InitialPassword123!");
       await Promise.all([

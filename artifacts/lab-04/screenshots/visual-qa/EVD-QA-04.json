@@ -1,7 +1,7 @@
 {
   "evidenceId": "EVD-QA-04",
   "title": "TokTickIT Sprint 4 Visual and Accessibility QA Checklist",
-  "timestamp": "2026-10-29T14:59:38.693Z",
+  "timestamp": "2026-10-29T15:17:54.135Z",
   "inspectedScreens": [
     "Authentication (Login & Mandatory Password Change)",
     "IT Staff Ticket Queue",
