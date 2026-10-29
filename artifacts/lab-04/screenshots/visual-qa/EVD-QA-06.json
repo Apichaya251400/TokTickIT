@@ -1,25 +1,118 @@
 {
   "evidenceId": "EVD-QA-06",
-  "title": "Dashboard Multi-Device Responsive Evidence (Staff & Requester)",
-  "timestamp": "2026-10-29T15:17:51.684Z",
-  "verifiedBreakpoints": [
+  "title": "Staff Dashboard Multi-Device Responsive Evidence (Dynamic Inspection)",
+  "timestamp": "2026-10-29T16:19:13.587Z",
+  "measuredBreakpoints": [
     {
       "viewport": "Desktop (1920x1080)",
-      "metricLayout": "4-column side-by-side grid",
-      "overflowStatus": "ZERO_HORIZONTAL_OVERFLOW"
+      "measuredLayout": "4-column side-by-side grid",
+      "cardBoxes": [
+        {
+          "card": "metric-unassigned-card",
+          "width": 216,
+          "height": 151,
+          "x": 504,
+          "y": 236
+        },
+        {
+          "card": "metric-my-assigned-card",
+          "width": 216,
+          "height": 151,
+          "x": 736,
+          "y": 236
+        },
+        {
+          "card": "metric-today-actions-card",
+          "width": 216,
+          "height": 151,
+          "x": 968,
+          "y": 236
+        },
+        {
+          "card": "metric-urgent-workload-card",
+          "width": 216,
+          "height": 151,
+          "x": 1200,
+          "y": 236
+        }
+      ],
+      "horizontalOverflow": false,
+      "status": "PASS"
     },
     {
       "viewport": "Tablet (768x1024)",
-      "metricLayout": "2x2 stacked metric grid",
-      "overflowStatus": "ZERO_HORIZONTAL_OVERFLOW"
+      "measuredLayout": "2x2 stacked metric grid",
+      "cardBoxes": [
+        {
+          "card": "metric-unassigned-card",
+          "width": 340,
+          "height": 122,
+          "x": 36,
+          "y": 231
+        },
+        {
+          "card": "metric-my-assigned-card",
+          "width": 340,
+          "height": 122,
+          "x": 392,
+          "y": 231
+        },
+        {
+          "card": "metric-today-actions-card",
+          "width": 340,
+          "height": 122,
+          "x": 36,
+          "y": 369
+        },
+        {
+          "card": "metric-urgent-workload-card",
+          "width": 340,
+          "height": 122,
+          "x": 392,
+          "y": 369
+        }
+      ],
+      "horizontalOverflow": false,
+      "status": "PASS"
     },
     {
       "viewport": "Mobile (375x812)",
-      "metricLayout": "Single-column vertical stack with touch targets >= 44x44px",
-      "overflowStatus": "ZERO_HORIZONTAL_OVERFLOW"
+      "measuredLayout": "Single-column vertical stack",
+      "cardBoxes": [
+        {
+          "card": "metric-unassigned-card",
+          "width": 327,
+          "height": 115,
+          "x": 24,
+          "y": 347
+        },
+        {
+          "card": "metric-my-assigned-card",
+          "width": 327,
+          "height": 115,
+          "x": 24,
+          "y": 478
+        },
+        {
+          "card": "metric-today-actions-card",
+          "width": 327,
+          "height": 115,
+          "x": 24,
+          "y": 609
+        },
+        {
+          "card": "metric-urgent-workload-card",
+          "width": 327,
+          "height": 115,
+          "x": 24,
+          "y": 740
+        }
+      ],
+      "horizontalOverflow": false,
+      "status": "PASS"
     }
   ],
-  "compliance": {
+  "verification": {
     "clipping": "NONE",
     "overlap": "NONE",
     "horizontalOverflow": "NONE",
@@ -27,5 +120,6 @@
       "brandColor": "#198754",
       "lightAccent": "#E8F5E9"
     }
-  }
+  },
+  "conclusion": "Staff Dashboard responsiveness dynamically verified across Desktop, Tablet, and Mobile viewports with zero horizontal overflow and proper column stacking."
 }

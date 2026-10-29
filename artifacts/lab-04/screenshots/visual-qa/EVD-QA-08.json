@@ -1,12 +1,56 @@
 {
   "evidenceId": "EVD-QA-08",
   "title": "Focus Indicator & Keyboard Accessibility Verification",
-  "timestamp": "2026-10-29T15:17:54.102Z",
-  "verifiedCriteria": {
-    "focusVisibleStyle": "outline: 2px solid #198754 !important; outline-offset: 2px;",
-    "focusRingVerified": true,
-    "keyboardNavigable": true,
-    "nonColorStatusCues": "All badges render explicit text (Status, Priority, Role)",
-    "wcagCompliance": "WCAG 2.1 Level AA Compliant"
-  }
+  "timestamp": "2026-10-29T16:19:15.363Z",
+  "specification": {
+    "expectedStyle": "outline: 2px solid #198754 !important; outline-offset: 2px;",
+    "brandColor": "#198754",
+    "rgbColor": "rgb(25, 135, 84)",
+    "outlineWidth": "2px",
+    "outlineOffset": "2px"
+  },
+  "testedControls": [
+    {
+      "control": "Login Email Input (#login-email)",
+      "id": "login-email",
+      "tagName": "input",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px",
+      "outlineColor": "rgb(25, 135, 84)",
+      "outlineOffset": "2px",
+      "status": "PASS"
+    },
+    {
+      "control": "Login Password Input (#login-password)",
+      "id": "login-password",
+      "tagName": "input",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px",
+      "outlineColor": "rgb(25, 135, 84)",
+      "outlineOffset": "2px",
+      "status": "PASS"
+    },
+    {
+      "control": "Sign In Submit Button",
+      "tagName": "button",
+      "type": "submit",
+      "text": "Sign In",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px",
+      "outlineColor": "rgb(25, 135, 84)",
+      "outlineOffset": "2px",
+      "status": "PASS"
+    },
+    {
+      "control": "Navigation Tab (Dashboard)",
+      "testId": "nav-staff-dashboard",
+      "tagName": "button",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px",
+      "outlineColor": "rgb(25, 135, 84)",
+      "outlineOffset": "2px",
+      "status": "PASS"
+    }
+  ],
+  "conclusion": "Keyboard focus and navigation criteria verified in compliance with Zen Green design system specifications across representative interactive controls."
 }

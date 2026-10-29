@@ -812,7 +812,7 @@ export default function App() {
             />
           ) : (
             <>
-              <div className="d-flex justify-content-between align-items-center mb-4">
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
             <h2 className="h4 fw-bold mb-0">
               Ticket Detail {detailTicket ? `— ${detailTicket.ticketNumber}` : ""}
             </h2>

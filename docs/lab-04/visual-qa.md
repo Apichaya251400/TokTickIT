@@ -3,7 +3,7 @@
 - **System Name**: TokTickIT
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Increment Goal**: Verify that all new and preserved Lab 4 screens satisfy the approved Zen Green visual, responsive, accessibility, and interaction design contract.
-- **Verification Timestamp**: `2026-10-29T21:40:00+07:00`
+- **Verification Timestamp**: `2026-10-29T23:05:00+07:00`
 - **Branch**: `feature/lab4-visual-qa`
 - **Target Branch**: `lab4-staging`
 
@@ -11,12 +11,12 @@
 
 ## 1. Executive Summary
 
-This report establishes the authoritative Visual and Accessibility Quality Assurance record for **TokTickIT Lab 4 (Sprint 4)** under **Issue #81 ([LAB4-10])**. All 8 major screens across role workspaces (Requester, IT Staff, Administrator) were systematically inspected across three standardized target viewports:
+This report establishes the authoritative Visual and Accessibility Quality Assurance record for **TokTickIT Lab 4 (Sprint 4)** under **Issue #81 ([LAB4-10])**. All major screens across role workspaces (Requester, IT Staff, Administrator), including newly introduced Sprint 4 workspaces and preserved Lab 1–3 screens, were systematically inspected across three standardized target viewports:
 - **Desktop Viewport**: `1920×1080` (16:9 widescreen)
 - **Tablet Viewport**: `768×1024` (3:4 portrait)
 - **Mobile Viewport**: `375×812` (modern phone viewport)
 
-Automated Playwright tests in [`e2e/lab-04/visual-accessibility-qa.spec.ts`](../../e2e/lab-04/visual-accessibility-qa.spec.ts) verified that all screens strictly adhere to Zen Green design tokens, render with zero page-level horizontal overflow (`scrollWidth <= innerWidth`), provide visible keyboard focus rings (`2px solid #198754`), enforce mobile touch targets `>= 44×44px`, present non-color status/priority cues, and maintain clear visual distinction between editable inputs and read-only displays.
+Automated Playwright tests in [`e2e/lab-04/visual-accessibility-qa.spec.ts`](../../e2e/lab-04/visual-accessibility-qa.spec.ts) verified that all screens strictly adhere to Zen Green design tokens, render with zero page-level horizontal overflow (`scrollWidth <= innerWidth + 1`) natively without mask rules, provide visible keyboard focus rings (`2px solid #198754` with `2px` offset), enforce mobile touch targets `>= 44×44px`, present non-color status/priority cues, and maintain clear visual distinction between editable inputs and read-only displays.
 
 ---
 
@@ -47,10 +47,16 @@ Automated Playwright tests in [`e2e/lab-04/visual-accessibility-qa.spec.ts`](../
 | **07. Requester Dashboard** | Mobile | `375×812` | `scrollWidth <= innerWidth` | `>= 44×44px` | Single-column metric cards, touch targets OK | `artifacts/lab-04/screenshots/visual-qa/mobile/06-requester-dashboard.png` |
 | **08. Requester Ticket Detail (Read-Only)** | Desktop | `1920×1080` | `scrollWidth <= innerWidth` | N/A | Read-only actions feed, no staff edit buttons | `artifacts/lab-04/screenshots/visual-qa/desktop/07-requester-detail.png` |
 | **08. Requester Ticket Detail (Read-Only)** | Tablet | `768×1024` | `scrollWidth <= innerWidth` | N/A | Clean layout, public comments visible | `artifacts/lab-04/screenshots/visual-qa/tablet/07-requester-detail.png` |
-| **08. Requester Ticket Detail (Read-Only)** | Mobile | `375×812` | `scrollWidth <= innerWidth` | `>= 44×44px` | Responsive detail cards, zero overflow | `artifacts/lab-04/screenshots/visual-qa/mobile/07-requester-detail.png` |
-| **09. Administrator User Management** | Desktop | `1920×1080` | `scrollWidth <= innerWidth` | N/A | Full user administration table & role pills | `artifacts/lab-04/screenshots/visual-qa/desktop/08-admin-users.png` |
-| **09. Administrator User Management** | Tablet | `768×1024` | `scrollWidth <= innerWidth` | N/A | Horizontal table scroll wrapper (`overflow-x: auto`) | `artifacts/lab-04/screenshots/visual-qa/tablet/08-admin-users.png` |
-| **09. Administrator User Management** | Mobile | `375×812` | `scrollWidth <= innerWidth` | `>= 44×44px` | Stacked user cards, touch targets >= 44x44px | `artifacts/lab-04/screenshots/visual-qa/mobile/08-admin-users.png` |
+| **08. Requester Ticket Detail (Read-Only)** | Mobile | `375×812` | `scrollWidth <= innerWidth` | `>= 44×44px` | Responsive detail cards, wrapped button bar | `artifacts/lab-04/screenshots/visual-qa/mobile/07-requester-detail.png` |
+| **09. Preserved Screen: Create Ticket Form** | Desktop | `1920×1080` | `scrollWidth <= innerWidth` | N/A | Distinct read-only fields (#F0F4F2), active inputs | `artifacts/lab-04/screenshots/visual-qa/desktop/09-create-ticket.png` |
+| **09. Preserved Screen: Create Ticket Form** | Tablet | `768×1024` | `scrollWidth <= innerWidth` | N/A | Form fields stacked, select menus visible | `artifacts/lab-04/screenshots/visual-qa/tablet/09-create-ticket.png` |
+| **09. Preserved Screen: Create Ticket Form** | Mobile | `375×812` | `scrollWidth <= innerWidth` | `>= 44×44px` | Full width inputs, touch-friendly submit | `artifacts/lab-04/screenshots/visual-qa/mobile/09-create-ticket.png` |
+| **10. Preserved Screen: My Tickets Queue** | Desktop | `1920×1080` | `scrollWidth <= innerWidth` | N/A | Data table with status and priority badges | `artifacts/lab-04/screenshots/visual-qa/desktop/10-my-tickets.png` |
+| **10. Preserved Screen: My Tickets Queue** | Tablet | `768×1024` | `scrollWidth <= innerWidth` | N/A | Scrollable table container, filter controls | `artifacts/lab-04/screenshots/visual-qa/tablet/10-my-tickets.png` |
+| **10. Preserved Screen: My Tickets Queue** | Mobile | `375×812` | `scrollWidth <= innerWidth` | `>= 44×44px` | Responsive cards, touch target buttons | `artifacts/lab-04/screenshots/visual-qa/mobile/10-my-tickets.png` |
+| **11. Administrator User Management** | Desktop | `1920×1080` | `scrollWidth <= innerWidth` | N/A | Full user administration table & role pills | `artifacts/lab-04/screenshots/visual-qa/desktop/08-admin-users.png` |
+| **11. Administrator User Management** | Tablet | `768×1024` | `scrollWidth <= innerWidth` | N/A | Horizontal table scroll wrapper (`overflow-x: auto`) | `artifacts/lab-04/screenshots/visual-qa/tablet/08-admin-users.png` |
+| **11. Administrator User Management** | Mobile | `375×812` | `scrollWidth <= innerWidth` | `>= 44×44px` | Stacked user cards, touch targets >= 44x44px | `artifacts/lab-04/screenshots/visual-qa/mobile/08-admin-users.png` |
 
 ---
 
@@ -68,19 +74,43 @@ Automated Playwright tests in [`e2e/lab-04/visual-accessibility-qa.spec.ts`](../
 
 ### 3.3 Editable vs. Read-Only Field Distinction
 - **Editable Controls**: Textareas (`#action-description`, `#action-result`), text inputs (`#action-attachment-notes`), assignee dropdowns (`#action-assignee`), and checkboxes (`#action-follow-up`) display clear form borders, placeholder cues, and focus rings.
-- **Read-Only Controls**: Requester actions feed, ticket IDs, timestamps, and closed/cancelled ticket summaries render in disabled state or plain text with muted labels, preventing accidental edits.
+- **Read-Only Controls**: Requester actions feed, ticket IDs, timestamps, and closed/cancelled ticket summaries render in disabled state or plain text with muted labels (`#F0F4F2` background), preventing accidental edits.
 
 ---
 
-## 4. Evidence Deliverables Summary
+## 4. Preserved Lab 1–3 Screens Continuity & Cross-Reference
+
+To satisfy the sprint increment requirement of complete visual & regression hardening across preserved Lab 1–3 features:
+1. **Visual Inspection**: All preserved screens (Login, Mandatory Password Change, Create Ticket, My Tickets, Ticket Detail, Attachments, Comments) have been visually inspected and captured across Desktop, Tablet, and Mobile viewports (`01-auth-login.png`, `01-auth-password-change.png`, `07-requester-detail.png`, `09-create-ticket.png`, `10-my-tickets.png`).
+2. **Functional Regression Continuity**: Functional contracts, validation bounds, idempotency guarantees, and backward compatibility are proven by the 56 Playwright E2E tests and evidence artifacts produced under **PR #93** (`e2e/lab-04/regression-hardening.spec.ts` / `artifacts/lab-04/screenshots/regression/EVD-REG-01..07`).
+
+---
+
+## 5. Visual and Accessibility Checklist (EVD-QA-04)
+
+| Checklist Item | Verification Method | Result | Description |
+|---|---|:---:|---|
+| **No Text/Control Clipping** | Automated & Visual | **PASS** | Document `scrollWidth <= innerWidth + 1` across all viewports; zero clipped labels or cut-off buttons. |
+| **No Element Overlap** | Automated | **PASS** | Disjoint bounding boxes verified for adjacent navigation tabs, action buttons, and metric cards. |
+| **No Horizontal Overflow** | Automated | **PASS** | Verified across Desktop (1920), Tablet (768), and Mobile (375) without masking rules. Root-cause fixes applied (`flex-wrap`). |
+| **Visible Focus States** | Automated | **PASS** | Verified `outline: 2px solid rgb(25, 135, 84)` with `2px` offset on `#login-email`, `#login-password`, submit buttons, and navigation links. |
+| **Non-Color Status Cues** | Automated & Visual | **PASS** | Explicit textual badges on all statuses and priorities ensure distinguishability without relying on color alone. |
+| **Mobile Touch Targets** | Automated | **PASS** | All interactive buttons and navigation controls strictly meet `>= 44×44px` on mobile viewports (`<= 768px`). |
+| **Accessible Semantic Labels** | Automated | **PASS** | Inputs bound with explicit `<label for="...">` associations and buttons have clear text or `aria-label`. |
+| **Editable vs. Read-Only** | Automated & Visual | **PASS** | Read-only fields shaded `#F0F4F2` with `readOnly` attributes, visually separated from white `#FFFFFF` editable inputs. |
+| **Validation Placement** | Automated | **PASS** | Validation alert banners and inline errors rendered directly adjacent to the relevant interactive controls. |
+
+---
+
+## 6. Evidence Deliverables Summary
 
 | Evidence ID | Description | Location | Status |
 |---|---|---|---|
-| **`EVD-QA-01`** | Desktop screenshots across all major screens (`1920×1080`) | `artifacts/lab-04/screenshots/visual-qa/desktop/` | **VERIFIED** |
-| **`EVD-QA-02`** | Tablet screenshots across all major screens (`768×1024`) | `artifacts/lab-04/screenshots/visual-qa/tablet/` | **VERIFIED** |
-| **`EVD-QA-03`** | Mobile screenshots across all major screens (`375×812`) | `artifacts/lab-04/screenshots/visual-qa/mobile/` | **VERIFIED** |
-| **`EVD-QA-04`** | Completed visual & accessibility checklist (Markdown & JSON) | `docs/lab-04/visual-qa.md` & `EVD-QA-04.json` | **VERIFIED** |
-| **`EVD-QA-05`** | Rendered & updated UI specification | `docs/lab-04/ui-spec.md` | **VERIFIED** |
-| **`EVD-QA-06`** | Dedicated Dashboard multi-device responsive evidence | `EVD-QA-06.png` & `EVD-QA-06.json` | **VERIFIED** |
-| **`EVD-QA-07`** | Dedicated Actions Taken responsive workspace evidence | `EVD-QA-07.png` & `EVD-QA-07.json` | **VERIFIED** |
-| **`EVD-QA-08`** | Dedicated Focus indicator & keyboard navigation evidence | `EVD-QA-08.png` & `EVD-QA-08.json` | **VERIFIED** |
+| **`EVD-QA-01`** | Desktop screenshots across all major and preserved screens (`1920×1080`) | `artifacts/lab-04/screenshots/visual-qa/desktop/` | **VERIFIED** |
+| **`EVD-QA-02`** | Tablet screenshots across all major and preserved screens (`768×1024`) | `artifacts/lab-04/screenshots/visual-qa/tablet/` | **VERIFIED** |
+| **`EVD-QA-03`** | Mobile screenshots across all major and preserved screens (`375×812`) | `artifacts/lab-04/screenshots/visual-qa/mobile/` | **VERIFIED** |
+| **`EVD-QA-04`** | Completed visual & accessibility checklist report (Markdown & JSON) | `docs/lab-04/visual-qa.md` & `EVD-QA-04.json` | **VERIFIED** |
+| **`EVD-QA-05`** | Rendered UI specification full-page screenshot & markdown document | `artifacts/lab-04/screenshots/visual-qa/EVD-QA-05.png` & `docs/lab-04/ui-spec.md` | **VERIFIED** |
+| **`EVD-QA-06`** | Dedicated Dashboard multi-device responsive evidence (Dynamic measurements) | `EVD-QA-06.png`, `EVD-QA-06-*.png` & `EVD-QA-06.json` | **VERIFIED** |
+| **`EVD-QA-07`** | Dedicated Actions Taken multi-device responsive evidence (Dynamic measurements) | `EVD-QA-07.png`, `EVD-QA-07-*.png` & `EVD-QA-07.json` | **VERIFIED** |
+| **`EVD-QA-08`** | Dedicated Focus indicator & keyboard navigation evidence (Dynamic measurements) | `EVD-QA-08.png` & `EVD-QA-08.json` | **VERIFIED** |
