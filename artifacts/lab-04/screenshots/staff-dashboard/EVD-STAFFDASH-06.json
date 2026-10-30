@@ -1,8 +1,8 @@
 {
   "queryVerification": {
     "unassignedCount": {
-      "expectedDbQuery": 54,
-      "actualApiResponse": 54,
+      "expectedDbQuery": 55,
+      "actualApiResponse": 55,
       "match": true
     },
     "myAssignedCount": {
@@ -11,8 +11,8 @@
       "match": true
     },
     "todayActionsCount": {
-      "expectedDbQuery": 1,
-      "actualApiResponse": 1,
+      "expectedDbQuery": 3,
+      "actualApiResponse": 3,
       "match": true
     },
     "urgentWorkloadCount": {
@@ -23,12 +23,21 @@
   },
   "apiResponse": {
     "metrics": {
-      "unassignedCount": 54,
+      "unassignedCount": 55,
       "myAssignedCount": 2,
-      "todayActionsCount": 1,
+      "todayActionsCount": 3,
       "urgentWorkloadCount": 2
     },
     "myRecentTickets": [
+      {
+        "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
+        "ticketNumber": "TKT-2026-000003",
+        "summary": "Requesting additional storage quota for department email account",
+        "currentStatus": "RESOLVED",
+        "requestedPriority": "LOW",
+        "itPriority": "LOW",
+        "updatedAt": "2026-10-29T19:09:16.106Z"
+      },
       {
         "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
         "ticketNumber": "TKT-2026-000002",
@@ -36,7 +45,7 @@
         "currentStatus": "IN_PROGRESS",
         "requestedPriority": "MEDIUM",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-29T07:20:45.037Z"
+        "updatedAt": "2026-10-29T19:09:12.908Z"
       },
       {
         "id": "fdb60d58-ea95-42ab-b55a-ce876b1a4d80",
@@ -45,7 +54,7 @@
         "currentStatus": "REOPENED",
         "requestedPriority": "HIGH",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-29T07:20:05.067Z"
+        "updatedAt": "2026-10-29T16:21:25.422Z"
       },
       {
         "id": "643535fa-7627-4103-89ce-c9a2fe91b11b",
@@ -54,26 +63,33 @@
         "currentStatus": "CLOSED",
         "requestedPriority": "MEDIUM",
         "itPriority": "MEDIUM",
-        "updatedAt": "2026-10-29T07:20:05.064Z"
-      },
-      {
-        "id": "e1f37400-afce-4127-aeb2-fe04436696f8",
-        "ticketNumber": "TKT-2026-000003",
-        "summary": "Requesting additional storage quota for department email account",
-        "currentStatus": "RESOLVED",
-        "requestedPriority": "LOW",
-        "itPriority": "LOW",
-        "updatedAt": "2026-10-29T07:20:05.056Z"
+        "updatedAt": "2026-10-29T16:21:25.420Z"
       }
     ],
     "currentStaffActions": [
       {
-        "id": "5a883149-adbf-4411-9186-a4d77703c6f6",
+        "id": "c0324510-78b8-4973-a863-d96b324078da",
         "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
         "ticketNumber": "TKT-2026-000002",
         "description": "E2E Verified hardware connectivity today",
         "result": "All diagnostics passed",
-        "createdAt": "2026-10-29T07:20:45.040Z"
+        "createdAt": "2026-10-30T08:04:27.564Z"
+      },
+      {
+        "id": "a4ee43da-7e2a-4ecb-98ad-2f0a64ddb8c2",
+        "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+        "ticketNumber": "TKT-2026-000002",
+        "description": "E2E Verified hardware connectivity today",
+        "result": "All diagnostics passed",
+        "createdAt": "2026-10-29T19:08:57.673Z"
+      },
+      {
+        "id": "50742c45-ea3f-403d-afb3-2805fbd26106",
+        "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+        "ticketNumber": "TKT-2026-000002",
+        "description": "E2E Verified hardware connectivity today",
+        "result": "All diagnostics passed",
+        "createdAt": "2026-10-29T17:11:36.766Z"
       },
       {
         "id": "act-seed-000003",

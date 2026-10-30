@@ -70,7 +70,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
         </div>
 
         {/* Role-based Navigation Links */}
-        <div className="d-flex align-items-center gap-2 flex-grow-1 flex-sm-grow-0">
+        <div className="d-flex flex-wrap align-items-center gap-2 flex-grow-1 flex-sm-grow-0">
           {user.role === "REQUESTER" && (
             <>
               <button
@@ -168,8 +168,8 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
         </div>
 
         {/* User Info & Logout Button */}
-        <div className="d-flex align-items-center gap-3">
-          <div className="d-flex align-items-center gap-2">
+        <div className="d-flex flex-wrap align-items-center gap-3">
+          <div className="d-flex flex-wrap align-items-center gap-2">
             <span className="fw-semibold text-dark">{user.name}</span>
             {renderRoleBadge()}
           </div>

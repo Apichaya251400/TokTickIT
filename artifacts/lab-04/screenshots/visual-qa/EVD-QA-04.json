@@ -1,0 +1,83 @@
+{
+  "evidenceId": "EVD-QA-04",
+  "title": "TokTickIT Sprint 4 Visual and Accessibility QA Checklist",
+  "timestamp": "2026-10-30T12:19:39.052Z",
+  "inspectedScreens": [
+    "Authentication: Login Screen",
+    "Authentication: Mandatory Password Change Screen",
+    "IT Staff Dashboard",
+    "IT Staff Ticket Queue",
+    "IT Staff Ticket Detail & Actions Taken Workspace",
+    "Ticket Workflow & Resolution States",
+    "Requester Dashboard",
+    "Requester Ticket Detail",
+    "Preserved Lab 2: Create Ticket Screen",
+    "Preserved Lab 2: My Tickets Screen",
+    "Administrator User Management"
+  ],
+  "viewports": [
+    {
+      "name": "Desktop",
+      "dimensions": "1920x1080",
+      "status": "PASS"
+    },
+    {
+      "name": "Tablet",
+      "dimensions": "768x1024",
+      "status": "PASS"
+    },
+    {
+      "name": "Mobile",
+      "dimensions": "375x812",
+      "status": "PASS"
+    }
+  ],
+  "checklistItems": {
+    "noClipping": {
+      "method": "Automated & Visual",
+      "status": "PASS",
+      "description": "No clipping observed in required Lab 4 screens; page-level horizontal overflow is bounded with targeted geometry checks on representative controls."
+    },
+    "noOverlap": {
+      "method": "Automated & Visual",
+      "status": "PASS",
+      "description": "No unintended overlap observed in required Lab 4 screens; pairwise bounding-box checks cover dashboard metric cards, Actions Taken form fields, and representative navigation controls."
+    },
+    "noHorizontalOverflow": {
+      "method": "Automated",
+      "status": "PASS",
+      "description": "Document scrollWidth strictly <= window.innerWidth across all viewports"
+    },
+    "visibleFocusStates": {
+      "method": "Automated",
+      "status": "PASS",
+      "description": "Representative required interactive controls have a visible Zen Green keyboard focus ring (2px solid rgb(25, 135, 84) with 2px offset) verified during keyboard traversal"
+    },
+    "nonColorStatusCues": {
+      "method": "Automated & Visual",
+      "status": "PASS",
+      "description": "Explicit textual badges for all statuses (NEW, OPEN, IN_PROGRESS, etc.) and priorities"
+    },
+    "mobileTouchTargets": {
+      "method": "Automated",
+      "status": "PASS",
+      "description": "Required mobile interactive controls (buttons, select, switches, navigation, form-control inputs) strictly meet >= 44x44px dimensions on mobile viewports"
+    },
+    "semanticLabels": {
+      "method": "Automated",
+      "status": "PASS",
+      "description": "Representative forms (Login, Create Ticket, Actions Taken) verify explicit label[for] associations and accessible button names"
+    },
+    "editableVsReadOnly": {
+      "method": "Automated & Visual",
+      "status": "PASS",
+      "description": "Clear visual distinction: readOnly attributes and #F0F4F2 vs #FFFFFF styling"
+    },
+    "validationPlacement": {
+      "method": "Automated",
+      "status": "PASS",
+      "description": "Required representative validation alert banners and inline invalid-feedback elements positioned directly adjacent to relevant form inputs"
+    }
+  },
+  "conclusion": "All major Lab 4 screens and preserved Lab 1-3 screens satisfy the approved Zen Green visual, responsive, and accessibility contract."
+}

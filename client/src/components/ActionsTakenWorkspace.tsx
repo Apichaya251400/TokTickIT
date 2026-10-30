@@ -509,13 +509,13 @@ export const ActionsTakenWorkspace: React.FC<ActionsTakenWorkspaceProps> = ({
         [data-testid="edit-action-modal"] .form-control:focus,
         [data-testid="edit-action-modal"] .form-select:focus {
           outline: 2px solid #198754 !important;
-          outline-offset: 1px !important;
+          outline-offset: 2px !important;
           box-shadow: 0 0 0 2px rgba(25, 135, 84, 0.25) !important;
         }
       `}</style>
       {/* Workspace Header */}
       <div className="card-header bg-light d-flex flex-wrap align-items-center justify-content-between gap-2 py-2">
-        <div className="d-flex align-items-center gap-2">
+        <div className="d-flex flex-wrap align-items-center gap-2">
           <h3 className="h6 fw-bold mb-0 text-success" style={{ color: "#198754" }}>
             Actions Taken Work Log
           </h3>

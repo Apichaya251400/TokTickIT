@@ -451,7 +451,7 @@ export const StaffTicketDetail: React.FC<StaffTicketDetailProps> = ({
       {/* Top Header Bar */}
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
         <div>
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex flex-wrap align-items-center gap-2">
             <h1 className="h4 fw-bold mb-0 text-success">{ticket.ticketNumber}</h1>
             {renderStatusBadge(ticket.currentStatus)}
             {renderPriorityBadge(ticket.itPriority || ticket.requestedPriority)}

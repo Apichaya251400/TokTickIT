@@ -812,7 +812,7 @@ export default function App() {
             />
           ) : (
             <>
-              <div className="d-flex justify-content-between align-items-center mb-4">
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
             <h2 className="h4 fw-bold mb-0">
               Ticket Detail {detailTicket ? `— ${detailTicket.ticketNumber}` : ""}
             </h2>
@@ -881,7 +881,7 @@ export default function App() {
                     </div>
                     <div className="col-12 col-md-4">
                       <label className="form-label small text-muted d-block">Priority / Status</label>
-                      <div className="d-flex align-items-center gap-2 mt-1">
+                      <div className="d-flex flex-wrap align-items-center gap-2 mt-1">
                         {renderPriorityBadge(detailTicket.requestedPriority)}
                         <span className="badge bg-primary">{detailTicket.currentStatus || "NEW"}</span>
                       </div>
@@ -926,8 +926,8 @@ export default function App() {
                         return (
                           <li key={att.id} className="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2 p-3">
                             <div>
-                              <div className="fw-bold d-flex align-items-center gap-2">
-                                <span>{att.fileName}</span>
+                              <div className="fw-bold d-flex flex-wrap align-items-center gap-2">
+                                <span className="text-break">{att.fileName}</span>
                                 {isRemoved && <span className="badge bg-secondary">Removed</span>}
                               </div>
                               <div className="small text-muted">
@@ -939,7 +939,7 @@ export default function App() {
                                 </div>
                               )}
                             </div>
-                            <div className="d-flex align-items-center gap-2">
+                            <div className="d-flex flex-wrap align-items-center gap-2">
                               {!isRemoved ? (
                                 <>
                                   <button

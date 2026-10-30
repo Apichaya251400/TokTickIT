@@ -1,8 +1,8 @@
 {
   "queryVerification": {
     "openTicketsCount": {
-      "expectedDbQuery": 56,
-      "actualApiResponse": 56,
+      "expectedDbQuery": 55,
+      "actualApiResponse": 55,
       "match": true
     },
     "waitingForRequesterCount": {
@@ -23,61 +23,61 @@
   },
   "apiResponse": {
     "metrics": {
-      "openTicketsCount": 56,
+      "openTicketsCount": 55,
       "waitingForRequesterCount": 1,
       "inProgressCount": 12,
       "recentlyResolvedCount": 9
     },
     "recentTickets": [
       {
-        "id": "35ce9582-e4e1-4010-bc69-0d2fdac06c76",
-        "ticketNumber": "TKT-2026-000008",
-        "summary": "Accidental duplicate ticket submission for laptop keyboard repair",
-        "currentStatus": "CANCELLED",
-        "requestedPriority": "LOW",
-        "updatedAt": "2026-10-29T07:20:05.070Z"
-      },
-      {
         "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
         "ticketNumber": "TKT-2026-000002",
         "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
         "currentStatus": "IN_PROGRESS",
         "requestedPriority": "MEDIUM",
-        "updatedAt": "2026-10-29T07:20:05.046Z"
+        "updatedAt": "2026-10-29T19:09:12.908Z"
       },
       {
-        "id": "d897d123-f8f0-462d-a1f1-052cade1d9ba",
+        "id": "34a5cfc3-77ca-42e4-9b36-9fa6b9a65384",
         "ticketNumber": "TKT-2026-000035",
         "summary": "Lab 2 feature continuity under JWT Auth",
-        "currentStatus": "NEW",
+        "currentStatus": "CANCELLED",
         "requestedPriority": "MEDIUM",
-        "updatedAt": "2026-10-29T07:19:11.524Z"
+        "updatedAt": "2026-10-29T16:28:39.828Z"
       },
       {
-        "id": "d4a43a5d-2212-478d-a9c3-2635ebb2173e",
+        "id": "35ce9582-e4e1-4010-bc69-0d2fdac06c76",
+        "ticketNumber": "TKT-2026-000008",
+        "summary": "Accidental duplicate ticket submission for laptop keyboard repair",
+        "currentStatus": "CANCELLED",
+        "requestedPriority": "LOW",
+        "updatedAt": "2026-10-29T16:21:25.424Z"
+      },
+      {
+        "id": "8ee6d118-dc4f-4ea0-a7be-03dccd6dc818",
         "ticketNumber": "TKT-2026-000034",
         "summary": "Alice regression ticket for ownership isolation test",
         "currentStatus": "NEW",
         "requestedPriority": "HIGH",
-        "updatedAt": "2026-10-29T07:19:11.244Z"
+        "updatedAt": "2026-10-29T16:21:25.241Z"
       },
       {
-        "id": "39d32c76-aef4-43cf-b244-b35dad553e6c",
+        "id": "880ce59f-a7e1-4c44-85b8-24c8096aa238",
         "ticketNumber": "TKT-2026-000033",
         "summary": "Detail Test Ticket Summary",
         "currentStatus": "NEW",
         "requestedPriority": "HIGH",
-        "updatedAt": "2026-10-29T07:19:08.508Z"
+        "updatedAt": "2026-10-29T16:21:21.699Z"
       }
     ],
     "attentionRequiredTickets": [
       {
-        "id": "8fadea15-dfe3-462a-b243-6bbac7749bab",
-        "ticketNumber": "TKT-2026-962791",
+        "id": "99e7f3d8-67f0-4beb-a945-f0eba0412505",
+        "ticketNumber": "TKT-2026-552346",
         "summary": "Matrix edge IN_PROGRESS to WAITING_FOR_REQUESTER",
         "currentStatus": "WAITING_FOR_REQUESTER",
         "requestedPriority": "MEDIUM",
-        "updatedAt": "2026-10-29T07:18:22.789Z"
+        "updatedAt": "2026-10-29T16:20:22.345Z"
       }
     ]
   }
