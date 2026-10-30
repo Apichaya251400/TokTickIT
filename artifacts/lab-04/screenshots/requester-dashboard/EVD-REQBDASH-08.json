@@ -10,13 +10,13 @@
       "role": "REQUESTER"
     },
     "requesterB_TargetVictim": {
-      "id": 135299,
+      "id": 135303,
       "name": "Bob Requester",
       "email": "bob.requester@example.com",
       "role": "REQUESTER",
       "confidentialTicket": {
-        "id": "3e3792aa-090d-487d-8cfa-1733277ac69a",
-        "ticketNumber": "TKT-2026-629449",
+        "id": "c9e76837-6d3b-437a-a5f2-e222964bed36",
+        "ticketNumber": "TKT-2026-956129",
         "summary": "[TEST-REQDASH-E2E] Bob Confidential Financial Request",
         "currentStatus": "WAITING_FOR_REQUESTER"
       }
@@ -24,11 +24,11 @@
   },
   "request": {
     "method": "GET",
-    "endpoint": "/api/dashboards/requester?requesterId=135299&userId=135299",
+    "endpoint": "/api/dashboards/requester?requesterId=135303&userId=135303",
     "authenticatedSession": "Alice (Requester A)",
     "attemptedOverride": {
-      "requesterId": 135299,
-      "userId": 135299
+      "requesterId": 135303,
+      "userId": 135303
     }
   },
   "response": {
@@ -54,7 +54,7 @@
           "summary": "Campus Wi-Fi disconnects frequently in Library 3rd floor",
           "currentStatus": "IN_PROGRESS",
           "requestedPriority": "MEDIUM",
-          "updatedAt": "2026-10-29T17:11:47.464Z"
+          "updatedAt": "2026-10-29T19:09:12.908Z"
         },
         {
           "id": "34a5cfc3-77ca-42e4-9b36-9fa6b9a65384",

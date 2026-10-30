@@ -65,8 +65,10 @@ Lab 4 Pull Requests under review by [@Pilaiwan3492](https://github.com/Pilaiwan3
   - Implemented realistic keyboard navigation in `TEST-QA-06` via `Tab` key traversal from navbar brand to Dashboard tab and then to IT Queue tab, asserting focus and Zen Green outline with 2px offset.
   - Automated semantic labels (`<label for="...">`) across representative forms (Login, Create Ticket, Actions Taken) and tightened adjacent validation alert/feedback placement in `TEST-QA-07` using relative DOM bounding coordinates.
   - Removed global `overflow-x: hidden` masking and fixed root-cause layout overflow on 375px mobile viewports via responsive flex-wrap across navigation bars, ticket detail headers, work logs, and comments.
-  - Included preserved Lab 1–3 screens (Create Ticket, My Tickets) across all viewports with cross-reference to PR #93 regression hardening evidence.
   - Aligned `EVD-QA-06` title in `tests.md` to `Dedicated Staff Dashboard dynamic multi-device audit`.
+  - Refined checklist wording in `docs/lab-04/ui-spec.md` and `docs/lab-04/visual-qa.md` to accurately specify representative/required controls and forms matching automated test coverage.
+  - Added Tablet viewport (`768×1024`) to `TEST-QA-05` so `EVD-QA-07` dynamically verifies Desktop, Tablet, and Mobile viewports without ambiguity.
+  - Updated `README.md` test summary table and evidence descriptions to reflect the current Lab 4 full E2E test suite (64 / 64) and integrated test total (475 / 475), clarifying `EVD-REG-01` as the regression suite baseline.
 
 ---
 

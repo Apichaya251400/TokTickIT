@@ -1,7 +1,7 @@
 {
   "evidenceId": "EVD-REG-04",
   "title": "Product Hardening: Failure States & Duplicate/Retry Protection Evidence",
-  "timestamp": "2026-10-29T19:08:39.211Z",
+  "timestamp": "2026-10-30T08:04:01.604Z",
   "formPreservationCheck": {
     "testId": "TEST-FAIL-01",
     "description": "Action Taken form inputs preserved upon recoverable validation error and network drop",
@@ -9,14 +9,14 @@
   },
   "duplicateActionProtection": {
     "testId": "TEST-IDEM-01..03",
-    "idempotencyKey": "e2e-reg-idem-1793300917641",
+    "idempotencyKey": "e2e-reg-idem-1793347440068",
     "initialSubmissionStatus": 201,
     "retrySubmissionStatus": 201,
-    "cachedActionId": "7dce02fc-7d45-4e3b-9a0d-d7315bd508a2",
+    "cachedActionId": "7e49c9fe-3520-4ebb-b643-4708148b3fc6",
     "identicalResponseReturned": true,
     "databaseUniqueConstraintEnforced": true,
     "databaseActionTakenCountEnforced": true,
-    "actionTakenRecordId": "7dce02fc-7d45-4e3b-9a0d-d7315bd508a2",
+    "actionTakenRecordId": "7e49c9fe-3520-4ebb-b643-4708148b3fc6",
     "simulatedNetworkDropAndRetry": "VERIFIED_PASS (Transient network drop aborted, form preserved, retry succeeded)",
     "status": "VERIFIED_PASS"
   }

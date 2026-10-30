@@ -11,8 +11,8 @@
       "match": true
     },
     "todayActionsCount": {
-      "expectedDbQuery": 2,
-      "actualApiResponse": 2,
+      "expectedDbQuery": 3,
+      "actualApiResponse": 3,
       "match": true
     },
     "urgentWorkloadCount": {
@@ -25,7 +25,7 @@
     "metrics": {
       "unassignedCount": 55,
       "myAssignedCount": 2,
-      "todayActionsCount": 2,
+      "todayActionsCount": 3,
       "urgentWorkloadCount": 2
     },
     "myRecentTickets": [
@@ -36,7 +36,7 @@
         "currentStatus": "RESOLVED",
         "requestedPriority": "LOW",
         "itPriority": "LOW",
-        "updatedAt": "2026-10-29T17:11:49.636Z"
+        "updatedAt": "2026-10-29T19:09:16.106Z"
       },
       {
         "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
@@ -45,7 +45,7 @@
         "currentStatus": "IN_PROGRESS",
         "requestedPriority": "MEDIUM",
         "itPriority": "URGENT",
-        "updatedAt": "2026-10-29T17:11:47.464Z"
+        "updatedAt": "2026-10-29T19:09:12.908Z"
       },
       {
         "id": "fdb60d58-ea95-42ab-b55a-ce876b1a4d80",
@@ -67,6 +67,14 @@
       }
     ],
     "currentStaffActions": [
+      {
+        "id": "c0324510-78b8-4973-a863-d96b324078da",
+        "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",
+        "ticketNumber": "TKT-2026-000002",
+        "description": "E2E Verified hardware connectivity today",
+        "result": "All diagnostics passed",
+        "createdAt": "2026-10-30T08:04:27.564Z"
+      },
       {
         "id": "a4ee43da-7e2a-4ecb-98ad-2f0a64ddb8c2",
         "ticketId": "0466d599-bbd8-429a-94cf-22d66e8b4967",

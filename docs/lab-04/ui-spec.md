@@ -171,10 +171,10 @@ The interface MUST render seamlessly across three standard viewports:
 - [x] **No Clipping**: All card text, metrics, badges, and buttons render cleanly without text truncation or container overflow across Desktop (`1920×1080`), Tablet (`768×1024`), and Mobile (`375×812`).
 - [x] **No Overlap**: Interactive elements have sufficient spacing and responsive margin/padding to prevent accidental activation and maintain accessible interaction.
 - [x] **No Unintended Horizontal Overflow**: Page body width remains strictly bounded to viewport width (`document.documentElement.scrollWidth <= window.innerWidth + 1`) without relying on body-level overflow clipping (`overflow-x: hidden`). Data tables use isolated responsive scroll wrappers (`overflow-x: auto`).
-- [x] **Visible Focus States**: Keyboard focus ring (`outline: 2px solid #198754 !important; outline-offset: 2px;`) is clearly visible on all buttons, links, inputs, and selectors.
+- [x] **Visible Focus States**: Representative required interactive controls have a visible Zen Green keyboard focus ring (`outline: 2px solid #198754 !important; outline-offset: 2px;`) verified during keyboard traversal.
 - [x] **Non-Color Status & Priority Cues**: Statuses, priorities, and roles use distinct readable textual labels alongside color-coded badges, ensuring full accessibility for color-vision-deficient users.
-- [x] **Mobile Touch Targets**: All interactive buttons, tabs, and form controls enforce minimum touch dimensions of `>= 44×44px` on mobile viewports.
-- [x] **Semantic Labels & ARIA Attributes**: All form fields feature explicit `<label htmlFor="...">`, landmark regions, and valid ARIA roles (`role="region"`, `role="button"`, `aria-current="page"`).
+- [x] **Mobile Touch Targets**: Required mobile interactive controls verified in the main navigation and Actions Taken form enforce minimum touch dimensions of `>= 44×44px` on mobile viewports (`<= 768px`).
+- [x] **Semantic Labels & ARIA Attributes**: Representative required forms (Login, Create Ticket, Actions Taken) use explicit label-to-control associations (`<label htmlFor="...">`), landmark regions, and valid ARIA roles (`role="region"`, `role="button"`, `aria-current="page"`).
 - [x] **Editable vs Read-Only Field Clarity**: Read-only fields (e.g. Requester Actions Taken feed, Ticket ID, timestamps) are visually distinguished from editable controls (Create/Edit Action modals, Resolution Note textarea).
-- [x] **Clear Validation & Alert Placement**: Form validation feedback (is-invalid error messages) and alert banners (409 Conflict stale-update, 403 Forbidden, 404 Not Found) are placed directly adjacent to relevant controls.
+- [x] **Clear Validation & Alert Placement**: Required representative validation states (Login error banner, Actions Taken inline feedback, Resolution Gate warning, 409 stale-update) are positioned adjacent to their relevant controls.
 

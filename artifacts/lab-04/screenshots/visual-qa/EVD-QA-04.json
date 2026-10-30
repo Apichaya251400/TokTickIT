@@ -1,7 +1,7 @@
 {
   "evidenceId": "EVD-QA-04",
   "title": "TokTickIT Sprint 4 Visual and Accessibility QA Checklist",
-  "timestamp": "2026-10-29T19:09:47.574Z",
+  "timestamp": "2026-10-30T08:05:36.380Z",
   "inspectedScreens": [
     "Authentication: Login Screen",
     "Authentication: Mandatory Password Change Screen",
@@ -51,7 +51,7 @@
     "visibleFocusStates": {
       "method": "Automated",
       "status": "PASS",
-      "description": "Verified 2px solid rgb(25, 135, 84) outline with 2px offset on keyboard navigation"
+      "description": "Representative required interactive controls have a visible Zen Green keyboard focus ring (2px solid rgb(25, 135, 84) with 2px offset) verified during keyboard traversal"
     },
     "nonColorStatusCues": {
       "method": "Automated & Visual",
@@ -61,7 +61,7 @@
     "mobileTouchTargets": {
       "method": "Automated",
       "status": "PASS",
-      "description": "All interactive controls verify >= 44x44px dimensions on mobile viewports"
+      "description": "Required mobile interactive controls (buttons, select, switches, navigation, form-control inputs) strictly meet >= 44x44px dimensions on mobile viewports"
     },
     "semanticLabels": {
       "method": "Automated",
@@ -76,7 +76,7 @@
     "validationPlacement": {
       "method": "Automated",
       "status": "PASS",
-      "description": "Validation alert banners and inline invalid-feedback elements positioned directly adjacent to relevant form inputs"
+      "description": "Required representative validation alert banners and inline invalid-feedback elements positioned directly adjacent to relevant form inputs"
     }
   },
   "conclusion": "All major Lab 4 screens and preserved Lab 1-3 screens satisfy the approved Zen Green visual, responsive, and accessibility contract."

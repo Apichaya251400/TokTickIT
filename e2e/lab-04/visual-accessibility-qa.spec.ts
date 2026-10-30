@@ -574,6 +574,7 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
 
     const testViewports = [
       { name: "Desktop", width: 1920, height: 1080 },
+      { name: "Tablet", width: 768, height: 1024 },
       { name: "Mobile", width: 375, height: 812 },
     ];
 
@@ -711,7 +712,7 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
         statusTransitions: ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"],
         requesterRoleConstraint: "READ_ONLY_ENFORCED",
       },
-      conclusion: "Actions Taken Workspace and record action card dynamically verified on Desktop and Mobile viewports with zero horizontal overflow, no field collisions, and compliant touch targets.",
+      conclusion: "Actions Taken Workspace and record action card dynamically verified on Desktop, Tablet, and Mobile viewports with zero horizontal overflow, no field collisions, and compliant touch targets.",
     };
 
     fs.writeFileSync(
@@ -979,12 +980,12 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
         noClipping: { method: "Automated & Visual", status: "PASS", description: "Zero text or control clipping across viewports with bounded scrollWidth" },
         noOverlap: { method: "Automated", status: "PASS", description: "Disjoint bounding boxes verified for adjacent navigation items and metric cards" },
         noHorizontalOverflow: { method: "Automated", status: "PASS", description: "Document scrollWidth strictly <= window.innerWidth across all viewports" },
-        visibleFocusStates: { method: "Automated", status: "PASS", description: "Verified 2px solid rgb(25, 135, 84) outline with 2px offset on keyboard navigation" },
+        visibleFocusStates: { method: "Automated", status: "PASS", description: "Representative required interactive controls have a visible Zen Green keyboard focus ring (2px solid rgb(25, 135, 84) with 2px offset) verified during keyboard traversal" },
         nonColorStatusCues: { method: "Automated & Visual", status: "PASS", description: "Explicit textual badges for all statuses (NEW, OPEN, IN_PROGRESS, etc.) and priorities" },
-        mobileTouchTargets: { method: "Automated", status: "PASS", description: "All interactive controls verify >= 44x44px dimensions on mobile viewports" },
+        mobileTouchTargets: { method: "Automated", status: "PASS", description: "Required mobile interactive controls (buttons, select, switches, navigation, form-control inputs) strictly meet >= 44x44px dimensions on mobile viewports" },
         semanticLabels: { method: "Automated", status: "PASS", description: "Representative forms (Login, Create Ticket, Actions Taken) verify explicit label[for] associations and accessible button names" },
         editableVsReadOnly: { method: "Automated & Visual", status: "PASS", description: "Clear visual distinction: readOnly attributes and #F0F4F2 vs #FFFFFF styling" },
-        validationPlacement: { method: "Automated", status: "PASS", description: "Validation alert banners and inline invalid-feedback elements positioned directly adjacent to relevant form inputs" },
+        validationPlacement: { method: "Automated", status: "PASS", description: "Required representative validation alert banners and inline invalid-feedback elements positioned directly adjacent to relevant form inputs" },
       },
       conclusion: "All major Lab 4 screens and preserved Lab 1-3 screens satisfy the approved Zen Green visual, responsive, and accessibility contract.",
     };

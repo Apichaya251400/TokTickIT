@@ -93,12 +93,12 @@ To satisfy the sprint increment requirement of complete visual & regression hard
 | **No Text/Control Clipping** | Automated & Visual | **PASS** | Document `scrollWidth <= innerWidth + 1` across all viewports; zero clipped labels or cut-off buttons. |
 | **No Element Overlap** | Automated | **PASS** | Disjoint bounding boxes verified for adjacent navigation tabs, action buttons, and metric cards. |
 | **No Horizontal Overflow** | Automated | **PASS** | Verified across Desktop (1920), Tablet (768), and Mobile (375) without masking rules. Root-cause fixes applied (`flex-wrap`). |
-| **Visible Focus States** | Automated | **PASS** | Verified `outline: 2px solid rgb(25, 135, 84)` with `2px` offset on `#login-email`, `#login-password`, submit buttons, and navigation links. |
+| **Visible Focus States** | Automated | **PASS** | Representative required interactive controls have a visible Zen Green keyboard focus ring (`outline: 2px solid rgb(25, 135, 84)` with `2px` offset) verified during keyboard traversal. |
 | **Non-Color Status Cues** | Automated & Visual | **PASS** | Explicit textual badges on all statuses and priorities ensure distinguishability without relying on color alone. |
-| **Mobile Touch Targets** | Automated | **PASS** | All interactive controls (buttons, select, switches, navigation) strictly meet `>= 44×44px` on mobile viewports (`<= 768px`). |
-| **Accessible Semantic Labels** | Automated | **PASS** | Representative forms (Login, Create Ticket, Actions Taken) verify explicit `<label for="...">` associations and accessible button names. |
+| **Mobile Touch Targets** | Automated | **PASS** | Required mobile interactive controls (buttons, select, switches, navigation, form-control inputs) strictly meet `>= 44×44px` on mobile viewports (`<= 768px`). |
+| **Accessible Semantic Labels** | Automated | **PASS** | Representative required forms (Login, Create Ticket, Actions Taken) verify explicit `<label for="...">` associations and accessible button names. |
 | **Editable vs. Read-Only** | Automated & Visual | **PASS** | Read-only fields shaded `#F0F4F2` with `readOnly` attributes, visually separated from white `#FFFFFF` editable inputs. |
-| **Validation Placement** | Automated | **PASS** | Validation alert banners and inline invalid-feedback elements positioned directly adjacent to relevant form inputs. |
+| **Validation Placement** | Automated | **PASS** | Required representative validation alert banners and inline invalid-feedback elements positioned directly adjacent to relevant form inputs. |
 
 ---
 
