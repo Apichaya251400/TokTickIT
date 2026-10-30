@@ -723,15 +723,21 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
 
   // TEST-QA-06: Focus Rings & Keyboard Navigation Accessibility Evidence (EVD-QA-08)
   test("TEST-QA-06: Focus Rings & Keyboard Navigation Accessibility Evidence (EVD-QA-08)", async ({ page }) => {
+    // Keyboard-only navigation from the page's initial focus position
     await page.goto("/");
     await page.evaluate(() => localStorage.clear());
     await page.context().clearCookies();
     await page.goto("/");
+    await expect(page.getByRole("heading", { name: /TokTickIT/i })).toBeVisible();
 
     const testedControls: any[] = [];
 
-    // 1. Focus on Login Email input
-    await page.locator("#login-email").focus();
+    // The page should start with focus on the document body.
+    const initialFocus = await page.evaluate(() => document.activeElement?.tagName.toLowerCase());
+    expect(initialFocus).toBe("body");
+
+    // First Tab -> Login Email
+    await page.keyboard.press("Tab");
     const emailInfo = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
       if (!el) return null;
@@ -745,14 +751,19 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
         outlineOffset: s.outlineOffset,
       };
     });
+
     expect(emailInfo?.id).toBe("login-email");
     expect(emailInfo?.outlineStyle).toBe("solid");
     expect(emailInfo?.outlineWidth).toBe("2px");
     expect(emailInfo?.outlineColor).toContain("25, 135, 84");
     expect(emailInfo?.outlineOffset).toBe("2px");
-    testedControls.push({ control: "Login Email Input (#login-email)", ...emailInfo, status: "PASS" });
+    testedControls.push({
+      control: "Login Email Input (#login-email)",
+      ...emailInfo,
+      status: "PASS",
+    });
 
-    // 3. Tab to Password input
+    // Second Tab -> Login Password
     await page.keyboard.press("Tab");
     const passwordInfo = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
@@ -767,13 +778,19 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
         outlineOffset: s.outlineOffset,
       };
     });
+
     expect(passwordInfo?.id).toBe("login-password");
     expect(passwordInfo?.outlineStyle).toBe("solid");
     expect(passwordInfo?.outlineWidth).toBe("2px");
     expect(passwordInfo?.outlineColor).toContain("25, 135, 84");
-    testedControls.push({ control: "Login Password Input (#login-password)", ...passwordInfo, status: "PASS" });
+    expect(passwordInfo?.outlineOffset).toBe("2px");
+    testedControls.push({
+      control: "Login Password Input (#login-password)",
+      ...passwordInfo,
+      status: "PASS",
+    });
 
-    // 4. Tab to Sign In submit button
+    // Third Tab -> Sign In
     await page.keyboard.press("Tab");
     const submitInfo = await page.evaluate(() => {
       const el = document.activeElement as HTMLButtonElement | null;
@@ -789,15 +806,46 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
         outlineOffset: s.outlineOffset,
       };
     });
+
     expect(submitInfo?.tagName).toBe("button");
+    expect(submitInfo?.type).toBe("submit");
+    expect(submitInfo?.text).toBe("Sign In");
     expect(submitInfo?.outlineStyle).toBe("solid");
     expect(submitInfo?.outlineWidth).toBe("2px");
     expect(submitInfo?.outlineColor).toContain("25, 135, 84");
-    testedControls.push({ control: "Sign In Submit Button", ...submitInfo, status: "PASS" });
+    expect(submitInfo?.outlineOffset).toBe("2px");
 
-    // 4. Log in and test realistic Tab key navigation between navigation items
+    testedControls.push({
+      control: "Sign In Submit Button",
+      ...submitInfo,
+      status: "PASS",
+    });
+
+    // 4. Log in and test realistic keyboard-only navigation from initial focus
     await loginAsStaff(page);
-    await page.locator("a.navbar-brand").focus();
+
+    // Reload authenticated page and start keyboard navigation from initial focus.
+    await page.reload();
+    await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();
+
+    const dashboardInitialFocus = await page.evaluate(
+      () => document.activeElement?.tagName.toLowerCase()
+    );
+    expect(dashboardInitialFocus).toBe("body");
+
+    // First Tab -> navbar brand
+    await page.keyboard.press("Tab");
+    const brandInfo = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement | null;
+      return {
+        tagName: el?.tagName.toLowerCase(),
+        className: el?.className,
+      };
+    });
+
+    expect(brandInfo?.tagName).toBe("a");
+
+    // Second Tab -> Dashboard
     await page.keyboard.press("Tab");
     const navDashboardInfo = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
@@ -812,15 +860,22 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
         outlineOffset: s.outlineOffset,
       };
     });
+
     expect(navDashboardInfo?.testId).toBe("nav-staff-dashboard");
     expect(navDashboardInfo?.outlineStyle).toBe("solid");
     expect(navDashboardInfo?.outlineWidth).toBe("2px");
     expect(navDashboardInfo?.outlineColor).toContain("25, 135, 84");
     expect(navDashboardInfo?.outlineOffset).toBe("2px");
-    testedControls.push({ control: "Navigation Tab (Dashboard)", ...navDashboardInfo, status: "PASS" });
 
-    // Press Tab key again to traverse to IT Queue
+    testedControls.push({
+      control: "Navigation Tab (Dashboard)",
+      ...navDashboardInfo,
+      status: "PASS",
+    });
+
+    // Third Tab -> IT Queue
     await page.keyboard.press("Tab");
+
     const navQueueInfo = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
       if (!el) return null;
@@ -834,12 +889,18 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
         outlineOffset: s.outlineOffset,
       };
     });
+
     expect(navQueueInfo?.testId).toBe("nav-it-queue");
     expect(navQueueInfo?.outlineStyle).toBe("solid");
     expect(navQueueInfo?.outlineWidth).toBe("2px");
     expect(navQueueInfo?.outlineColor).toContain("25, 135, 84");
     expect(navQueueInfo?.outlineOffset).toBe("2px");
-    testedControls.push({ control: "Navigation Tab (IT Queue)", ...navQueueInfo, status: "PASS" });
+
+    testedControls.push({
+      control: "Navigation Tab (IT Queue)",
+      ...navQueueInfo,
+      status: "PASS",
+    });
 
     await page.screenshot({
       path: path.join(qaArtifactsBase, "EVD-QA-08.png"),
@@ -977,8 +1038,16 @@ test.describe("LAB4-10: Zen Green UI, Responsive & Accessibility QA (Issue #81)"
         { name: "Mobile", dimensions: "375x812", status: "PASS" },
       ],
       checklistItems: {
-        noClipping: { method: "Automated & Visual", status: "PASS", description: "Zero text or control clipping across viewports with bounded scrollWidth" },
-        noOverlap: { method: "Automated", status: "PASS", description: "Disjoint bounding boxes verified for adjacent navigation items and metric cards" },
+        noClipping: {
+          method: "Automated & Visual",
+          status: "PASS",
+          description: "No clipping observed in required Lab 4 screens; page-level horizontal overflow is bounded with targeted geometry checks on representative controls.",
+        },
+        noOverlap: {
+          method: "Automated & Visual",
+          status: "PASS",
+          description: "No unintended overlap observed in required Lab 4 screens; pairwise bounding-box checks cover dashboard metric cards, Actions Taken form fields, and representative navigation controls.",
+        },
         noHorizontalOverflow: { method: "Automated", status: "PASS", description: "Document scrollWidth strictly <= window.innerWidth across all viewports" },
         visibleFocusStates: { method: "Automated", status: "PASS", description: "Representative required interactive controls have a visible Zen Green keyboard focus ring (2px solid rgb(25, 135, 84) with 2px offset) verified during keyboard traversal" },
         nonColorStatusCues: { method: "Automated & Visual", status: "PASS", description: "Explicit textual badges for all statuses (NEW, OPEN, IN_PROGRESS, etc.) and priorities" },

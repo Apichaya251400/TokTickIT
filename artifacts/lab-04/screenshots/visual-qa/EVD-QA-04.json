@@ -1,7 +1,7 @@
 {
   "evidenceId": "EVD-QA-04",
   "title": "TokTickIT Sprint 4 Visual and Accessibility QA Checklist",
-  "timestamp": "2026-10-30T08:05:36.380Z",
+  "timestamp": "2026-10-30T12:19:39.052Z",
   "inspectedScreens": [
     "Authentication: Login Screen",
     "Authentication: Mandatory Password Change Screen",
@@ -36,12 +36,12 @@
     "noClipping": {
       "method": "Automated & Visual",
       "status": "PASS",
-      "description": "Zero text or control clipping across viewports with bounded scrollWidth"
+      "description": "No clipping observed in required Lab 4 screens; page-level horizontal overflow is bounded with targeted geometry checks on representative controls."
     },
     "noOverlap": {
-      "method": "Automated",
+      "method": "Automated & Visual",
       "status": "PASS",
-      "description": "Disjoint bounding boxes verified for adjacent navigation items and metric cards"
+      "description": "No unintended overlap observed in required Lab 4 screens; pairwise bounding-box checks cover dashboard metric cards, Actions Taken form fields, and representative navigation controls."
     },
     "noHorizontalOverflow": {
       "method": "Automated",

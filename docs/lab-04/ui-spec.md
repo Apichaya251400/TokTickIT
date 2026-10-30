@@ -168,8 +168,8 @@ The interface MUST render seamlessly across three standard viewports:
 
 ## 7. Visual & Accessibility QA Checklist
 
-- [x] **No Clipping**: All card text, metrics, badges, and buttons render cleanly without text truncation or container overflow across Desktop (`1920×1080`), Tablet (`768×1024`), and Mobile (`375×812`).
-- [x] **No Overlap**: Interactive elements have sufficient spacing and responsive margin/padding to prevent accidental activation and maintain accessible interaction.
+- [x] **No Clipping**: No clipping was observed in the required Lab 4 screens during visual inspection. Automated verification checks page-level horizontal overflow, with targeted bounding-box checks for representative dashboard cards and Actions Taken form controls.
+- [x] **No Overlap**: No unintended overlap was observed in the required Lab 4 screens during visual inspection. Automated bounding-box checks cover representative navigation controls, all four Staff Dashboard metric cards, and Actions Taken form fields.
 - [x] **No Unintended Horizontal Overflow**: Page body width remains strictly bounded to viewport width (`document.documentElement.scrollWidth <= window.innerWidth + 1`) without relying on body-level overflow clipping (`overflow-x: hidden`). Data tables use isolated responsive scroll wrappers (`overflow-x: auto`).
 - [x] **Visible Focus States**: Representative required interactive controls have a visible Zen Green keyboard focus ring (`outline: 2px solid #198754 !important; outline-offset: 2px;`) verified during keyboard traversal.
 - [x] **Non-Color Status & Priority Cues**: Statuses, priorities, and roles use distinct readable textual labels alongside color-coded badges, ensuring full accessibility for color-vision-deficient users.

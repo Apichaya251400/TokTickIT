@@ -90,8 +90,8 @@ To satisfy the sprint increment requirement of complete visual & regression hard
 
 | Checklist Item | Verification Method | Result | Description |
 |---|---|:---:|---|
-| **No Text/Control Clipping** | Automated & Visual | **PASS** | Document `scrollWidth <= innerWidth + 1` across all viewports; zero clipped labels or cut-off buttons. |
-| **No Element Overlap** | Automated | **PASS** | Disjoint bounding boxes verified for adjacent navigation tabs, action buttons, and metric cards. |
+| **No Text/Control Clipping** | Automated & Visual | **PASS** | No clipping observed in the required Lab 4 screens. Page-level horizontal overflow is bounded, with targeted geometry checks for representative dashboard and Actions Taken controls. |
+| **No Element Overlap** | Automated & Visual | **PASS** | No unintended overlap observed in the required Lab 4 screens. Pairwise bounding-box checks cover all four dashboard metric cards, Actions Taken form fields, and representative navigation controls. |
 | **No Horizontal Overflow** | Automated | **PASS** | Verified across Desktop (1920), Tablet (768), and Mobile (375) without masking rules. Root-cause fixes applied (`flex-wrap`). |
 | **Visible Focus States** | Automated | **PASS** | Representative required interactive controls have a visible Zen Green keyboard focus ring (`outline: 2px solid rgb(25, 135, 84)` with `2px` offset) verified during keyboard traversal. |
 | **Non-Color Status Cues** | Automated & Visual | **PASS** | Explicit textual badges on all statuses and priorities ensure distinguishability without relying on color alone. |
