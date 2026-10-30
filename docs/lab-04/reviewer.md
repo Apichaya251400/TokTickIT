@@ -103,11 +103,11 @@ Lab 4 Pull Requests reviewed on partner's repository (`Pilaiwan3492/TokTickIT`).
 ### 1. README Check
 - **Existence**: `README.md` exists in repository root.
 - **Setup & Execution Instructions**: Validated server and client setup, database migration (`prisma:migrate`), idempotent seed (`prisma:seed`), and dev server commands.
-- **Test Commands**: Verified commands for server tests (282), client tests (129), and Playwright E2E tests (52).
+- **Test Commands**: Verified commands for server tests (282), client tests (129), and Playwright E2E tests (64) (Integrated total: 475 tests).
 
 ### 2. Directory Structure Verification
 - `client/`: Frontend React 18 + Vite source code, components, and Vitest unit tests.
 - `server/`: Express API routes, middleware, Prisma schema, migrations, seed script, and Vitest API tests.
 - `e2e/`: Playwright E2E test suites for Lab 2, Lab 3, and Lab 4.
 - `docs/lab-04/`: Lab 4 documentation (`specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, `reviewer.md`, `ai-use.md`, `regression-evidence.md`).
-- `artifacts/lab-04/`: Evidence screenshots and JSON payloads for Actions Taken (`EVD-ACT-*`), Staff Dashboard (`EVD-STAFFDASH-*`), Requester Dashboard (`EVD-REQBDASH-*`), Ticket Workflow (`EVD-WORKFLOW-*`), and Regression (`EVD-REG-*`).
+- `artifacts/lab-04/`: Evidence screenshots and JSON payloads for Actions Taken (`EVD-ACT-*`), Staff Dashboard (`EVD-STAFFDASH-*`), Requester Dashboard (`EVD-REQBDASH-*`), Ticket Workflow (`EVD-WORKFLOW-*`), Regression (`EVD-REG-*`), and Visual QA (`EVD-QA-*`).
