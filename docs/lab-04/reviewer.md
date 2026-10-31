@@ -91,7 +91,7 @@ Lab 4 Pull Requests under review by [@Pilaiwan3492](https://github.com/Pilaiwan3
     - Added `await waitFor(...)` for success toast in `client/tests/lab-02/CreateTicket.test.tsx`, eliminating React `act(...)` warning (129/129 tests passing with 0 warnings).
     - Configured `poolOptions.threads.maxThreads: 2` in `client/vite.config.ts` to prevent jsdom thread memory overhead on Windows.
 - **Issue 12 / PR #96 (Release Gate & Peer Feedback Polish)**:
-  - **Targeted Test Cleanup**: Refined `server/tests/lab-04/actions.api.test.ts` to strictly track and delete only test-created records (`createdActionIds`, `createdTicketIds`, `createdIdempotencyKeys`), completely removing broad fallback deletion (`startsWith: "test-act-"`).
+  - **Targeted Test Cleanup**: Refined `server/tests/lab-04/actions-taken.api.test.ts` to strictly track and delete only test-created records (`createdActionIds`, `createdTicketIds`, `createdIdempotencyKeys`), completely removing broad fallback deletion (`startsWith: "test-act-"`).
   - **Performance Smoke & Concurrency Benchmark**: Executed automated benchmark suite (`server/scripts/run-performance-benchmark.ts`) measuring sequential (100 reqs) and concurrent (50 reqs, c=10) latencies across Staff/Requester Dashboards and 10 parallel idempotency key collisions, capturing raw execution log in `artifacts/lab-04/screenshots/release/EVD-PERF-01.txt`.
   - **Traceability Alignment**: Mapped AC-16 and AC-20 to `TEST-ACT-07` and AC-22 to `TEST-ACT-09` in `tests.md` and `EVD-REL-08.md`, matching physical test names.
   - **Pre-Merge Release Lifecycle**: Updated `EVD-REL-08.md` to state `Pre-merge Release Candidate (PR #96)`, with final post-merge verification baseline explicitly scheduled on `main` following peer review.

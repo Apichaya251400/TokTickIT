@@ -249,15 +249,15 @@ The system exposes RESTful JSON endpoints under `/api`:
 
 ## 12. Definition of Done (DoD)
 
-- [ ] All 23 Acceptance Criteria (AC-01 to AC-23) implemented and verified.
-- [ ] Prisma database schema updated, migrated, and idempotent seed script verified.
-- [ ] Server unit & API integration tests (`server/tests/lab-04/`) passing 100%.
-- [ ] Client component tests (`client/tests/lab-04/`) passing 100%.
-- [ ] Playwright E2E tests (`e2e/lab-04/`) passing 100% across Desktop, Tablet, and Mobile viewports.
-- [ ] Full Lab 1–3 regression suite passing 100%.
-- [ ] All 6 documentation files created/updated in `docs/lab-04/` (`specification.md`, `tests.md`, `ui-spec.md`, `api-spec.md`, `reviewer.md`, `ai-use.md`).
-- [ ] Peer review completed and logged in `docs/lab-04/reviewer.md` with approvals.
-- [ ] All 12 GitHub Issues in Done on GitHub Project Board.
+- [x] All 23 Acceptance Criteria (AC-01 to AC-23) implemented and verified.
+- [x] Prisma database schema updated, migrated, and idempotent seed script verified.
+- [x] Server unit & API integration tests (`server/tests/lab-04/`) passing 100%.
+- [x] Client component tests (`client/tests/lab-04/`) passing 100%.
+- [x] Playwright E2E tests (`e2e/lab-04/`) passing 100% across Desktop, Tablet, and Mobile viewports.
+- [x] Full Lab 1–3 regression suite passing 100%.
+- [x] All 6 documentation files created/updated in `docs/lab-04/` (`specification.md`, `tests.md`, `ui-spec.md`, `api-spec.md`, `reviewer.md`, `ai-use.md`).
+- [x] Peer review completed and logged in `docs/lab-04/reviewer.md` with approvals.
+- [x] All 12 GitHub Issues in Done on GitHub Project Board.
 - [ ] Feature branches merged into `lab4-staging`, and final release PR merged into `main`.
 
 ---

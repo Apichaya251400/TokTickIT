@@ -36,21 +36,21 @@
 | Rule ID | Rule Summary | Mapped Acceptance Criteria | Planned Test IDs | Target Test File |
 |---|---|---|---|---|
 | **BR-01** | ActionTaken belongs to exactly 1 Ticket | AC-01 | `TEST-DB-01` | `server/tests/lab-04/db-schema.test.ts` |
-| **BR-02** | Ticket Owner vs Action Performer separation | AC-05 | `TEST-ACT-14` | `server/tests/lab-04/actions.api.test.ts` |
-| **BR-03** | Performer ID derived strictly from actor session token | AC-02 | `TEST-ACT-02` | `server/tests/lab-04/actions.api.test.ts` |
-| **BR-04** | Action assignee must be active IT Staff or Administrator | AC-21 | `TEST-ACT-06` | `server/tests/lab-04/actions.api.test.ts` |
-| **BR-05** | `followUpNote` mandatory when `followUpRequired = true` | AC-03 | `TEST-ACT-03` | `server/tests/lab-04/actions.api.test.ts` |
-| **BR-06** | Requester read-only access for Actions Taken | AC-04 | `TEST-ACT-04` | `server/tests/lab-04/actions.api.test.ts` |
+| **BR-02** | Ticket Owner vs Action Performer separation | AC-05 | `TEST-ACT-14` | `server/tests/lab-04/actions-taken.api.test.ts` |
+| **BR-03** | Performer ID derived strictly from actor session token | AC-02 | `TEST-ACT-02` | `server/tests/lab-04/actions-taken.api.test.ts` |
+| **BR-04** | Action assignee must be active IT Staff or Administrator | AC-21 | `TEST-ACT-06` | `server/tests/lab-04/actions-taken.api.test.ts` |
+| **BR-05** | `followUpNote` mandatory when `followUpRequired = true` | AC-03 | `TEST-ACT-03` | `server/tests/lab-04/actions-taken.api.test.ts` |
+| **BR-06** | Requester read-only access for Actions Taken | AC-04 | `TEST-ACT-04` | `server/tests/lab-04/actions-taken.api.test.ts` |
 | **BR-07** | Requester "Problem Appears Resolved" indication is advisory | AC-10 | `TEST-GATE-02` | `server/tests/lab-04/ticket-workflow.api.test.ts` |
 | **BR-08** | Resolution Gate evaluation (>= 1 COMPLETED or note) | AC-09 | `TEST-GATE-01` | `server/tests/lab-04/ticket-workflow.api.test.ts` |
-| **BR-09** | Terminal `CANCELLED` status locks transitions & actions | AC-12, AC-18 | `TEST-TERM-01..03` | `server/tests/lab-04/ticket-workflow.api.test.ts` & `actions.api.test.ts` |
+| **BR-09** | Terminal `CANCELLED` status locks transitions & actions | AC-12, AC-18 | `TEST-TERM-01..03` | `server/tests/lab-04/ticket-workflow.api.test.ts` & `actions-taken.api.test.ts` |
 | **BR-10** | Optimistic concurrency via mandatory `expectedUpdatedAt` | AC-11, AC-17 | `TEST-CONCUR-01..02` | `server/tests/lab-04/concurrency.api.test.ts` |
 | **BR-11** | Dashboard metrics calculated server-side | AC-06, AC-07 | `TEST-DASH-05` | `server/tests/lab-04/staff-dashboard.api.test.ts` |
 | **BR-12** | Asia/Bangkok (UTC+7) time boundary calculations | AC-06, AC-07 | `TEST-UNIT-02` | `server/tests/unit/timezone.test.ts` |
 | **BR-13** | Ownership-scoped dashboard metric filtering | AC-06, AC-07 | `TEST-DASH-06` | `server/tests/lab-04/staff-dashboard.api.test.ts` |
 | **BR-14** | Explicit empty state `0` behavior for metric cards | AC-15 | `TEST-CARD-00` | `client/tests/lab-04/StaffDashboard.test.tsx` |
 | **BR-15** | Metric card click drill-down navigation | AC-08 | `TEST-DASH-03` | `e2e/lab-04/staff-dashboard.spec.ts` |
-| **BR-16** | ActionTaken authorization bound to parent Ticket | AC-23 | `TEST-SEC-01` | `server/tests/lab-04/actions.api.test.ts` |
+| **BR-16** | ActionTaken authorization bound to parent Ticket | AC-23 | `TEST-SEC-01` | `server/tests/lab-04/actions-taken.api.test.ts` |
 | **BR-17** | Whitespace-only string rejection on textual inputs | AC-03, AC-09 | `TEST-UNIT-03` | `server/tests/unit/validation.test.ts` |
 
 ---
@@ -59,11 +59,11 @@
 
 | Requirement / AC ID | Category / Description | Planned Test ID | Test Type | Target File / Execution Path | Expected Result | Status |
 |---|---|---|---|---|---|---|
-| **AC-01 / FR-01, FR-02** | Create Action Taken with valid data & auto performer attribution | `TEST-ACT-01` | Integration / API | `server/tests/lab-04/actions.api.test.ts` | `201 Created`, action linked to ticket, `performedById = req.user.id` | `Pass` |
-| **AC-02 / BR-03** | Reject client-supplied performer ID in request payload | `TEST-ACT-02` | Integration / API | `server/tests/lab-04/actions.api.test.ts` | `400 Bad Request` (`INVALID_PERFORMER_ATTRIBUTE`) | `Pass` |
-| **AC-03 / FR-03, BR-05** | Reject `followUpRequired = true` when `followUpNote` is empty/whitespace | `TEST-ACT-03` | Integration / API | `server/tests/lab-04/actions.api.test.ts` | `400 Bad Request` (`MISSING_FOLLOW_UP_NOTE`) | `Pass` |
-| **AC-04 / BR-06** | Reject Requester attempting `POST` / `PUT` on ActionTaken | `TEST-ACT-04` | Integration / API | `server/tests/lab-04/actions.api.test.ts` | `403 Forbidden` (`FORBIDDEN`) | `Pass` |
-| **AC-05 / FR-01** | Multi-staff actions ordered chronologically (`createdAt ASC`, `id ASC`) | `TEST-ACT-05` | Integration / API | `server/tests/lab-04/actions.api.test.ts` | `200 OK`, returned list strictly sorted by `createdAt ASC`, tie-break `id ASC` | `Pass` |
+| **AC-01 / FR-01, FR-02** | Create Action Taken with valid data & auto performer attribution | `TEST-ACT-01` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `201 Created`, action linked to ticket, `performedById = req.user.id` | `Pass` |
+| **AC-02 / BR-03** | Reject client-supplied performer ID in request payload | `TEST-ACT-02` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `400 Bad Request` (`INVALID_PERFORMER_ATTRIBUTE`) | `Pass` |
+| **AC-03 / FR-03, BR-05** | Reject `followUpRequired = true` when `followUpNote` is empty/whitespace | `TEST-ACT-03` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `400 Bad Request` (`MISSING_FOLLOW_UP_NOTE`) | `Pass` |
+| **AC-04 / BR-06** | Reject Requester attempting `POST` / `PUT` on ActionTaken | `TEST-ACT-04` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `403 Forbidden` (`FORBIDDEN`) | `Pass` |
+| **AC-05 / FR-01** | Multi-staff actions ordered chronologically (`createdAt ASC`, `id ASC`) | `TEST-ACT-05` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `200 OK`, returned list strictly sorted by `createdAt ASC`, tie-break `id ASC` | `Pass` |
 | **AC-06 / FR-05** | IT Staff Dashboard calculates accurate metrics, urgent & recent items | `TEST-DASH-01` | Integration / API | `server/tests/lab-04/staff-dashboard.api.test.ts` | `200 OK`, exact aggregate counts for `unassignedCount`, `myAssignedCount`, `todayActionsCount`, `urgentWorkloadCount` | `Pass` |
 | **AC-06 / FR-05** | Administrator can access dashboard and IT queue endpoints | `TEST-DASH-ADMIN-01` | Integration / API | `server/tests/lab-04/staff-dashboard.api.test.ts` | `200 OK`, Administrator receives dashboard metrics and queue tickets without 403 Forbidden | `Pass` |
 | **AC-06 / FR-05** | Administrator dashboard Today's Actions drill-down query | `TEST-DASH-ADMIN-02` | Integration / API | `server/tests/lab-04/staff-dashboard.api.test.ts` | `200 OK`, Administrator queries `/api/tickets?view=today_actions` returning performed actions | `Pass` |
@@ -77,20 +77,20 @@
 | **AC-10 / BR-07** | Requester "Problem Appears Resolved" indication records timestamp, status unchanged | `TEST-GATE-02` | Integration / API | `server/tests/lab-04/ticket-workflow.api.test.ts` | `200 OK`, `requesterResolvedIndicatedAt` set, `currentStatus` remains `IN_PROGRESS` | `Pass` |
 | **AC-11 / BR-10** | Concurrent ticket resolution race condition using same `expectedUpdatedAt` | `TEST-CONCUR-01` | Integration / API | `server/tests/lab-04/concurrency.api.test.ts` | Concurrent `Promise.all`: exactly 1 request gets `200 OK`, competing request gets `409 Conflict` (`STALE_UPDATE`) | `Pass` |
 | **AC-12 / BR-09** | Reject status transition on `CANCELLED` ticket | `TEST-TERM-01` | Integration / API | `server/tests/lab-04/ticket-workflow.api.test.ts` | `400 Bad Request` (`TICKET_TERMINAL`) | `Pass` |
-| **AC-12 / BR-09** | Reject Action creation on `CANCELLED` ticket | `TEST-TERM-02` | Integration / API | `server/tests/lab-04/actions.api.test.ts` & `ticket-workflow.api.test.ts` | `400 Bad Request` (`TICKET_TERMINAL`) | `Pass` |
-| **AC-12 / BR-09** | Reject Action edit or status transition on `CANCELLED` ticket | `TEST-TERM-03` | Integration / API | `server/tests/lab-04/actions.api.test.ts` | `400 Bad Request` (`TICKET_TERMINAL`) | `Pass` |
+| **AC-12 / BR-09** | Reject Action creation on `CANCELLED` ticket | `TEST-TERM-02` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` & `ticket-workflow.api.test.ts` | `400 Bad Request` (`TICKET_TERMINAL`) | `Pass` |
+| **AC-12 / BR-09** | Reject Action edit or status transition on `CANCELLED` ticket | `TEST-TERM-03` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `400 Bad Request` (`TICKET_TERMINAL`) | `Pass` |
 | **AC-13 / FR-13** | Full Lab 1–3 regression test suite verification | `TEST-REGR-01` | E2E & API | `npm --prefix server test` & `npx playwright test` | 100% of Lab 1–3 server and E2E regression tests pass cleanly | `Pass` |
 | **AC-14 / FR-15** | Visual Responsive Layout Adaptation across Desktop, Tablet, and Mobile viewports | `TEST-RESP-01` | Playwright E2E | `e2e/lab-04/responsive-a11y.spec.ts` | Viewports `1920×1080`, `768×1024`, `375×812` render grid, table, and cards without clipping/overflow | `Pass` |
 | **AC-15 / FR-08, BR-14** | Zero-count metric API payload response validation | `TEST-DASH-04` | Integration / API | `server/tests/lab-04/staff-dashboard.api.test.ts` | Endpoint returns `0` counts for empty datasets in JSON payload | `Pass` |
 | **AC-15 / FR-08, BR-14** | Zero-count metric UI card rendering & empty state text | `TEST-CARD-00` | UI Component | `client/tests/lab-04/StaffDashboard.test.tsx` | Metric cards render `0` and empty lists render clean message (e.g. `"No recent tickets"`) | `Pass` |
-| **AC-16 / FR-14** | Duplicate ActionTaken creation with identical `Idempotency-Key` returns cached response | `TEST-ACT-07` | Integration / API | `server/tests/lab-04/actions.api.test.ts` | `201 Created`, cached response returned, exactly 1 ActionTaken record created in database | `Pass` |
+| **AC-16 / FR-14** | Duplicate ActionTaken creation with identical `Idempotency-Key` returns cached response | `TEST-ACT-07` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `201 Created`, cached response returned, exactly 1 ActionTaken record created in database | `Pass` |
 | **AC-17 / BR-10, FR-12** | Stale ActionTaken or Ticket update using outdated `expectedUpdatedAt` | `TEST-CONCUR-02` | Integration / API | `server/tests/lab-04/concurrency.api.test.ts` | `409 Conflict` (`STALE_UPDATE`), database state unmodified by stale request | `Pass` |
-| **AC-18 / BR-09, FR-04** | ActionTaken creation attempt on `CANCELLED` ticket | `TEST-TERM-02` | Integration / API | `server/tests/lab-04/actions.api.test.ts` & `ticket-workflow.api.test.ts` | `400 Bad Request` (`TICKET_TERMINAL`), zero actions added | `Pass` |
+| **AC-18 / BR-09, FR-04** | ActionTaken creation attempt on `CANCELLED` ticket | `TEST-TERM-02` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` & `ticket-workflow.api.test.ts` | `400 Bad Request` (`TICKET_TERMINAL`), zero actions added | `Pass` |
 | **AC-19 / FR-15** | Interactive Accessibility: keyboard navigation, focus ring, ARIA, touch targets | `TEST-A11Y-01` | Playwright E2E | `e2e/lab-04/responsive-a11y.spec.ts` | Visible focus rings (`2px solid #198754`), valid ARIA roles, touch targets >= 44×44px, no body horizontal overflow | `Pass` |
-| **AC-20 / FR-14** | Reuse existing `Idempotency-Key` with different request payload | `TEST-ACT-07` | Integration / API | `server/tests/lab-04/actions.api.test.ts` | `409 Conflict` (`IDEMPOTENCY_KEY_REUSED`), zero new records created | `Pass` |
-| **AC-21 / BR-04** | Assign action to inactive user, non-staff user, or invalid UUID | `TEST-ACT-06` | Integration / API | `server/tests/lab-04/actions.api.test.ts` | `400 Bad Request` (`INVALID_ASSIGNEE`) | `Pass` |
-| **AC-22 / Section 8.2** | Valid action status transitions pass; invalid transitions from terminal states fail | `TEST-ACT-09` | Integration / API | `server/tests/lab-04/actions.api.test.ts` | Permitted status transitions return `200 OK`; terminal `COMPLETED`/`CANCELLED` status changes return `400 Bad Request` | `Pass` |
-| **AC-23 / BR-16** | Cross-ticket ActionTaken access authorization check (unauthorized ticket) | `TEST-SEC-01` | Integration / API | `server/tests/lab-04/actions.api.test.ts` | `403 Forbidden` (`FORBIDDEN`), ActionTaken access bound strictly to parent Ticket authorization | `Pass` |
+| **AC-20 / FR-14** | Reuse existing `Idempotency-Key` with different request payload | `TEST-ACT-07` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `409 Conflict` (`IDEMPOTENCY_KEY_REUSED`), zero new records created | `Pass` |
+| **AC-21 / BR-04** | Assign action to inactive user, non-staff user, or invalid UUID | `TEST-ACT-06` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `400 Bad Request` (`INVALID_ASSIGNEE`) | `Pass` |
+| **AC-22 / Section 8.2** | Valid action status transitions pass; invalid transitions from terminal states fail | `TEST-ACT-09` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | Permitted status transitions return `200 OK`; terminal `COMPLETED`/`CANCELLED` status changes return `400 Bad Request` | `Pass` |
+| **AC-23 / BR-16** | Cross-ticket ActionTaken access authorization check (unauthorized ticket) | `TEST-SEC-01` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `403 Forbidden` (`FORBIDDEN`), ActionTaken access bound strictly to parent Ticket authorization | `Pass` |
 
 ---
 

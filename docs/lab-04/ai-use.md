@@ -17,7 +17,7 @@ Throughout Lab 4 development, AI was utilized as a pair-programming reasoning en
 
 All AI interactions were governed by strict engineering guardrails:
 1. **No ungrounded code generation**: Every prompt required grounding in the Lab 4 specification, business rules, and architectural contracts before proposing code changes.
-2. **Verification over assumption**: Every AI-proposed change had to be substantiated with executable unit, API integration, or Playwright E2E tests verified against real PostgreSQL/SQLite databases.
+2. **Verification over assumption**: Every AI-proposed change had to be substantiated with executable unit, API integration, or Playwright E2E tests verified against the PostgreSQL database.
 3. **Preservation of existing behavior**: Earlier Lab 1–3 functionality, security boundaries, and ownership rules could not be weakened or bypassed.
 4. **Human-in-the-loop review**: All code and documentation modifications were audited by the repository author and submitted for formal peer review by the collaborator (`@Pilaiwan3492`).
 

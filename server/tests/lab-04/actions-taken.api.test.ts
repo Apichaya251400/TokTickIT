@@ -5,7 +5,7 @@ import { getPrisma } from "../../src/prisma.js";
 import { seedDatabase } from "../../prisma/seed.js";
 import { clearRevocationBlocklist, signToken } from "../../src/utils/jwt.js";
 
-describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
+describe("LAB4-04 / Actions Taken REST API Suite (actions-taken.api.test.ts)", () => {
   const prisma = getPrisma();
 
   let staffToken: string;
