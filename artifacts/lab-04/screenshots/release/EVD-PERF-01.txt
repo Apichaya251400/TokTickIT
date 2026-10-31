@@ -1,0 +1,59 @@
+================================================================================
+EVD-PERF-01: TokTickIT Sprint 4 Performance-Smoke & Concurrency Benchmark Log
+================================================================================
+Timestamp (UTC): 2026-10-31T18:24:37.245Z
+Environment:
+  - OS: Windows_NT 10.0.26200 (x64)
+  - CPU: 12th Gen Intel(R) Core(TM) i5-12500H (16 vCPUs)
+  - Node.js: v24.14.0
+  - Target Application: TokTickIT Express Backend via Supertest IPC In-Memory
+  - Database: PostgreSQL (Prisma Client pool)
+  - Scope: Local Single-Node Performance-Smoke & Concurrency Benchmark
+--------------------------------------------------------------------------------
+
+>>> [PERF-01] IT Staff Dashboard Aggregate API (GET /api/dashboards/staff)
+Scenario: Retrieve 4 metric aggregations + attention worklist for IT_STAFF
+  [Phase 1A] 100 Sequential Requests:
+    - Total Requests: 100, Errors: 0
+    - Throughput: 151.94 req/sec
+    - Latency: min=4.83ms, mean=6.58ms, median=5.87ms, p90=7.91ms, p95=8.46ms, p99=11.59ms, max=48.84ms
+  [Phase 1B] Concurrent Load (50 requests, concurrency=10):
+    - Total Requests: 50, Errors: 0
+    - Throughput: 262.06 req/sec
+    - Latency: min=16.37ms, mean=29.74ms, median=21.91ms, p90=55.75ms, p95=84.26ms, p99=84.75ms, max=84.75ms
+    - Threshold: < 200 ms | Status: PASS
+
+>>> [PERF-02] Requester Dashboard Aggregate API (GET /api/dashboards/requester)
+Scenario: Retrieve 4 owned metric aggregations + attention tickets for REQUESTER
+  [Phase 2A] 100 Sequential Requests:
+    - Total Requests: 100, Errors: 0
+    - Throughput: 159.17 req/sec
+    - Latency: min=4.71ms, mean=6.28ms, median=6.22ms, p90=7.55ms, p95=7.79ms, p99=8.33ms, max=8.35ms
+  [Phase 2B] Concurrent Load (50 requests, concurrency=10):
+    - Total Requests: 50, Errors: 0
+    - Throughput: 366.07 req/sec
+    - Latency: min=18.45ms, mean=23.19ms, median=20.93ms, p90=33.8ms, p95=34.08ms, p99=34.23ms, max=34.23ms
+    - Threshold: < 200 ms | Status: PASS
+
+>>> [PERF-03] Concurrent Idempotent Action Creation (POST /api/tickets/:id/actions)
+Scenario: 10 parallel HTTP requests sharing identical Idempotency-Key via Promise.all
+  [Execution Results]:
+    - 10 Parallel Requests Status: [201, 201, 201, 201, 201, 201, 201, 201, 201, 201]
+    - All 10 Returned 201 Created: true
+    - All Returned Identical Action ID (951685c4-ef2a-42ca-aa52-5d2231b83b8e): true
+    - Database ActionTaken Persisted: 1 (Expected: 1)
+    - Database IdempotencyRecord Persisted: 1 (Expected: 1)
+    - Latency Stats: min=51.86ms, median=64.8ms, p95=75.38ms, max=75.38ms
+    - Verification Status: PASS
+
+================================================================================
+BENCHMARK EXECUTIVE SUMMARY TABLE
+================================================================================
+| Benchmark ID | Target Scenario | Workload Pattern | p50 | p90 | p95 | Max | Throughput | Result |
+|---|---|---|---|---|---|---|---|---|
+| PERF-01-SEQ | Staff Dashboard | 100 sequential reqs | 5.87 ms | 7.91 ms | 8.46 ms | 48.84 ms | 151.94 req/s | PASS |
+| PERF-01-CONC | Staff Dashboard | 50 concurrent (c=10) | 21.91 ms | 55.75 ms | 84.26 ms | 84.75 ms | 262.06 req/s | PASS |
+| PERF-02-SEQ | Requester Dashboard | 100 sequential reqs | 6.22 ms | 7.55 ms | 7.79 ms | 8.35 ms | 159.17 req/s | PASS |
+| PERF-02-CONC | Requester Dashboard | 50 concurrent (c=10) | 20.93 ms | 33.8 ms | 34.08 ms | 34.23 ms | 366.07 req/s | PASS |
+| PERF-03 | Idempotency Race | 10 parallel Promise.all | 64.8 ms | 73.86 ms | 75.38 ms | 75.38 ms | 122.12 req/s | PASS |
+================================================================================
