@@ -1,0 +1,33 @@
+{
+  "evidenceId": "EVD-E2E-04",
+  "title": "Dashboard Metrics, Calculations, Ownership Isolation & Drill-Down Evidence",
+  "timestamp": "2026-10-31T07:07:00.399Z",
+  "testedRoles": [
+    "IT_STAFF",
+    "REQUESTER",
+    "ADMINISTRATOR"
+  ],
+  "viewports": [
+    {
+      "viewport": "desktop",
+      "width": 1920,
+      "height": 1080,
+      "hasHorizontalScroll": false,
+      "status": "PASS"
+    },
+    {
+      "viewport": "tablet",
+      "width": 768,
+      "height": 1024,
+      "hasHorizontalScroll": false,
+      "status": "PASS"
+    },
+    {
+      "viewport": "mobile",
+      "width": 375,
+      "height": 812,
+      "hasHorizontalScroll": false,
+      "status": "PASS"
+    }
+  ]
+}

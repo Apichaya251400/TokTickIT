@@ -5,6 +5,7 @@ import { PrismaClient } from "../../server/node_modules/@prisma/client";
 
 const prisma = new PrismaClient();
 const artifactsBase = path.resolve(process.cwd(), "artifacts/lab-04/screenshots/ticket-workflow");
+const hardeningBase = path.resolve(process.cwd(), "artifacts/lab-04/screenshots/e2e-hardening");
 
 function ensureDirSync(dirPath: string) {
   if (!fs.existsSync(dirPath)) {
@@ -110,6 +111,7 @@ async function openStaffTicketBySearch(page: Page, query: string) {
 test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrency (Issue #77)", () => {
   test.beforeAll(async () => {
     ensureDirSync(artifactsBase);
+    ensureDirSync(hardeningBase);
     // Disable password change prompt for test accounts
     await prisma.user.updateMany({
       where: { email: { in: ["john.staff@toktick.it", "alice@example.com", "staff@toktick.it", "admin@toktick.it"] } },
@@ -550,5 +552,123 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
       path: path.join(artifactsBase, "EVD-WORKFLOW-07.png"),
       fullPage: false,
     });
+  });
+
+  // EVD-E2E-03: Resolution Gate Precondition Satisfied by Completed ActionTaken (Valid Path #2)
+  test("E2E-FLOW-08: Resolution Gate Precondition Satisfied by Completed ActionTaken without Note (EVD-E2E-03)", async ({ page }) => {
+    // 1. Setup known state on TKT-2026-000003: IN_PROGRESS with at least 1 COMPLETED action
+    const staffUser = await prisma.user.findUnique({
+      where: { email: "john.staff@toktick.it" },
+    });
+    expect(staffUser).not.toBeNull();
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { ticketNumber: "TKT-2026-000003" },
+    });
+    expect(ticket).not.toBeNull();
+
+    await prisma.ticket.update({
+      where: { id: ticket!.id },
+      data: { currentStatus: "IN_PROGRESS", resolutionNote: null },
+    });
+
+    // Ensure a completed action exists on this ticket
+    const existingCompleted = await prisma.actionTaken.findFirst({
+      where: { ticketId: ticket!.id, status: "COMPLETED" },
+    });
+    if (!existingCompleted) {
+      await prisma.actionTaken.create({
+        data: {
+          ticketId: ticket!.id,
+          performedById: staffUser!.id,
+          description: "Hardware replacement and link aggregation verified",
+          result: "Interface Gi0/1 restored to operational state",
+          status: "COMPLETED",
+        },
+      });
+    }
+
+    const completedActionsCount = await prisma.actionTaken.count({
+      where: { ticketId: ticket!.id, status: "COMPLETED" },
+    });
+    expect(completedActionsCount).toBeGreaterThanOrEqual(1);
+
+    await page.setViewportSize({ width: 1280, height: 850 });
+    await loginAsStaff(page);
+
+    await openStaffTicketBySearch(page, "TKT-2026-000003");
+
+    // Click Resolve Ticket
+    const resolveBtn = page.getByTestId("status-transition-btn-RESOLVED");
+    await expect(resolveBtn).toBeVisible();
+    await resolveBtn.click();
+
+    const modal = page.getByTestId("resolve-ticket-modal");
+    await expect(modal).toBeVisible();
+
+    // Verify Resolution Gate indicates preconditions are satisfied (gate-notice-optional)
+    const optionalGateNotice = page.getByTestId("gate-notice-optional");
+    await expect(optionalGateNotice).toBeVisible();
+    await expect(optionalGateNotice).toContainText("Resolution Gate Satisfied");
+    await expect(optionalGateNotice).toContainText("completed Action(s) Taken");
+
+    // Verify Confirm Resolution button is ENABLED even with empty resolution note
+    const confirmBtn = page.getByTestId("confirm-resolve-btn");
+    await expect(confirmBtn).toBeVisible();
+    await expect(confirmBtn).toBeEnabled();
+
+    // Leave note empty and submit resolution
+    const [resolveRes] = await Promise.all([
+      page.waitForResponse((res) => res.url().includes("/api/tickets/") && res.request().method() === "PUT"),
+      confirmBtn.click(),
+    ]);
+    expect(resolveRes.status()).toBe(200);
+
+    // Modal closes and success alert appears
+    await expect(modal).toHaveCount(0);
+    await expect(page.getByText(/Ticket status updated successfully/i)).toBeVisible();
+
+    // Verify RESOLVED status badge in detail header
+    const detail = page.getByTestId("staff-ticket-detail");
+    await expect(detail.getByText("RESOLVED", { exact: true })).toBeVisible();
+
+    // Verify Database reflects RESOLVED status
+    const updatedTicket = await prisma.ticket.findUnique({
+      where: { id: ticket!.id },
+    });
+    expect(updatedTicket!.currentStatus).toBe("RESOLVED");
+
+    // Save Evidence EVD-E2E-03 Screenshot
+    await page.screenshot({
+      path: path.join(hardeningBase, "EVD-E2E-03.png"),
+      fullPage: false,
+    });
+
+    // Save Evidence EVD-E2E-03 JSON report
+    const evidenceReport = {
+      evidenceId: "EVD-E2E-03",
+      title: "Resolution Gate Preconditions, Valid/Invalid Paths & Concurrency Evidence",
+      timestamp: new Date().toISOString(),
+      ticketNumber: "TKT-2026-000003",
+      verifiedPaths: {
+        invalidPath: "0 completed actions + empty note => rejected by Resolution Gate",
+        validPath1: "Staff resolution note provided => transitions to RESOLVED",
+        validPath2: ">= 1 completed ActionTaken present => note optional => transitions to RESOLVED",
+        concurrencyProtection: "Stale update detects collision => returns 409 Conflict with safe refresh",
+        terminalStateProtection: "CANCELLED tickets locked against transitions and actions",
+      },
+      preconditionDetails: {
+        completedActionsCount,
+        resolutionNoteRequired: false,
+        resultingStatus: "RESOLVED",
+      },
+      status: "PASS",
+    };
+
+    fs.writeFileSync(
+      path.join(hardeningBase, "EVD-E2E-03.json"),
+      JSON.stringify(evidenceReport, null, 2),
+      "utf8"
+    );
   });
 });

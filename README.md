@@ -156,17 +156,19 @@ npm --prefix client run build
 |---|---|---|---|---|
 | **Server API & Integration Suite** | Vitest + Supertest | `29 / 29` files | **282 / 282 PASS** | **100% PASS** |
 | **Client UI Component Suite** | Vitest + RTL + jsdom | `17 / 17` files | **129 / 129 PASS** | **100% PASS** |
-| **Playwright Full E2E Suite** | Playwright Chromium | `12 / 12` specs | **64 / 64 PASS** | **100% PASS** |
+| **Playwright Full E2E Hardening Suite** | Playwright Chromium | `13 / 13` specs | **72 / 72 PASS** | **100% PASS** |
 | **Production Build Suite** | TypeScript + Vite | `server + client` | **0 errors / built OK** | **100% PASS** |
-| **Integrated Total** | — | **58 test files** | **475 / 475 PASS (100% GREEN)** | **100% PASS** |
+| **Integrated Total** | — | **59 test files** | **483 / 483 PASS (100% GREEN)** | **100% PASS** |
 
 ### Lab 4 Evidence Deliverables Traceability
 
-- **`EVD-REG-01`**: Full integrated terminal test run output showing passing Server (282), Client (129), and Sprint 4 Regression E2E (56) suites from PR #93 / LAB4-09, plus individual component logs (`artifacts/lab-04/screenshots/regression/EVD-REG-01.txt`). The current full Lab 4 E2E test suite executes 64 passing tests.
-- **`EVD-REG-02`**: Representative regression E2E cross-role workflow screenshot (`artifacts/lab-04/screenshots/regression/EVD-REG-02.png`).
-- **`EVD-REG-03`**: Lab 1–3 regression evidence summary report for final documentation (`docs/lab-04/regression-evidence.md`).
-- **`EVD-REG-04`**: Product-hardening evidence for failure states (form data preservation `TEST-FAIL-01`) and duplicate-action protection (`TEST-IDEM-01..03`) (`artifacts/lab-04/screenshots/regression/EVD-REG-04.png`, `.json`).
-- **`EVD-REG-05`**: Visual responsive viewport (`1920x1080`, `768x1024`, `375x812`) and accessibility regression evidence (`artifacts/lab-04/screenshots/regression/EVD-REG-05.png`, `.json`).
-- **`EVD-REG-06`**: README setup, seed, migration, and production build verification record (`docs/lab-04/EVD-REG-06.md`).
-- **`EVD-REG-07`**: Product-hardening verification for zero console errors, zero broken links, zero placeholder strings, and functional controls (`artifacts/lab-04/screenshots/regression/EVD-REG-07.png`, `.json`).
-- **`EVD-QA-01..08`**: Sprint 4 Visual, Responsive, and Accessibility QA evidence suite (8 Playwright E2E tests covering Desktop, Tablet, Mobile, rendered UI-spec `EVD-QA-05.png`, dedicated Dashboard `EVD-QA-06`, dedicated Actions Taken `EVD-QA-07`, and Focus/Keyboard `EVD-QA-08` / `EVD-QA-04.json` / `docs/lab-04/visual-qa.md`).
+- **`EVD-REG-01..07`**: Sprint 4 Regression and Product Hardening suite (`artifacts/lab-04/screenshots/regression/`, `docs/lab-04/regression-evidence.md`, `docs/lab-04/EVD-REG-06.md`).
+- **`EVD-QA-01..08`**: Sprint 4 Visual, Responsive, and Accessibility QA evidence suite (`artifacts/lab-04/screenshots/visual-qa/`, `EVD-QA-04.json`, `docs/lab-04/visual-qa.md`).
+- **`EVD-E2E-01..07`**: Sprint 4 Final E2E Business Flows & Product Hardening evidence suite (Issue #82 / LAB4-11):
+  - **`EVD-E2E-01`**: Full integrated terminal test run output of passing Playwright test suite (72 / 72 PASS) (`artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-01.txt`).
+  - **`EVD-E2E-02`**: Full Action Taken lifecycle (`PENDING` $\to$ `IN_PROGRESS` $\to$ `COMPLETED`), assignee assignment, edit modal, and ticket state reflection (`artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-02.png`).
+  - **`EVD-E2E-03`**: Ticket Resolution Gate valid resolution path #2 without resolution note precondition satisfied by completed action taken (`artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-03.png`, `.json`).
+  - **`EVD-E2E-04`**: Operational Dashboards (IT Staff & Requester) calculated metrics, strict ownership isolation, queue/ticket drill-downs, and Admin access (`artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-04.png`, `.json`).
+  - **`EVD-E2E-05`**: Concurrency conflict (`409 STALE_UPDATE`) safe error banner, form data preservation, and refresh recovery (`artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-05.png`, `.json`).
+  - **`EVD-E2E-06`**: Reproducible hardening checklist and verification runbook (`docs/lab-04/EVD-E2E-06.md`).
+  - **`EVD-E2E-07`**: Multi-viewport responsive business flows and accessibility audit (`artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-07.png`, `.json`).
