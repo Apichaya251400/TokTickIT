@@ -118,9 +118,9 @@ Result: **0 errors**; optimized production bundle generated in `client/dist/`.
 
 | Test Domain | Executed Command | Passing Count | Duration |
 |---|---|---|---|
-| **Server Tests** | `npm --prefix server test` | **282 / 282 PASS** | ~65s |
+| **Server Tests** | `npm --prefix server test` | **284 / 284 PASS** | ~65s |
 | **Client Tests** | `npm --prefix client test` | **129 / 129 PASS** | ~5s |
-| **Playwright E2E Tests** | `npx playwright test` | **56 / 56 PASS** | ~50s |
-| **Total Automated** | — | **467 / 467 PASS (100% GREEN)** | — |
+| **Playwright E2E Tests** | `npx playwright test` | **72 / 72 PASS** | ~50s |
+| **Total Automated** | — | **485 / 485 PASS (100% GREEN)** | — |
 
 All setup, migration, seed, build, and test instructions in `README.md` are verified to be fully accurate and operational.

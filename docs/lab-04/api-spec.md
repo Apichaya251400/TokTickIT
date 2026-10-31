@@ -3,7 +3,8 @@
 - **System Name**: TokTickIT
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Document Status**: Approved REST API Specification
-- **Repository Branch**: `feature/lab4-spec-dd`
+- **Repository Branch at Specification Time**: `feature/lab4-spec-dd`
+- **Final Verification Branch**: `main`
 
 ---
 
@@ -12,7 +13,9 @@
 The REST API extends the existing TokTickIT backend endpoints. All request and response bodies use JSON (`Content-Type: application/json`).
 
 ### Authentication & Authorization
-All protected endpoints defined in this Lab 4 specification MUST authenticate using the existing Lab 3 HTTP-only JWT session cookie. The `Authorization: Bearer` mechanism is not supported by Lab 4 endpoints. The auth middleware populates `req.user` with `{ id, name, email, role, isActive }`.
+All protected endpoints defined in this Lab 4 specification authenticate using the existing JWT authentication mechanism from Lab 3.
+
+The primary browser/session mechanism is the HTTP-only JWT session cookie. The server also accepts the `Authorization: Bearer <token>` form for API and integration-test compatibility. Both mechanisms are validated by the same authentication middleware, which populates `req.user` with `{ id, name, email, role, isActive }`.
 
 Unauthenticated authentication endpoints such as login remain governed by the existing Lab 3 authentication contract.
 

@@ -3,7 +3,8 @@
 - **System Name**: TokTickIT
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Document Status**: Approved Engineering Specification
-- **Repository Branch**: `feature/lab4-spec-dd`
+- **Repository Branch at Specification Time**: `feature/lab4-spec-dd`
+- **Final Verification Branch**: `main`
 
 ---
 
