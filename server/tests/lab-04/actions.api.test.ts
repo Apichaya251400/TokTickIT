@@ -21,6 +21,10 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
   let activeTicket: any;
   let cancelledTicket: any;
 
+  const createdTicketIds: string[] = [];
+  const createdActionIds: string[] = [];
+  const createdIdempotencyKeys: string[] = [];
+
   beforeEach(async () => {
     clearRevocationBlocklist();
     await seedDatabase();
@@ -76,6 +80,8 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
         currentStatus: "CANCELLED",
       },
     });
+
+    createdTicketIds.push(activeTicket.id, cancelledTicket.id);
   });
 
   afterEach(async () => {
@@ -89,30 +95,31 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
   });
 
   afterAll(async () => {
-    // Clean up all ActionTaken records and custom tickets created during actions API tests
-    const seededActionIds = ["act-seed-000001", "act-seed-000002", "act-seed-000003", "act-seed-000004", "act-seed-000005"];
-    await prisma.actionTaken.deleteMany({
-      where: { id: { notIn: seededActionIds } },
-    });
+    // Specifically cleanup only records created by this test suite
+    if (createdActionIds.length > 0) {
+      await prisma.actionTaken.deleteMany({
+        where: { id: { in: createdActionIds } },
+      });
+    }
 
-    await prisma.idempotencyRecord.deleteMany({});
+    if (createdTicketIds.length > 0) {
+      await prisma.actionTaken.deleteMany({
+        where: { ticketId: { in: createdTicketIds } },
+      });
+      await prisma.ticket.deleteMany({
+        where: { id: { in: createdTicketIds } },
+      });
+    }
 
-    await prisma.ticket.deleteMany({
-      where: {
-        ticketNumber: {
-          notIn: [
-            "TKT-2026-000001",
-            "TKT-2026-000002",
-            "TKT-2026-000003",
-            "TKT-2026-000004",
-            "TKT-2026-000005",
-            "TKT-2026-000006",
-            "TKT-2026-000007",
-            "TKT-2026-000008",
-          ],
-        },
-      },
-    });
+    if (createdIdempotencyKeys.length > 0) {
+      await prisma.idempotencyRecord.deleteMany({
+        where: { idempotencyKey: { in: createdIdempotencyKeys } },
+      });
+    } else {
+      await prisma.idempotencyRecord.deleteMany({
+        where: { idempotencyKey: { startsWith: "test-act-" } },
+      });
+    }
 
     await prisma.user.updateMany({
       data: { requiresPasswordChange: true },
