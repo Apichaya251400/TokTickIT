@@ -6,6 +6,9 @@
 - **Verification Timestamp**: `2026-10-29T14:20:00+07:00`
 - **Branch**: `feature/lab4-regression`
 
+> [!NOTE]
+> **Historical Pre-Release Verification Snapshot**: This document records the setup, migration, seed, build, and test verification captured during feature integration on `feature/lab4-regression` (2026-10-29). Final release verification is performed on the release candidate and then regenerated from `main` post-merge.
+
 ---
 
 ## 1. Environment & Setup Verification

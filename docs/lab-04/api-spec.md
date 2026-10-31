@@ -30,6 +30,9 @@ Unauthenticated authentication endpoints such as login remain governed by the ex
 ```
 *Note on 500 Internal Server Error*: Any unhandled server exception MUST return `500 Internal Server Error` with `code: "INTERNAL_ERROR"` and message `"An unexpected error occurred. Please try again."` without exposing internal stack traces or database engine details. Serialization or transaction conflicts caused by concurrent Ticket or Action Taken updates MUST be retried when safe; if the operation cannot be safely retried, return `409 Conflict` (`STALE_UPDATE`) rather than exposing an unhandled `500 Internal Server Error`.
 
+> [!NOTE]
+> **Legacy Contract Compatibility**: Legacy Lab 3 `/api/tickets` endpoints retain their existing top-level string error response shape (`{ "error": "FORBIDDEN", "message": "Access denied" }`). New Lab 4 endpoints follow the standardized structured error object contract above (`{ "error": { "code": "...", "message": "..." } }`).
+
 ---
 
 ## 2. Actions Taken Endpoints
@@ -350,6 +353,7 @@ Lab 4 does not modify the business rules of these endpoints.
   "message": "Authentication required"
 }
 ```
+- *Note on Legacy Error Shape*: As noted in Section 1, `/api/tickets` is an existing Lab 3 endpoint that preserves its established `{ "error": "FORBIDDEN", "message": "Access denied" }` shape, while newly introduced Lab 4 endpoints return the standardized `{ "error": { "code": "...", "message": "..." } }` object.
 
 ---
 

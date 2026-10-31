@@ -26,7 +26,7 @@ TokTickIT provides an end-to-end IT service desk experience across three distinc
 
 - **Frontend**: React 18 + TypeScript + Vite + Bootstrap 5
 - **Backend**: Node.js + Express + TypeScript
-- **Database**: PostgreSQL (v16 / Docker container `tok-postgres`) / SQLite (development/test fallback)
+- **Database**: PostgreSQL 16 (Docker container `tok-postgres` / local instance)
 - **ORM**: Prisma ORM v5
 - **Testing Tools**:
   - **Unit & Integration / API**: Vitest + Supertest

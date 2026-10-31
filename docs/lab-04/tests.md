@@ -25,7 +25,7 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 ## 2. Requirement-to-Test Traceability Matrix
 
 ### 2.1 Test ID Semantic Separation Notice
-- **`TEST-DASH-*` (Backend Query & API Contract Tests)**: Target `server/tests/lab-04/staff-dashboard.api.test.ts`. Verifies backend Prisma aggregate query calculation accuracy, Asia/Bangkok (UTC+7) date boundary filtering, role authorization, and JSON response payloads.
+- **`TEST-DASH-*` (Backend Query & API Contract Tests)**: Covers the Staff and Requester Dashboard API suites (`server/tests/lab-04/staff-dashboard.api.test.ts` and `server/tests/lab-04/requester-dashboard.api.test.ts`). Verifies backend Prisma aggregate query calculation accuracy, Asia/Bangkok (UTC+7) date boundary filtering, role authorization, and JSON response payloads.
 - **`TEST-CARD-*` (UI Presentation & Drill-Down Tests)**: Target `client/tests/lab-04/StaffDashboard.test.tsx` and `RequesterDashboard.test.tsx`. Verifies client UI card rendering, helper subtext, empty state `0` displays, and interactive drill-down URL navigation.
 
 ### 2.2 Functional Requirements (FR) Traceability Summary Table
@@ -322,7 +322,7 @@ npx playwright test e2e/lab-04
 |---|---|---|---|
 | **`EVD-TEST-01`** | Rendered `tests.md` documentation screenshot | `docs/lab-04/tests.md` | Markdown artifact view & repository check |
 | **`EVD-TEST-02`** | AC → Test → Evidence ID traceability matrix | `docs/lab-04/tests.md` Section 2 | Traceability matrix cross-check |
-| **`EVD-TEST-03`** | Final passing test summary from main | `server/tests/lab-04/`, `client/tests/lab-04/`, `e2e/lab-04/` | CLI test runner log output (`npm --prefix server test` & `npx playwright test`) |
+| **`EVD-TEST-03`** | Pre-merge release-candidate test summary from `feature/lab4-release` (final evidence regenerated from `main` post-merge) | `server/tests/lab-04/`, `client/tests/lab-04/`, `e2e/lab-04/` | CLI test runner log output (`npm --prefix server test` & `npx playwright test`) |
 | **`EVD-E2E-01`** | Full integrated Playwright test suite execution log (72 passing tests) | `artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-01.txt` | Terminal execution log file |
 | **`EVD-E2E-02`** | Actions Taken full lifecycle transitions, assignee assignment & DB state | `artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-02.png` | Playwright test `E2E-ACT-07` artifact capture |
 | **`EVD-E2E-03`** | Ticket Resolution Gate valid resolution path #2 without resolution note | `artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-03.png`, `.json` | Playwright test `E2E-FLOW-08` artifact capture |

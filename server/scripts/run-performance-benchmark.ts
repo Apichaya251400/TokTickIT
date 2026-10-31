@@ -6,6 +6,11 @@ import { seedDatabase } from "../prisma/seed.js";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, "../../");
 
 interface LatencyStats {
   count: number;
@@ -279,7 +284,9 @@ async function runBenchmark() {
   log(`| PERF-03 | Idempotency Race | 10 parallel Promise.all | ${idemStats.median} ms | ${idemStats.p90} ms | ${idemStats.p95} ms | ${idemStats.max} ms | ${idemStats.throughputReqPerSec} req/s | PASS |`);
   log("================================================================================\n");
 
-  const outputPath = "C:/Users/User/Desktop/Software/TokTickIT/artifacts/lab-04/screenshots/release/EVD-PERF-01.txt";
+  const outputDir = path.resolve(repoRoot, "artifacts/lab-04/screenshots/release");
+  fs.mkdirSync(outputDir, { recursive: true });
+  const outputPath = path.resolve(outputDir, "EVD-PERF-01.txt");
   fs.writeFileSync(outputPath, logLines.join("\n"), "utf-8");
   console.log(`\nBenchmark log successfully written to: ${outputPath}`);
 
