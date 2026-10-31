@@ -462,27 +462,17 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
 
   // EVD-WORKFLOW-07: Final Database-State Verification Evidence
   test("E2E-FLOW-07: Final database-state verification after workflow transitions (EVD-WORKFLOW-07)", async ({ page }) => {
-    // Ensure known states for tickets if test is executed in isolation
-    let resolvedTicket = await prisma.ticket.findUnique({
+    // Snapshot initial states of tickets that may be updated during this test in isolation
+    const initialTkt4 = await prisma.ticket.findUnique({
       where: { ticketNumber: "TKT-2026-000004" },
-      select: {
-        id: true,
-        ticketNumber: true,
-        currentStatus: true,
-        resolutionNote: true,
-        updatedAt: true,
-        _count: { select: { actionsTaken: true } },
-      },
     });
-    if (resolvedTicket && (resolvedTicket.currentStatus !== "RESOLVED" || !resolvedTicket.resolutionNote)) {
-      await prisma.ticket.update({
-        where: { id: resolvedTicket.id },
-        data: {
-          currentStatus: "RESOLVED",
-          resolutionNote: "Root-cause identified and mitigated successfully.",
-        },
-      });
-      resolvedTicket = await prisma.ticket.findUnique({
+    const initialTkt2 = await prisma.ticket.findUnique({
+      where: { ticketNumber: "TKT-2026-000002" },
+    });
+
+    try {
+      // Ensure known states for tickets if test is executed in isolation
+      let resolvedTicket = await prisma.ticket.findUnique({
         where: { ticketNumber: "TKT-2026-000004" },
         select: {
           id: true,
@@ -493,27 +483,28 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
           _count: { select: { actionsTaken: true } },
         },
       });
-    }
+      if (resolvedTicket && (resolvedTicket.currentStatus !== "RESOLVED" || !resolvedTicket.resolutionNote)) {
+        await prisma.ticket.update({
+          where: { id: resolvedTicket.id },
+          data: {
+            currentStatus: "RESOLVED",
+            resolutionNote: "Root-cause identified and mitigated successfully.",
+          },
+        });
+        resolvedTicket = await prisma.ticket.findUnique({
+          where: { ticketNumber: "TKT-2026-000004" },
+          select: {
+            id: true,
+            ticketNumber: true,
+            currentStatus: true,
+            resolutionNote: true,
+            updatedAt: true,
+            _count: { select: { actionsTaken: true } },
+          },
+        });
+      }
 
-    let advisoryTicket = await prisma.ticket.findUnique({
-      where: { ticketNumber: "TKT-2026-000002" },
-      select: {
-        id: true,
-        ticketNumber: true,
-        currentStatus: true,
-        requesterResolvedIndicatedAt: true,
-        updatedAt: true,
-      },
-    });
-    if (advisoryTicket && (!advisoryTicket.requesterResolvedIndicatedAt || advisoryTicket.currentStatus !== "IN_PROGRESS")) {
-      await prisma.ticket.update({
-        where: { id: advisoryTicket.id },
-        data: {
-          currentStatus: "IN_PROGRESS",
-          requesterResolvedIndicatedAt: new Date(),
-        },
-      });
-      advisoryTicket = await prisma.ticket.findUnique({
+      let advisoryTicket = await prisma.ticket.findUnique({
         where: { ticketNumber: "TKT-2026-000002" },
         select: {
           id: true,
@@ -523,74 +514,115 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
           updatedAt: true,
         },
       });
+      if (advisoryTicket && (!advisoryTicket.requesterResolvedIndicatedAt || advisoryTicket.currentStatus !== "IN_PROGRESS")) {
+        await prisma.ticket.update({
+          where: { id: advisoryTicket.id },
+          data: {
+            currentStatus: "IN_PROGRESS",
+            requesterResolvedIndicatedAt: new Date(),
+          },
+        });
+        advisoryTicket = await prisma.ticket.findUnique({
+          where: { ticketNumber: "TKT-2026-000002" },
+          select: {
+            id: true,
+            ticketNumber: true,
+            currentStatus: true,
+            requesterResolvedIndicatedAt: true,
+            updatedAt: true,
+          },
+        });
+      }
+
+      const terminalTicket = await prisma.ticket.findUnique({
+        where: { ticketNumber: "TKT-2026-000008" },
+        select: {
+          id: true,
+          ticketNumber: true,
+          currentStatus: true,
+        },
+      });
+
+      // Verification assertions
+      expect(resolvedTicket?.currentStatus).toBe("RESOLVED");
+      expect(resolvedTicket?.resolutionNote).toBeTruthy();
+      expect(advisoryTicket?.currentStatus).toBe("IN_PROGRESS");
+      expect(advisoryTicket?.requesterResolvedIndicatedAt).toBeTruthy();
+      expect(terminalTicket?.currentStatus).toBe("CANCELLED");
+
+      // Write database state JSON artifact
+      const dbEvidence = {
+        timestamp: new Date().toISOString(),
+        verifiedConstraints: {
+          resolutionGateEnforced: true,
+          advisoryIndicatorNonMutating: true,
+          terminalStatePreserved: true,
+          optimisticConcurrencyEnforced: true,
+        },
+        tickets: {
+          resolvedTicket,
+          advisoryTicket,
+          terminalTicket,
+        },
+      };
+
+      fs.writeFileSync(
+        path.join(artifactsBase, "EVD-WORKFLOW-07.json"),
+        JSON.stringify(dbEvidence, null, 2)
+      );
+
+      // Also render clean visual summary page in Playwright and capture EVD-WORKFLOW-07.png
+      await page.setContent(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>EVD-WORKFLOW-07 Database State Verification</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; background: #0F172A; color: #F8FAFC; padding: 24px; margin: 0; }
+              h1 { color: #10B981; font-size: 20px; margin-bottom: 4px; }
+              .badge { background: #198754; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+              pre { background: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.5; color: #38BDF8; overflow-x: auto; }
+              .info { color: #94A3B8; font-size: 13px; margin-bottom: 16px; }
+            </style>
+          </head>
+          <body>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <h1>TokTickIT Lab 4 - EVD-WORKFLOW-07 Database State Verification</h1>
+              <span class="badge">VERIFIED CONSISTENT</span>
+            </div>
+            <div class="info">Authoritative PostgreSQL Database State captured after atomic transitions and concurrency tests:</div>
+            <pre>${JSON.stringify(dbEvidence, null, 2)}</pre>
+          </body>
+        </html>
+      `);
+
+      await page.screenshot({
+        path: path.join(artifactsBase, "EVD-WORKFLOW-07.png"),
+        fullPage: false,
+      });
+    } finally {
+      // Restore initial states to guarantee deterministic test data isolation
+      if (initialTkt4) {
+        await prisma.ticket.update({
+          where: { id: initialTkt4.id },
+          data: {
+            currentStatus: initialTkt4.currentStatus,
+            resolutionNote: initialTkt4.resolutionNote,
+            requesterResolvedIndicatedAt: initialTkt4.requesterResolvedIndicatedAt,
+          },
+        });
+      }
+      if (initialTkt2) {
+        await prisma.ticket.update({
+          where: { id: initialTkt2.id },
+          data: {
+            currentStatus: initialTkt2.currentStatus,
+            resolutionNote: initialTkt2.resolutionNote,
+            requesterResolvedIndicatedAt: initialTkt2.requesterResolvedIndicatedAt,
+          },
+        });
+      }
     }
-
-    const terminalTicket = await prisma.ticket.findUnique({
-      where: { ticketNumber: "TKT-2026-000008" },
-      select: {
-        id: true,
-        ticketNumber: true,
-        currentStatus: true,
-      },
-    });
-
-    // Verification assertions
-    expect(resolvedTicket?.currentStatus).toBe("RESOLVED");
-    expect(resolvedTicket?.resolutionNote).toBeTruthy();
-    expect(advisoryTicket?.currentStatus).toBe("IN_PROGRESS");
-    expect(advisoryTicket?.requesterResolvedIndicatedAt).toBeTruthy();
-    expect(terminalTicket?.currentStatus).toBe("CANCELLED");
-
-    // Write database state JSON artifact
-    const dbEvidence = {
-      timestamp: new Date().toISOString(),
-      verifiedConstraints: {
-        resolutionGateEnforced: true,
-        advisoryIndicatorNonMutating: true,
-        terminalStatePreserved: true,
-        optimisticConcurrencyEnforced: true,
-      },
-      tickets: {
-        resolvedTicket,
-        advisoryTicket,
-        terminalTicket,
-      },
-    };
-
-    fs.writeFileSync(
-      path.join(artifactsBase, "EVD-WORKFLOW-07.json"),
-      JSON.stringify(dbEvidence, null, 2)
-    );
-
-    // Also render clean visual summary page in Playwright and capture EVD-WORKFLOW-07.png
-    await page.setContent(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>EVD-WORKFLOW-07 Database State Verification</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; background: #0F172A; color: #F8FAFC; padding: 24px; margin: 0; }
-            h1 { color: #10B981; font-size: 20px; margin-bottom: 4px; }
-            .badge { background: #198754; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-            pre { background: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.5; color: #38BDF8; overflow-x: auto; }
-            .info { color: #94A3B8; font-size: 13px; margin-bottom: 16px; }
-          </style>
-        </head>
-        <body>
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h1>TokTickIT Lab 4 - EVD-WORKFLOW-07 Database State Verification</h1>
-            <span class="badge">VERIFIED CONSISTENT</span>
-          </div>
-          <div class="info">Authoritative PostgreSQL Database State captured after atomic transitions and concurrency tests:</div>
-          <pre>${JSON.stringify(dbEvidence, null, 2)}</pre>
-        </body>
-      </html>
-    `);
-
-    await page.screenshot({
-      path: path.join(artifactsBase, "EVD-WORKFLOW-07.png"),
-      fullPage: false,
-    });
   });
 
   // EVD-E2E-03: Resolution Gate Precondition Satisfied by Completed ActionTaken (Valid Path #2)
@@ -601,26 +633,27 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
     });
     expect(staffUser).not.toBeNull();
 
-    const ticket = await prisma.ticket.findUnique({
+    // Dynamically capture initial state of TKT-2026-000003 before test mutation
+    const initialTicket = await prisma.ticket.findUnique({
       where: { ticketNumber: "TKT-2026-000003" },
     });
-    expect(ticket).not.toBeNull();
-
-    await prisma.ticket.update({
-      where: { id: ticket!.id },
-      data: { currentStatus: "IN_PROGRESS", resolutionNote: null },
-    });
+    expect(initialTicket).not.toBeNull();
 
     let createdActionId: string | null = null;
     try {
+      await prisma.ticket.update({
+        where: { id: initialTicket!.id },
+        data: { currentStatus: "IN_PROGRESS", resolutionNote: null },
+      });
+
       // Ensure a completed action exists on this ticket
       const existingCompleted = await prisma.actionTaken.findFirst({
-        where: { ticketId: ticket!.id, status: "COMPLETED" },
+        where: { ticketId: initialTicket!.id, status: "COMPLETED" },
       });
       if (!existingCompleted) {
         const created = await prisma.actionTaken.create({
           data: {
-            ticketId: ticket!.id,
+            ticketId: initialTicket!.id,
             performedById: staffUser!.id,
             description: "Hardware replacement and link aggregation verified",
             result: "Interface Gi0/1 restored to operational state",
@@ -631,7 +664,7 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
       }
 
       const completedActionsCount = await prisma.actionTaken.count({
-        where: { ticketId: ticket!.id, status: "COMPLETED" },
+        where: { ticketId: initialTicket!.id, status: "COMPLETED" },
       });
       expect(completedActionsCount).toBeGreaterThanOrEqual(1);
 
@@ -676,7 +709,7 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
 
       // Verify Database reflects RESOLVED status
       const updatedTicket = await prisma.ticket.findUnique({
-        where: { id: ticket!.id },
+        where: { id: initialTicket!.id },
       });
       expect(updatedTicket!.currentStatus).toBe("RESOLVED");
 
@@ -713,11 +746,16 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
         "utf8"
       );
     } finally {
-      // Restore ticket state and clean up created action to preserve deterministic test data isolation
-      await prisma.ticket.update({
-        where: { id: ticket!.id },
-        data: { currentStatus: "IN_PROGRESS", resolutionNote: null },
-      });
+      // Restore ticket state to captured initial values and clean up created action to preserve deterministic test data isolation
+      if (initialTicket) {
+        await prisma.ticket.update({
+          where: { id: initialTicket.id },
+          data: {
+            currentStatus: initialTicket.currentStatus,
+            resolutionNote: initialTicket.resolutionNote,
+          },
+        });
+      }
       if (createdActionId) {
         await prisma.actionTaken.deleteMany({ where: { id: createdActionId } });
       }

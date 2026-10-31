@@ -397,10 +397,16 @@ test.describe("E2E-REG: Final Regression & Product Hardening Suite (Issue #80 / 
 
   // TEST-CONC-01: Stale Concurrent Update Returns 409 Conflict with Safe Refresh Recovery (EVD-E2E-05)
   test("TEST-CONC-01: Stale concurrent update returns 409 Conflict with safe refresh recovery (EVD-E2E-05)", async ({ page }) => {
+    // Dynamically capture initial state of TKT-2026-000005 before test execution
+    const initialTkt5 = await prisma.ticket.findUnique({
+      where: { ticketNumber: "TKT-2026-000005" },
+    });
+    expect(initialTkt5).not.toBeNull();
+
     try {
-      // Reset TKT-2026-000005 to WAITING_FOR_REQUESTER
+      // Set known precondition for concurrency test (WAITING_FOR_REQUESTER so IN_PROGRESS transition button is available)
       await prisma.ticket.update({
-        where: { ticketNumber: "TKT-2026-000005" },
+        where: { id: initialTkt5!.id },
         data: { currentStatus: "WAITING_FOR_REQUESTER" },
       });
 
@@ -425,7 +431,7 @@ test.describe("E2E-REG: Final Regression & Product Hardening Suite (Issue #80 / 
 
       // Browser holds current updatedAt. Simulate mid-flight background update:
       await prisma.ticket.update({
-        where: { ticketNumber: "TKT-2026-000005" },
+        where: { id: initialTkt5!.id },
         data: { summary: `Concurrent background update ${Date.now()}` },
       });
 
@@ -498,14 +504,17 @@ test.describe("E2E-REG: Final Regression & Product Hardening Suite (Issue #80 / 
         "utf8"
       );
     } finally {
-      // Restore TKT-2026-000005 original summary and status to guarantee deterministic test data isolation
-      await prisma.ticket.update({
-        where: { ticketNumber: "TKT-2026-000005" },
-        data: {
-          summary: "Grade submission app throws 500 error on final CSV export",
-          currentStatus: "WAITING_FOR_REQUESTER",
-        },
-      });
+      // Restore TKT-2026-000005 to dynamically captured initial state to guarantee deterministic test data isolation
+      if (initialTkt5) {
+        await prisma.ticket.update({
+          where: { id: initialTkt5.id },
+          data: {
+            summary: initialTkt5.summary,
+            currentStatus: initialTkt5.currentStatus,
+            resolutionNote: initialTkt5.resolutionNote,
+          },
+        });
+      }
     }
   });
 });
