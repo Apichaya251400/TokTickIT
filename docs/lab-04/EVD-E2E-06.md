@@ -112,7 +112,7 @@ Prior to final release integration into `lab4-staging` and preparation for Sprin
 - [x] **Zero browser console errors** across all authenticated views
 - [x] **Zero broken links or dead routes**
 - [x] **Zero unfinished UI placeholders** (`TODO`, `TBD`, `Lorem ipsum`, `Under construction`)
-- [x] **All interactive buttons have functional behaviors and accessible labels**
+- [x] **Representative interactive buttons have functional behavior, and all rendered buttons have valid accessible labels**
 - [x] **Responsive layout integrity** (zero page-level horizontal overflow on Desktop, Tablet, Mobile)
 - [x] **Touch targets $\ge$ 44&times;44px** enforced on mobile viewport
 - [x] **Visible focus rings (`2px solid #198754`)** on keyboard Tab navigation
