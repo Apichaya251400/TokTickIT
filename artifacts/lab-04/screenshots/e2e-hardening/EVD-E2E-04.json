@@ -1,0 +1,32 @@
+{
+  "evidenceId": "EVD-E2E-04",
+  "title": "Operational Staff Dashboard Multi-Viewport Responsive Audit Evidence",
+  "timestamp": "2026-10-31T13:19:35.876Z",
+  "testedRoles": [
+    "IT_STAFF"
+  ],
+  "roleCoverageNote": "Role-specific operational calculations and ownership isolation are proven in E2E-DASH-01 (IT_STAFF), E2E-DASH-02 (REQUESTER), and E2E-DASH-03 (ADMINISTRATOR)",
+  "viewports": [
+    {
+      "viewport": "desktop",
+      "width": 1920,
+      "height": 1080,
+      "hasHorizontalScroll": false,
+      "status": "PASS"
+    },
+    {
+      "viewport": "tablet",
+      "width": 768,
+      "height": 1024,
+      "hasHorizontalScroll": false,
+      "status": "PASS"
+    },
+    {
+      "viewport": "mobile",
+      "width": 375,
+      "height": 812,
+      "hasHorizontalScroll": false,
+      "status": "PASS"
+    }
+  ]
+}

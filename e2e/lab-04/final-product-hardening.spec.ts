@@ -305,7 +305,7 @@ test.describe("HARDEN-01..04: Console Errors, Broken Links, Placeholder Text & U
   });
 
   // 4. Interactive Controls Functional Behavior and Accessible Labels Audit
-  test("TEST-HARDEN-04: All interactive buttons have functional behaviors, valid labels, and zero dead placeholder controls", async ({ page }) => {
+  test("TEST-HARDEN-04: Representative interactive buttons have functional behavior, and all rendered buttons have valid accessible labels", async ({ page }) => {
     // 4.1 Staff Dashboard: Metric Card Click -> Navigates to Queue
     await loginAsStaff(page);
     await expect(page.getByTestId("staff-dashboard-page")).toBeVisible();

@@ -6,6 +6,7 @@ on:
       - lab4-staging
       - feature/lab4-actions-ui
       - feature/lab4-regression
+      - feature/lab4-e2e-hardening
   pull_request:
     branches:
       - lab4-staging
