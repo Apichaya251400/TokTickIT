@@ -2,7 +2,8 @@
 
 **Sprint**: Lab 4 (Sprint 4)  
 **Repository**: https://github.com/Apichaya251400/TokTickIT  
-**Branch**: `feature/lab4-release` (Post-merge verification source: `main`)  
+**Branch**: `feature/lab4-release`  
+**Verification Stage**: Pre-merge Release Candidate (PR #96)  
 **Generated**: 2026-11-01  
 **Audit Status**: 100% Bidirectional Traceability Verified (0 undefined IDs, 0 unmapped requirements)
 
