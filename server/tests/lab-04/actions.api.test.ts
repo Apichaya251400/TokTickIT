@@ -803,4 +803,88 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
     });
     expect(postCancelTicket.actionsTaken.length).toBe(finalTicket.actionsTaken.length);
   });
+
+  // ---------------------------------------------------------------------------
+  // TEST-ACT-13: attachmentNotes API Persistence (Handout §4.1)
+  // ---------------------------------------------------------------------------
+  it("TEST-ACT-13: Persists trimmed attachmentNotes on create and update, and returns it in the API response (Handout §4.1)", async () => {
+    const key = `test-act-13-${Date.now()}`;
+    const createRes = await request(app)
+      .post(`/api/tickets/${activeTicket.id}/actions`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .set("Idempotency-Key", key)
+      .send({
+        description: "Collected diagnostic logs from the workstation.",
+        result: "Logs archived for vendor escalation.",
+        followUpRequired: false,
+        attachmentNotes: "  Event viewer export: evt-2026-10-31.zip  ",
+      });
+
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.attachmentNotes).toBe("Event viewer export: evt-2026-10-31.zip");
+
+    const dbCreated = await prisma.actionTaken.findUniqueOrThrow({ where: { id: createRes.body.id } });
+    expect(dbCreated.attachmentNotes).toBe("Event viewer export: evt-2026-10-31.zip");
+
+    const updateRes = await request(app)
+      .put(`/api/actions/${createRes.body.id}`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .send({
+        expectedUpdatedAt: createRes.body.updatedAt,
+        attachmentNotes: "Updated reference: vendor case #48213",
+      });
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.attachmentNotes).toBe("Updated reference: vendor case #48213");
+
+    const dbUpdated = await prisma.actionTaken.findUniqueOrThrow({ where: { id: createRes.body.id } });
+    expect(dbUpdated.attachmentNotes).toBe("Updated reference: vendor case #48213");
+
+    const listRes = await request(app)
+      .get(`/api/tickets/${activeTicket.id}/actions`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`);
+    expect(listRes.status).toBe(200);
+    const listed = (listRes.body.data ?? listRes.body).find((a: any) => a.id === createRes.body.id);
+    expect(listed.attachmentNotes).toBe("Updated reference: vendor case #48213");
+  });
+
+  // ---------------------------------------------------------------------------
+  // TEST-ACT-14: Ticket Owner vs Action Performer Separation (BR-02)
+  // ---------------------------------------------------------------------------
+  it("TEST-ACT-14: Action recorded by a non-owner IT Staff keeps performedById = actor and leaves Ticket owner unchanged (BR-02)", async () => {
+    const staffMembers = await prisma.user.findMany({
+      where: { role: "IT_STAFF", isActive: true },
+      orderBy: { id: "asc" },
+    });
+    const ownerStaff = staffMembers.find((u) => u.id !== staffUser.id);
+    expect(ownerStaff).toBeDefined();
+
+    // Ticket is owned by a different staff member than the one recording the action
+    await prisma.ticket.update({ where: { id: activeTicket.id }, data: { ownerId: ownerStaff!.id } });
+
+    const key = `test-act-14-${Date.now()}`;
+    const res = await request(app)
+      .post(`/api/tickets/${activeTicket.id}/actions`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .set("Idempotency-Key", key)
+      .send({
+        description: "Second-line support verified VPN client configuration.",
+        result: "Configuration corrected; awaiting owner follow-up.",
+        followUpRequired: false,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.performedBy.id).toBe(staffUser.id);
+    expect(res.body.performedBy.id).not.toBe(ownerStaff!.id);
+
+    const dbAction = await prisma.actionTaken.findUniqueOrThrow({ where: { id: res.body.id } });
+    expect(dbAction.performedById).toBe(staffUser.id);
+
+    const dbTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: activeTicket.id } });
+    expect(dbTicket.ownerId).toBe(ownerStaff!.id);
+  });
 });

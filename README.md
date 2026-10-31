@@ -171,11 +171,11 @@ npm --prefix client run build
 
 | Suite / Level | Tooling | Test Files | Automated Tests Passed | Status |
 |---|---|---|---|---|
-| **Server API & Integration Suite** | Vitest + Supertest | `29 / 29` files | **282 / 282 PASS** | **100% PASS** |
+| **Server API & Integration Suite** | Vitest + Supertest | `29 / 29` files | **284 / 284 PASS** | **100% PASS** |
 | **Client UI Component Suite** | Vitest + RTL + jsdom | `17 / 17` files | **129 / 129 PASS** | **100% PASS** |
 | **Playwright Full E2E Hardening Suite** | Playwright Chromium | `13 / 13` specs | **72 / 72 PASS** | **100% PASS** |
 | **Production Build Suite** | TypeScript + Vite | `server + client` | **0 errors / built OK** | **100% PASS** |
-| **Integrated Total** | — | **59 test files** | **483 / 483 PASS (100% GREEN)** | **100% PASS** |
+| **Integrated Total** | — | **59 test files** | **485 / 485 PASS (100% GREEN)** | **100% PASS** |
 
 ### Lab 4 Evidence Deliverables Traceability
 
