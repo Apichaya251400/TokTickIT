@@ -403,6 +403,10 @@ describe("Issue #28: Create Ticket Requester UI & Validation Suite", () => {
         status: 201,
         json: () => Promise.resolve({ id: "t-uuid-1", ticketNumber: "TKT-2026-000002" }),
       } as Response);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Ticket TKT-2026-000002 created successfully!/i)).toBeInTheDocument();
+      });
     });
   });
 
