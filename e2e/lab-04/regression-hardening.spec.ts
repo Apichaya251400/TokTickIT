@@ -512,6 +512,7 @@ test.describe("E2E-REG: Final Regression & Product Hardening Suite (Issue #80 / 
             summary: initialTkt5.summary,
             currentStatus: initialTkt5.currentStatus,
             resolutionNote: initialTkt5.resolutionNote,
+            updatedAt: initialTkt5.updatedAt,
           },
         });
       }

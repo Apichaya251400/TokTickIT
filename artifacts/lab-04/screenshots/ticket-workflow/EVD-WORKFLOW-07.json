@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-31T13:20:05.278Z",
+  "timestamp": "2026-10-31T14:49:16.667Z",
   "verifiedConstraints": {
     "resolutionGateEnforced": true,
     "advisoryIndicatorNonMutating": true,
@@ -12,7 +12,7 @@
       "ticketNumber": "TKT-2026-000004",
       "currentStatus": "RESOLVED",
       "resolutionNote": "Root cause identified: Network switch port flapping on SW-CORE-02. Replaced patch cable and verified error-free packet throughput.",
-      "updatedAt": "2026-10-31T13:20:02.948Z",
+      "updatedAt": "2026-10-31T14:49:14.070Z",
       "_count": {
         "actionsTaken": 0
       }
@@ -21,8 +21,8 @@
       "id": "0466d599-bbd8-429a-94cf-22d66e8b4967",
       "ticketNumber": "TKT-2026-000002",
       "currentStatus": "IN_PROGRESS",
-      "requesterResolvedIndicatedAt": "2026-10-31T13:20:03.579Z",
-      "updatedAt": "2026-10-31T13:20:03.579Z"
+      "requesterResolvedIndicatedAt": "2026-10-31T14:49:14.827Z",
+      "updatedAt": "2026-10-31T14:49:14.829Z"
     },
     "terminalTicket": {
       "id": "35ce9582-e4e1-4010-bc69-0d2fdac06c76",

@@ -609,6 +609,7 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
             currentStatus: initialTkt4.currentStatus,
             resolutionNote: initialTkt4.resolutionNote,
             requesterResolvedIndicatedAt: initialTkt4.requesterResolvedIndicatedAt,
+            updatedAt: initialTkt4.updatedAt,
           },
         });
       }
@@ -619,6 +620,7 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
             currentStatus: initialTkt2.currentStatus,
             resolutionNote: initialTkt2.resolutionNote,
             requesterResolvedIndicatedAt: initialTkt2.requesterResolvedIndicatedAt,
+            updatedAt: initialTkt2.updatedAt,
           },
         });
       }
@@ -753,6 +755,7 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
           data: {
             currentStatus: initialTicket.currentStatus,
             resolutionNote: initialTicket.resolutionNote,
+            updatedAt: initialTicket.updatedAt,
           },
         });
       }
