@@ -367,9 +367,10 @@ test.describe("E2E-DASH: Operational Dashboards, Calculations, Ownership Isolati
 
     const evidenceData: Record<string, any> = {
       evidenceId: "EVD-E2E-04",
-      title: "Dashboard Metrics, Calculations, Ownership Isolation & Drill-Down Evidence",
+      title: "Operational Staff Dashboard Multi-Viewport Responsive Audit Evidence",
       timestamp: new Date().toISOString(),
-      testedRoles: ["IT_STAFF", "REQUESTER", "ADMINISTRATOR"],
+      testedRoles: ["IT_STAFF"],
+      roleCoverageNote: "Role-specific operational calculations and ownership isolation are proven in E2E-DASH-01 (IT_STAFF), E2E-DASH-02 (REQUESTER), and E2E-DASH-03 (ADMINISTRATOR)",
       viewports: [],
     };
 

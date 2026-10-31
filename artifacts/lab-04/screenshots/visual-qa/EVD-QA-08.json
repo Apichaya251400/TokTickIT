@@ -1,7 +1,7 @@
 {
   "evidenceId": "EVD-QA-08",
   "title": "Focus Indicator & Keyboard Accessibility Verification",
-  "timestamp": "2026-10-31T07:08:24.488Z",
+  "timestamp": "2026-10-31T08:08:03.539Z",
   "specification": {
     "expectedStyle": "outline: 2px solid #198754 !important; outline-offset: 2px;",
     "brandColor": "#198754",

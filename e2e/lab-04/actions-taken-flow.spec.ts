@@ -529,93 +529,104 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
       await assigneeSelect.selectOption(String(staffUser.id));
     }
 
-    const [createRes] = await Promise.all([
-      page.waitForResponse((res) => res.url().includes("/actions") && res.request().method() === "POST"),
-      page.getByTestId("save-action-btn").click(),
-    ]);
-    expect(createRes.status()).toBe(201);
-    const createData = await createRes.json();
-    const actionId = createData.id || createData.action?.id;
-    expect(createData.status || createData.action?.status).toBe("PENDING");
+    let actionId: string | null = null;
+    try {
+      const [createRes] = await Promise.all([
+        page.waitForResponse((res) => res.url().includes("/actions") && res.request().method() === "POST"),
+        page.getByTestId("save-action-btn").click(),
+      ]);
+      expect(createRes.status()).toBe(201);
+      const createData = await createRes.json();
+      actionId = createData.id || createData.action?.id;
+      expect(createData.status || createData.action?.status).toBe("PENDING");
 
-    // 3. Verify Database and UI reflect new Action state and ticket state
-    const dbAction = await prisma.actionTaken.findUnique({ where: { id: actionId } });
-    expect(dbAction).not.toBeNull();
-    expect(dbAction!.status).toBe("PENDING");
-    expect(dbAction!.description).toBe(desc);
+      // 3. Verify Database and UI reflect new Action state, assignee, performer, and ticket state
+      const dbAction = await prisma.actionTaken.findUnique({ where: { id: actionId! } });
+      expect(dbAction).not.toBeNull();
+      expect(dbAction!.status).toBe("PENDING");
+      expect(dbAction!.description).toBe(desc);
+      expect(dbAction!.assigneeId).toBe(staffUser!.id);
+      expect(dbAction!.performedById).toBe(staffUser!.id);
 
-    const actionCard = page.locator(`[data-testid="action-card-${actionId}"]`);
-    await expect(actionCard).toBeVisible();
-    await expect(actionCard).toContainText("PENDING");
+      const actionCard = page.locator(`[data-testid="action-card-${actionId}"]`);
+      await expect(actionCard).toBeVisible();
+      await expect(actionCard).toContainText("PENDING");
+      await expect(actionCard).toContainText(staffUser!.name);
 
-    // 4. Edit Action: Update description
-    const editBtn = actionCard.locator(`[data-testid="action-edit-btn-${actionId}"]`);
-    await expect(editBtn).toBeVisible();
-    await editBtn.click();
+      // 4. Edit Action: Update description
+      const editBtn = actionCard.locator(`[data-testid="action-edit-btn-${actionId}"]`);
+      await expect(editBtn).toBeVisible();
+      await editBtn.click();
 
-    const editModal = page.getByTestId("edit-action-modal");
-    await expect(editModal).toBeVisible();
+      const editModal = page.getByTestId("edit-action-modal");
+      await expect(editModal).toBeVisible();
 
-    const updatedDesc = `${desc} - edited & verified`;
-    await page.getByTestId("edit-description-input").fill(updatedDesc);
+      const updatedDesc = `${desc} - edited & verified`;
+      await page.getByTestId("edit-description-input").fill(updatedDesc);
 
-    const [editRes] = await Promise.all([
-      page.waitForResponse((res) => res.url().includes(`/actions/${actionId}`) && res.request().method() === "PUT"),
-      page.getByTestId("save-edit-action-btn").click(),
-    ]);
-    expect(editRes.status()).toBe(200);
+      const [editRes] = await Promise.all([
+        page.waitForResponse((res) => res.url().includes(`/actions/${actionId}`) && res.request().method() === "PUT"),
+        page.getByTestId("save-edit-action-btn").click(),
+      ]);
+      expect(editRes.status()).toBe(200);
 
-    // Verify DB updated
-    const updatedDbAction = await prisma.actionTaken.findUnique({ where: { id: actionId } });
-    expect(updatedDbAction!.description).toBe(updatedDesc);
-    await expect(actionCard).toContainText(updatedDesc);
+      // Verify DB updated
+      const updatedDbAction = await prisma.actionTaken.findUnique({ where: { id: actionId! } });
+      expect(updatedDbAction!.description).toBe(updatedDesc);
+      await expect(actionCard).toContainText(updatedDesc);
 
-    // 5. State Transition: PENDING -> IN_PROGRESS ("Start Work")
-    const startWorkBtn = actionCard.locator(`[data-testid="action-start-work-btn-${actionId}"]`);
-    await expect(startWorkBtn).toBeVisible();
-    const [startRes] = await Promise.all([
-      page.waitForResponse((res) => res.url().includes(`/actions/${actionId}/status`) && res.request().method() === "PUT"),
-      startWorkBtn.click(),
-    ]);
-    expect(startRes.status()).toBe(200);
+      // 5. State Transition: PENDING -> IN_PROGRESS ("Start Work")
+      const startWorkBtn = actionCard.locator(`[data-testid="action-start-work-btn-${actionId}"]`);
+      await expect(startWorkBtn).toBeVisible();
+      const [startRes] = await Promise.all([
+        page.waitForResponse((res) => res.url().includes(`/actions/${actionId}/status`) && res.request().method() === "PUT"),
+        startWorkBtn.click(),
+      ]);
+      expect(startRes.status()).toBe(200);
 
-    const startData = await startRes.json();
-    expect(startData.status || startData.action?.status).toBe("IN_PROGRESS");
-    await expect(actionCard).toContainText("IN_PROGRESS");
+      const startData = await startRes.json();
+      expect(startData.status || startData.action?.status).toBe("IN_PROGRESS");
+      await expect(actionCard).toContainText("IN_PROGRESS");
 
-    const inProgressDbAction = await prisma.actionTaken.findUnique({ where: { id: actionId } });
-    expect(inProgressDbAction!.status).toBe("IN_PROGRESS");
+      const inProgressDbAction = await prisma.actionTaken.findUnique({ where: { id: actionId! } });
+      expect(inProgressDbAction!.status).toBe("IN_PROGRESS");
 
-    // 6. State Transition: IN_PROGRESS -> COMPLETED ("Complete Action")
-    const completeBtn = actionCard.locator(`[data-testid="action-complete-btn-${actionId}"]`);
-    await expect(completeBtn).toBeVisible();
-    const [completeRes] = await Promise.all([
-      page.waitForResponse((res) => res.url().includes(`/actions/${actionId}/status`) && res.request().method() === "PUT"),
-      completeBtn.click(),
-    ]);
-    expect(completeRes.status()).toBe(200);
+      // 6. State Transition: IN_PROGRESS -> COMPLETED ("Complete Action")
+      const completeBtn = actionCard.locator(`[data-testid="action-complete-btn-${actionId}"]`);
+      await expect(completeBtn).toBeVisible();
+      const [completeRes] = await Promise.all([
+        page.waitForResponse((res) => res.url().includes(`/actions/${actionId}/status`) && res.request().method() === "PUT"),
+        completeBtn.click(),
+      ]);
+      expect(completeRes.status()).toBe(200);
 
-    const completeData = await completeRes.json();
-    expect(completeData.status || completeData.action?.status).toBe("COMPLETED");
-    await expect(actionCard).toContainText("COMPLETED");
+      const completeData = await completeRes.json();
+      expect(completeData.status || completeData.action?.status).toBe("COMPLETED");
+      await expect(actionCard).toContainText("COMPLETED");
 
-    const completedDbAction = await prisma.actionTaken.findUnique({ where: { id: actionId } });
-    expect(completedDbAction!.status).toBe("COMPLETED");
+      const completedDbAction = await prisma.actionTaken.findUnique({ where: { id: actionId! } });
+      expect(completedDbAction!.status).toBe("COMPLETED");
 
-    // Terminal state verification: transition buttons hidden
-    await expect(actionCard.locator(`[data-testid="action-complete-btn-${actionId}"]`)).toHaveCount(0);
-    await expect(actionCard.locator(`[data-testid="action-cancel-btn-${actionId}"]`)).toHaveCount(0);
+      // Terminal state verification: transition buttons hidden
+      await expect(actionCard.locator(`[data-testid="action-complete-btn-${actionId}"]`)).toHaveCount(0);
+      await expect(actionCard.locator(`[data-testid="action-cancel-btn-${actionId}"]`)).toHaveCount(0);
 
-    // 7. Verify Ticket resulting state in DB and UI
-    const finalActionCount = await prisma.actionTaken.count({ where: { ticketId } });
-    expect(finalActionCount).toBe(initialActionCount + 1);
+      // 7. Verify Ticket resulting state in DB and UI
+      const finalActionCount = await prisma.actionTaken.count({ where: { ticketId } });
+      expect(finalActionCount).toBe(initialActionCount + 1);
 
-    await actionCard.scrollIntoViewIfNeeded();
+      await actionCard.scrollIntoViewIfNeeded();
 
-    // 8. Capture Evidence EVD-E2E-02
-    await page.screenshot({
-      path: path.join(hardeningBase, "EVD-E2E-02.png"),
-      fullPage: false,
-    });
+      // 8. Capture Evidence EVD-E2E-02
+      await page.screenshot({
+        path: path.join(hardeningBase, "EVD-E2E-02.png"),
+        fullPage: false,
+      });
+    } finally {
+      // 9. Cleanup created action to preserve deterministic test data isolation
+      if (actionId) {
+        await prisma.actionTaken.deleteMany({ where: { id: actionId } });
+      }
+    }
   });
 });

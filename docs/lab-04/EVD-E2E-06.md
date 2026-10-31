@@ -118,3 +118,39 @@ Prior to final release integration into `lab4-staging` and preparation for Sprin
 - [x] **Safe-failure form data preservation**
 - [x] **Backend idempotency deduplication** verified directly against database records
 - [x] **Optimistic concurrency control (`409 Conflict`)** with safe recovery
+
+---
+
+## 4. Verification Execution & Evidence Lifecycle (`EVD-E2E-01`)
+
+To satisfy rigorous release assurance and prevent unintegrated feature-branch artifacts from posing as final release verification, TokTickIT follows a strict two-stage verification lifecycle for `EVD-E2E-01`:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Phase 1: Feature Branch Hardening & PR Review (PR #95)                      │
+│ - Branch: feature/lab4-e2e-hardening                                       │
+│ - Automated assertions: Assignee DB state, IT_STAFF metadata, Isolation     │
+│ - Verified: 72/72 E2E, 282/282 Server, 129/129 Client tests (483 total)    │
+│ - CI Pipeline: Green checkmarks on GitHub Actions                           │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │ Peer Review Approval & Merge
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Phase 2: Post-Merge Integrated Release Baseline (lab4-staging)              │
+│ - Branch: lab4-staging (Target Base d47446d + PR #95 integrated)            │
+│ - Re-seed: npm --prefix server run prisma:seed                              │
+│ - Final Execution: npx playwright test                                      │
+│ - Authoritative Deliverable: artifacts/lab-04/screenshots/e2e-hardening/    │
+│   EVD-E2E-01.txt (Final integrated Playwright execution log)                │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Pre-Merge Hardening Verification (PR #95)**:
+   - Verified that all business flows pass locally and on CI.
+   - Verified all dynamic state mutations (`E2E-ACT-07`, `E2E-FLOW-08`, `TEST-CONC-01`, `TEST-IDEM`) restore database integrity via `finally` blocks.
+   - Regenerated test screenshot and JSON artifacts (`EVD-E2E-02..05`, `EVD-E2E-07`).
+
+2. **Post-Merge Staging Baseline Capture (`EVD-E2E-01.txt`)**:
+   - Following peer review sign-off and PR #95 merge into `lab4-staging`, pull latest `lab4-staging`.
+   - Execute clean database seed and full Playwright test suite to generate the final integrated `EVD-E2E-01.txt` artifact directly on `lab4-staging`.
+

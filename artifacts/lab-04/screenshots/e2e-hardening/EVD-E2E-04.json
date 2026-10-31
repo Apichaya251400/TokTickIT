@@ -1,12 +1,11 @@
 {
   "evidenceId": "EVD-E2E-04",
-  "title": "Dashboard Metrics, Calculations, Ownership Isolation & Drill-Down Evidence",
-  "timestamp": "2026-10-31T07:07:00.399Z",
+  "title": "Operational Staff Dashboard Multi-Viewport Responsive Audit Evidence",
+  "timestamp": "2026-10-31T08:06:47.481Z",
   "testedRoles": [
-    "IT_STAFF",
-    "REQUESTER",
-    "ADMINISTRATOR"
+    "IT_STAFF"
   ],
+  "roleCoverageNote": "Role-specific operational calculations and ownership isolation are proven in E2E-DASH-01 (IT_STAFF), E2E-DASH-02 (REQUESTER), and E2E-DASH-03 (ADMINISTRATOR)",
   "viewports": [
     {
       "viewport": "desktop",
