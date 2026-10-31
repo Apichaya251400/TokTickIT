@@ -498,6 +498,7 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
     });
     expect(ticket).not.toBeNull();
     const ticketId = ticket!.id;
+    const initialTicketStatus = ticket!.currentStatus;
 
     const staffUser = await prisma.user.findUnique({
       where: { email: "john.staff@toktick.it" },
@@ -614,6 +615,15 @@ test.describe("E2E-ACT: Actions Taken Workspace Flow & Evidence Capture (Issue #
       // 7. Verify Ticket resulting state in DB and UI
       const finalActionCount = await prisma.actionTaken.count({ where: { ticketId } });
       expect(finalActionCount).toBe(initialActionCount + 1);
+
+      // Verify parent Ticket resulting state in database
+      const ticketAfterFlow = await prisma.ticket.findUnique({ where: { id: ticketId } });
+      expect(ticketAfterFlow).not.toBeNull();
+      expect(ticketAfterFlow!.currentStatus).toBe(initialTicketStatus);
+
+      // Verify Ticket detail header status badge in UI still reflects correct Ticket state
+      const detail = page.getByTestId("staff-ticket-detail");
+      await expect(detail.getByText(initialTicketStatus, { exact: true })).toBeVisible();
 
       await actionCard.scrollIntoViewIfNeeded();
 

@@ -609,9 +609,22 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
             currentStatus: initialTkt4.currentStatus,
             resolutionNote: initialTkt4.resolutionNote,
             requesterResolvedIndicatedAt: initialTkt4.requesterResolvedIndicatedAt,
-            updatedAt: initialTkt4.updatedAt,
           },
         });
+        await prisma.$executeRaw`
+          UPDATE "Ticket"
+          SET "updatedAt" = ${initialTkt4.updatedAt}
+          WHERE id = ${initialTkt4.id}
+        `;
+        const restored4 = await prisma.ticket.findUnique({
+          where: { id: initialTkt4.id },
+        });
+        expect(restored4?.currentStatus).toBe(initialTkt4.currentStatus);
+        expect(restored4?.resolutionNote).toBe(initialTkt4.resolutionNote);
+        expect(restored4?.requesterResolvedIndicatedAt?.getTime() ?? null).toBe(
+          initialTkt4.requesterResolvedIndicatedAt?.getTime() ?? null
+        );
+        expect(restored4?.updatedAt.getTime()).toBe(initialTkt4.updatedAt.getTime());
       }
       if (initialTkt2) {
         await prisma.ticket.update({
@@ -620,9 +633,22 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
             currentStatus: initialTkt2.currentStatus,
             resolutionNote: initialTkt2.resolutionNote,
             requesterResolvedIndicatedAt: initialTkt2.requesterResolvedIndicatedAt,
-            updatedAt: initialTkt2.updatedAt,
           },
         });
+        await prisma.$executeRaw`
+          UPDATE "Ticket"
+          SET "updatedAt" = ${initialTkt2.updatedAt}
+          WHERE id = ${initialTkt2.id}
+        `;
+        const restored2 = await prisma.ticket.findUnique({
+          where: { id: initialTkt2.id },
+        });
+        expect(restored2?.currentStatus).toBe(initialTkt2.currentStatus);
+        expect(restored2?.resolutionNote).toBe(initialTkt2.resolutionNote);
+        expect(restored2?.requesterResolvedIndicatedAt?.getTime() ?? null).toBe(
+          initialTkt2.requesterResolvedIndicatedAt?.getTime() ?? null
+        );
+        expect(restored2?.updatedAt.getTime()).toBe(initialTkt2.updatedAt.getTime());
       }
     }
   });
@@ -755,9 +781,19 @@ test.describe("E2E-WORKFLOW: Final Ticket Workflow, Resolution Gate & Concurrenc
           data: {
             currentStatus: initialTicket.currentStatus,
             resolutionNote: initialTicket.resolutionNote,
-            updatedAt: initialTicket.updatedAt,
           },
         });
+        await prisma.$executeRaw`
+          UPDATE "Ticket"
+          SET "updatedAt" = ${initialTicket.updatedAt}
+          WHERE id = ${initialTicket.id}
+        `;
+        const restored = await prisma.ticket.findUnique({
+          where: { id: initialTicket.id },
+        });
+        expect(restored?.currentStatus).toBe(initialTicket.currentStatus);
+        expect(restored?.resolutionNote).toBe(initialTicket.resolutionNote);
+        expect(restored?.updatedAt.getTime()).toBe(initialTicket.updatedAt.getTime());
       }
       if (createdActionId) {
         await prisma.actionTaken.deleteMany({ where: { id: createdActionId } });

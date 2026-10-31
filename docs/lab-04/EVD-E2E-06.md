@@ -18,7 +18,7 @@ Prior to final release integration into `lab4-staging` and preparation for Sprin
 | **Zero Browser Console Errors** | `TEST-HARDEN-01` | Playwright `console` and `pageerror` event listener across all 8 major views | `0` errors detected | **VERIFIED PASS** |
 | **Zero Broken Links / Dead Routes** | `TEST-HARDEN-02` | Automated traversal and navigation of all navigation links and views | All 8 SPA routes valid, 0 404s | **VERIFIED PASS** |
 | **Zero UI Placeholders / TODOs** | `TEST-HARDEN-03` | Automated DOM tree regex scan for `TODO`, `TBD`, `Lorem ipsum`, `Under construction` | `0` placeholder strings | **VERIFIED PASS** |
-| **All Interactive Buttons Functional** | `TEST-HARDEN-04` | Audit of all `<button>` elements for non-empty text/aria-label, disabled state, and action | All buttons functional, 0 dead stubs | **VERIFIED PASS** |
+| **Interactive Controls & Accessible Labels** | `TEST-HARDEN-04` | Behavior verification on representative buttons & audit of all `<button>` elements for non-empty text/aria-label | Representative buttons functional, all buttons have valid accessible labels | **VERIFIED PASS** |
 | **Responsive Layout Integrity** | `TEST-RESP-01`, `TEST-RESP-E2E` | Geometry checks across Desktop (`1920x1080`), Tablet (`768x1024`), and Mobile (`375x812`) | Zero page-level horizontal overflow | **VERIFIED PASS** |
 | **Touch Targets $\ge$ 44&times;44px** | `TEST-RESP-01-MOBILE`, `TEST-RESP-E2E` | Bounding box height/width assertions on mobile navigation and action buttons | Minimum touch target $\ge 44\text{px}$ enforced | **VERIFIED PASS** |
 | **Visible Focus Ring Accessibility** | `TEST-A11Y-01`, `TEST-QA-06` | Computed style evaluation on keyboard Tab navigation | Exact `2px solid #198754` with `2px` offset | **VERIFIED PASS** |
@@ -62,16 +62,17 @@ Prior to final release integration into `lab4-staging` and preparation for Sprin
 - **Verification Logic**: Scans `document.body.innerText` against regex pattern `/(?:\b(?:TODO|TBD|FIXME)\b|Lorem\s+Ipsum|Under\s+Construction|Coming\s+Soon)/i`.
 - **Result**: `0` matching placeholder strings found across all authenticated role states.
 
-### 2.4 All Interactive Buttons Have Functional Behavior (`TEST-HARDEN-04`)
+### 2.4 Representative Interactive Buttons Functional & All Buttons Accessible (`TEST-HARDEN-04`)
 - **Reproducible Command**:
   ```bash
   npx playwright test e2e/lab-04/final-product-hardening.spec.ts -g "TEST-HARDEN-04"
   ```
 - **Verification Logic**: Audits all `<button>` elements in the DOM:
-  - Asserts accessible name is non-empty (`innerText` or `aria-label`).
+  - Actively executes representative interactive flows (Dashboard metric card, Queue -> Detail, Back buttons, Create Ticket navigation, User Management, Logout).
+  - Asserts accessible name is non-empty (`innerText` or `aria-label`) on all rendered buttons.
   - Verifies that disabled buttons are disabled due to explicit business rules (e.g. empty mandatory resolution note, self-deactivation guard).
   - Asserts no unhandled click exceptions occur.
-- **Result**: All interactive controls are functional and properly labeled.
+- **Result**: Representative interactive buttons are functional and all rendered buttons have valid accessible labels.
 
 ### 2.5 Responsive Integrity & Zero Horizontal Overflow (`TEST-RESP-01`, `TEST-RESP-E2E`)
 - **Reproducible Command**:

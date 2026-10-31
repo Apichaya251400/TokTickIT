@@ -512,9 +512,20 @@ test.describe("E2E-REG: Final Regression & Product Hardening Suite (Issue #80 / 
             summary: initialTkt5.summary,
             currentStatus: initialTkt5.currentStatus,
             resolutionNote: initialTkt5.resolutionNote,
-            updatedAt: initialTkt5.updatedAt,
           },
         });
+        await prisma.$executeRaw`
+          UPDATE "Ticket"
+          SET "updatedAt" = ${initialTkt5.updatedAt}
+          WHERE id = ${initialTkt5.id}
+        `;
+        const restored5 = await prisma.ticket.findUnique({
+          where: { id: initialTkt5.id },
+        });
+        expect(restored5?.summary).toBe(initialTkt5.summary);
+        expect(restored5?.currentStatus).toBe(initialTkt5.currentStatus);
+        expect(restored5?.resolutionNote).toBe(initialTkt5.resolutionNote);
+        expect(restored5?.updatedAt.getTime()).toBe(initialTkt5.updatedAt.getTime());
       }
     }
   });

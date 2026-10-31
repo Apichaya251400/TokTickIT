@@ -1,7 +1,7 @@
 {
   "evidenceId": "EVD-E2E-03",
   "title": "Resolution Gate Preconditions, Valid/Invalid Paths & Concurrency Evidence",
-  "timestamp": "2026-10-31T14:49:17.723Z",
+  "timestamp": "2026-10-31T15:18:05.484Z",
   "ticketNumber": "TKT-2026-000003",
   "verifiedPaths": {
     "invalidPath": "0 completed actions + empty note => rejected by Resolution Gate",
