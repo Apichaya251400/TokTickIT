@@ -98,6 +98,23 @@ npm run prisma:seed
 - Sample Actions Taken (0, 1, and multiple action scenarios across various statuses)
 - Synchronizes `ticket_number_seq` dynamically to max ticket number suffix (`TEST-DB-SEQ-01`)
 
+### 4. Default Seed User Accounts & Roles
+All seeded accounts use the default password `InitialPassword123!`:
+
+| Role | Name | Email | Password | Initial State / Note |
+|---|---|---|---|---|
+| **Requester** | Alice Johnson | `alice@example.com` | `InitialPassword123!` | First login requires password change (`requiresPasswordChange: true`) |
+| **Requester** | Bob Smith | `bob@example.com` | `InitialPassword123!` | Active Requester (owns `TKT-2026-000002`..) |
+| **Requester** | Charlie Brown | `charlie@example.com` | `InitialPassword123!` | Active Requester |
+| **Requester** | Diana Prince | `diana@example.com` | `InitialPassword123!` | Active Requester |
+| **IT Staff** | John Staff | `john.staff@toktick.it` | `InitialPassword123!` | Active IT Staff (primary queue & dashboard) |
+| **IT Staff** | Sarah Staff | `sarah.staff@toktick.it` | `InitialPassword123!` | Active IT Staff |
+| **IT Staff** | Mike Staff | `mike.staff@toktick.it` | `InitialPassword123!` | Active IT Staff |
+| **Administrator** | System Admin | `admin@toktick.it` | `InitialPassword123!` | Full admin management & queue access |
+| **Administrator** | Super Admin | `superadmin@toktick.it` | `InitialPassword123!` | Full admin access |
+| **Inactive Staff** | Decommissioned Staff | `inactive.staff@toktick.it` | `InitialPassword123!` | `isActive: false` (assignee rejection tests) |
+| **Inactive Requester** | Former Employee | `inactive.user@example.com` | `InitialPassword123!` | `isActive: false` (login rejection tests) |
+
 ---
 
 ## 6. Running the Application
