@@ -67,6 +67,9 @@ async function runBenchmark() {
     originalUserState.set(user.id, user.requiresPasswordChange);
   }
 
+  let benchmarkIdempotencyKey: string | null = null;
+  let benchmarkActionId: string | null = null;
+
   try {
     await prisma.user.updateMany({
       where: { id: { in: [staffUser.id, requesterUser.id] } },
@@ -221,6 +224,7 @@ async function runBenchmark() {
   log("Scenario: 10 parallel HTTP requests sharing identical Idempotency-Key via Promise.all");
 
   const idemKey = `bench-idem-${Date.now()}`;
+  benchmarkIdempotencyKey = idemKey;
   const idemPayload = {
     description: "Benchmark concurrent idempotency action.",
     result: "Benchmark verified.",
@@ -246,13 +250,26 @@ async function runBenchmark() {
 
   const statuses = idemResults.map(r => r.status);
   const all201 = statuses.every(s => s === 201);
-  const firstActionId = idemResults[0].body.id;
-  const allMatchId = idemResults.every(r => r.body.id === firstActionId);
+  const firstActionId = idemResults[0]?.body?.id;
+  const allMatchId = idemResults.every(r => r.body?.id === firstActionId);
+
+  const createdActionIds = new Set<string>();
+  for (const result of idemResults) {
+    if (typeof result.body?.id === "string") {
+      createdActionIds.add(result.body.id);
+    }
+  }
+
+  benchmarkActionId = createdActionIds.size > 0
+    ? Array.from(createdActionIds)[0]
+    : null;
 
   // Assert database state
-  const dbActionCount = await prisma.actionTaken.count({
-    where: { ticketId: activeTicket.id, description: "Benchmark concurrent idempotency action." },
-  });
+  const dbActionCount = benchmarkActionId
+    ? await prisma.actionTaken.count({
+        where: { id: benchmarkActionId },
+      })
+    : 0;
   const dbIdemCount = await prisma.idempotencyRecord.count({
     where: { idempotencyKey: idemKey },
   });
@@ -266,13 +283,6 @@ async function runBenchmark() {
   log(`    - Latency Stats: min=${idemStats.min}ms, median=${idemStats.median}ms, p95=${idemStats.p95}ms, max=${idemStats.max}ms`);
   log(`    - Verification Status: ${all201 && allMatchId && dbActionCount === 1 ? "PASS" : "FAIL"}\n`);
 
-  // Cleanup benchmark records
-  await prisma.actionTaken.deleteMany({
-    where: { ticketId: activeTicket.id, description: "Benchmark concurrent idempotency action." },
-  });
-  await prisma.idempotencyRecord.deleteMany({
-    where: { idempotencyKey: idemKey },
-  });
   log("================================================================================");
   log("BENCHMARK EXECUTIVE SUMMARY TABLE");
   log("================================================================================");
@@ -291,6 +301,18 @@ async function runBenchmark() {
   fs.writeFileSync(outputPath, logLines.join("\n"), "utf-8");
   console.log(`\nBenchmark log successfully written to: ${outputPath}`);
 } finally {
+  if (benchmarkActionId) {
+    await prisma.actionTaken.deleteMany({
+      where: { id: benchmarkActionId },
+    });
+  }
+
+  if (benchmarkIdempotencyKey) {
+    await prisma.idempotencyRecord.deleteMany({
+      where: { idempotencyKey: benchmarkIdempotencyKey },
+    });
+  }
+
   for (const [userId, requiresPasswordChange] of originalUserState) {
     await prisma.user.update({
       where: { id: userId },
