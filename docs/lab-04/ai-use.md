@@ -4,7 +4,7 @@
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Document Status**: Final AI Usage Report & Reflection
 - **AI Tool / Platform**: Google Antigravity (Agentic AI Coding Assistant)
-- **Primary LLM**: Gemini 2.0 Flash / Gemini 1.5 Pro (Google DeepMind)
+- **Primary LLM**: Gemini 3.8 Flash High (Google DeepMind)
 - **Author**: Aphichaya Klinhual (67070503447)
 - **Peer Reviewer**: Pilaiwan Churdchu (67070503492)
 - **Repository**: https://github.com/Apichaya251400/TokTickIT
@@ -84,7 +84,7 @@ All AI interactions were governed by strict engineering guardrails:
 ### Prompt 8: Deterministic Test Data Isolation & Dynamic State Restoration
 > **"Several E2E tests mutate existing database records (`E2E-ACT-07`, `TEST-CONC-01`, `TEST-IDEM`, `E2E-FLOW-08`, `E2E-FLOW-07`). Standard Prisma updates automatically update `@updatedAt`, causing timestamp drift across test runs. How can we implement dynamic snapshotting before mutation and restore exact original values including authoritative `updatedAt` timestamps in `finally` blocks using raw SQL?"**
 
-- **Intent & Purpose**: Guaranteed 100% deterministic test data restoration and database idempotency across repeated test runs.
+- **Intent & Purpose**: Improved test determinism by snapshotting mutable database state and restoring the original values, including updatedAt, in finally blocks.
 - **Outcome**: Implemented `prisma.$executeRaw` dynamic state restoration in `finally` blocks for `updatedAt` and ticket statuses, verifying exact millisecond timestamp equality in post-test assertions.
 
 ---
@@ -100,7 +100,7 @@ All AI interactions were governed by strict engineering guardrails:
 ### Prompt 10: Final Cross-Document Consistency & Release Gate Verification
 > **"Perform a cross-document consistency audit across `specification.md`, `tests.md`, `ui-spec.md`, and `api-spec.md`. Verify that all Functional Requirements (`FR-01..15`), Business Rules (`BR-01..17`), Acceptance Criteria (`AC-01..23`), API route signatures, and test file paths match physical files in the repository without discrepancies."**
 
-- **Intent & Purpose**: Ensured absolute internal consistency across all four engineering specifications before tagging the final release.
+- **Intent & Purpose**: Ensured cross-document consistency across the four engineering specifications and verified that documented requirements, API signatures, and test file references were aligned with the repository.
 - **Outcome**: Automated cross-audit script verified zero missing requirements, zero undefined rules, 100% physical test file existence (21/21 files), and unified terminology across documents.
 
 ---
@@ -123,4 +123,4 @@ Working on Lab 4 with an agentic AI coding workflow highlighted the distinct str
 
 The most valuable takeaway from Lab 4 was realizing how critical atomic transaction boundaries and idempotency tokens are when network failures and user retries occur in real-world systems. Concurrent requests sharing the same idempotency key could race between cache lookup and record insertion. Rather than relying on fragile application-level locks, enforcing a database unique constraint on `(userId, ticketId, endpoint, idempotencyKey)` inside an atomic transaction ensured that parallel requests cleanly serialize on the database constraint without creating duplicate records.
 
-Additionally, introducing new dashboards revealed the importance of backward compatibility in automated test suites: when default landing tabs changed, earlier test suites needed explicit navigation steps. By systematically verifying all 485 automated tests (284 server, 129 client, 72 Playwright E2E) across every release stage, we achieved strong release-candidate confidence, with final release verification scheduled after the staging and main-branch merge.
+Additionally, introducing new dashboards revealed the importance of backward compatibility in automated test suites: when default landing tabs changed, earlier test suites needed explicit navigation steps. By systematically verifying all 485 automated tests (284 server, 129 client, and 72 Playwright E2E), we achieved strong release confidence. PR #96 has received formal peer approval, with the remaining release step being the governed merge and final branch-level verification.
