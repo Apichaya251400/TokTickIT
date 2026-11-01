@@ -3,7 +3,8 @@
 - **System Name**: TokTickIT
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Document Status**: Approved REST API Specification
-- **Repository Branch**: `feature/lab4-spec-dd`
+- **Repository Branch at Specification Time**: `feature/lab4-spec-dd`
+- **Target Final Verification Branch**: `main`
 
 ---
 
@@ -12,7 +13,9 @@
 The REST API extends the existing TokTickIT backend endpoints. All request and response bodies use JSON (`Content-Type: application/json`).
 
 ### Authentication & Authorization
-All protected endpoints defined in this Lab 4 specification MUST authenticate using the existing Lab 3 HTTP-only JWT session cookie. The `Authorization: Bearer` mechanism is not supported by Lab 4 endpoints. The auth middleware populates `req.user` with `{ id, name, email, role, isActive }`.
+All protected endpoints defined in this Lab 4 specification authenticate using the existing JWT authentication mechanism from Lab 3.
+
+The primary browser/session mechanism is the HTTP-only JWT session cookie. The server also accepts the `Authorization: Bearer <token>` form for API and integration-test compatibility. Both mechanisms are validated by the same authentication middleware, which populates `req.user` with `{ id, name, email, role, isActive }`.
 
 Unauthenticated authentication endpoints such as login remain governed by the existing Lab 3 authentication contract.
 
@@ -26,6 +29,9 @@ Unauthenticated authentication endpoints such as login remain governed by the ex
 }
 ```
 *Note on 500 Internal Server Error*: Any unhandled server exception MUST return `500 Internal Server Error` with `code: "INTERNAL_ERROR"` and message `"An unexpected error occurred. Please try again."` without exposing internal stack traces or database engine details. Serialization or transaction conflicts caused by concurrent Ticket or Action Taken updates MUST be retried when safe; if the operation cannot be safely retried, return `409 Conflict` (`STALE_UPDATE`) rather than exposing an unhandled `500 Internal Server Error`.
+
+> [!NOTE]
+> **Legacy Contract Compatibility**: Legacy Lab 3 `/api/tickets` endpoints retain their existing top-level string error response shape (`{ "error": "FORBIDDEN", "message": "Access denied" }`). New Lab 4 endpoints follow the standardized structured error object contract above (`{ "error": { "code": "...", "message": "..." } }`).
 
 ---
 
@@ -347,6 +353,7 @@ Lab 4 does not modify the business rules of these endpoints.
   "message": "Authentication required"
 }
 ```
+- *Note on Legacy Error Shape*: As noted in Section 1, `/api/tickets` is an existing Lab 3 endpoint that preserves its established `{ "error": "FORBIDDEN", "message": "Access denied" }` shape, while newly introduced Lab 4 endpoints return the standardized `{ "error": { "code": "...", "message": "..." } }` object.
 
 ---
 

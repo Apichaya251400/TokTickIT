@@ -5,7 +5,7 @@ import { getPrisma } from "../../src/prisma.js";
 import { seedDatabase } from "../../prisma/seed.js";
 import { clearRevocationBlocklist, signToken } from "../../src/utils/jwt.js";
 
-describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
+describe("LAB4-04 / Actions Taken REST API Suite (actions-taken.api.test.ts)", () => {
   const prisma = getPrisma();
 
   let staffToken: string;
@@ -21,6 +21,28 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
   let activeTicket: any;
   let cancelledTicket: any;
 
+  const createdTicketIds: string[] = [];
+  const createdActionIds: string[] = [];
+  const createdIdempotencyKeys: string[] = [];
+  const originalRequiresPasswordChange = new Map<number, boolean>();
+
+  const trackKey = (k: string): string => {
+    createdIdempotencyKeys.push(k);
+    return k;
+  };
+
+  const trackAction = (id?: string): void => {
+    if (id && !createdActionIds.includes(id)) {
+      createdActionIds.push(id);
+    }
+  };
+
+  const trackTicket = (id?: string): void => {
+    if (id && !createdTicketIds.includes(id)) {
+      createdTicketIds.push(id);
+    }
+  };
+
   beforeEach(async () => {
     clearRevocationBlocklist();
     await seedDatabase();
@@ -33,9 +55,19 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
     otherRequesterUser = requesters[1] || requesters[0];
 
     // Disable password change restriction strictly for test users used in this suite
+    const testUsers = [staffUser, adminUser, requesterUser, otherRequesterUser];
+    for (const user of testUsers) {
+      if (!originalRequiresPasswordChange.has(user.id)) {
+        originalRequiresPasswordChange.set(
+          user.id,
+          user.requiresPasswordChange
+        );
+      }
+    }
+
     await prisma.user.updateMany({
       where: {
-        email: { in: [staffUser.email, adminUser.email, requesterUser.email, otherRequesterUser.email] },
+        id: { in: testUsers.map((user) => user.id) },
       },
       data: { requiresPasswordChange: false },
     });
@@ -76,47 +108,43 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
         currentStatus: "CANCELLED",
       },
     });
+
+    trackTicket(activeTicket.id);
+    trackTicket(cancelledTicket.id);
   });
 
   afterEach(async () => {
-    if (staffUser || adminUser || requesterUser || otherRequesterUser) {
-      const userEmails = [staffUser?.email, adminUser?.email, requesterUser?.email, otherRequesterUser?.email].filter(Boolean);
-      await prisma.user.updateMany({
-        where: { email: { in: userEmails } },
-        data: { requiresPasswordChange: true },
+    for (const [userId, requiresPasswordChange] of originalRequiresPasswordChange) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { requiresPasswordChange },
       });
     }
+    originalRequiresPasswordChange.clear();
   });
 
   afterAll(async () => {
-    // Clean up all ActionTaken records and custom tickets created during actions API tests
-    const seededActionIds = ["act-seed-000001", "act-seed-000002", "act-seed-000003", "act-seed-000004", "act-seed-000005"];
-    await prisma.actionTaken.deleteMany({
-      where: { id: { notIn: seededActionIds } },
-    });
+    // Specifically cleanup only records created by this test suite
+    if (createdActionIds.length > 0) {
+      await prisma.actionTaken.deleteMany({
+        where: { id: { in: createdActionIds } },
+      });
+    }
 
-    await prisma.idempotencyRecord.deleteMany({});
+    if (createdTicketIds.length > 0) {
+      await prisma.actionTaken.deleteMany({
+        where: { ticketId: { in: createdTicketIds } },
+      });
+      await prisma.ticket.deleteMany({
+        where: { id: { in: createdTicketIds } },
+      });
+    }
 
-    await prisma.ticket.deleteMany({
-      where: {
-        ticketNumber: {
-          notIn: [
-            "TKT-2026-000001",
-            "TKT-2026-000002",
-            "TKT-2026-000003",
-            "TKT-2026-000004",
-            "TKT-2026-000005",
-            "TKT-2026-000006",
-            "TKT-2026-000007",
-            "TKT-2026-000008",
-          ],
-        },
-      },
-    });
-
-    await prisma.user.updateMany({
-      data: { requiresPasswordChange: true },
-    });
+    if (createdIdempotencyKeys.length > 0) {
+      await prisma.idempotencyRecord.deleteMany({
+        where: { idempotencyKey: { in: createdIdempotencyKeys } },
+      });
+    }
 
     await prisma.$disconnect();
   });
@@ -125,7 +153,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
   // TEST-ACT-01: Valid Action Taken Creation & Auto PerformedBy Attribution
   // ---------------------------------------------------------------------------
   it("TEST-ACT-01: Creates an Action Taken on active ticket with auto performedById session identity (AC-01, BR-03)", async () => {
-    const key = `test-act-01-${Date.now()}`;
+    const key = trackKey(`test-act-01-${Date.now()}`);
     const res = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -139,6 +167,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
 
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty("id");
+    trackAction(res.body.id);
     expect(res.body.ticketId).toBe(activeTicket.id);
     expect(res.body.performedBy.id).toBe(staffUser.id);
     expect(res.body.status).toBe("PENDING");
@@ -150,7 +179,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
   // TEST-ACT-02: Client-Supplied PerformedBy Payload Rejection
   // ---------------------------------------------------------------------------
   it("TEST-ACT-02: Rejects Action Taken creation when client payload contains performedById (AC-02, BR-03)", async () => {
-    const key = `test-act-02-${Date.now()}`;
+    const key = trackKey(`test-act-02-${Date.now()}`);
     const res = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -171,7 +200,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
   // TEST-ACT-03: Follow-Up Note Requirement & Strict Type Validation (MUST FIX 2)
   // ---------------------------------------------------------------------------
   it("TEST-ACT-03: Rejects Action Taken creation when followUpRequired is missing note or is invalid type (AC-03, BR-05)", async () => {
-    const keyMissing = `test-act-03-missing-${Date.now()}`;
+    const keyMissing = trackKey(`test-act-03-missing-${Date.now()}`);
     const resMissing = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -187,7 +216,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
     expect(resMissing.body.error.code).toBe("BAD_REQUEST");
 
     // MUST FIX: Rejects missing followUpRequired field (undefined)
-    const keyMissingField = `test-act-03-missing-field-${Date.now()}`;
+    const keyMissingField = trackKey(`test-act-03-missing-field-${Date.now()}`);
     const resMissingField = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -202,7 +231,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
     expect(resMissingField.body.error.code).toBe("BAD_REQUEST");
 
     // MUST FIX 2: Rejects string "false" for followUpRequired
-    const keyTypeStr = `test-act-03-type-${Date.now()}`;
+    const keyTypeStr = trackKey(`test-act-03-type-${Date.now()}`);
     const resTypeStr = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -223,7 +252,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
   // ---------------------------------------------------------------------------
   it("TEST-ACT-04: Denies Requester from creating, editing, or updating Action status (403 Forbidden) (AC-04, BR-06)", async () => {
     // 1. Create action attempt by Requester
-    const key = `test-act-04-${Date.now()}`;
+    const key = trackKey(`test-act-04-${Date.now()}`);
     const createRes = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${requesterToken}`)
@@ -240,7 +269,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
     expect(errorCode).toBe("FORBIDDEN");
 
     // Create a staff action to test Requester edit & status transition rejection
-    const actionKey = `test-act-04-setup-${Date.now()}`;
+    const actionKey = trackKey(`test-act-04-setup-${Date.now()}`);
     const setupRes = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -253,6 +282,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
       });
 
     const actionId = setupRes.body.id;
+    trackAction(actionId);
     const updatedAt = setupRes.body.updatedAt;
 
     // 2. Edit action content attempt by Requester
@@ -288,6 +318,8 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
     const stamp = Date.now().toString().slice(-8);
     const idB = `00000000-0000-4000-8000-00${stamp}02`;
     const idA = `00000000-0000-4000-8000-00${stamp}01`;
+    trackAction(idB);
+    trackAction(idA);
 
     await prisma.actionTaken.create({
       data: {
@@ -340,7 +372,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
   // ---------------------------------------------------------------------------
   it("TEST-ACT-06: Allows assignment to active IT Staff/Admin and rejects invalid or REQUESTER assignees (AC-21, BR-04)", async () => {
     // 1. Valid assignment to Administrator
-    const key = `test-act-06-${Date.now()}`;
+    const key = trackKey(`test-act-06-${Date.now()}`);
     const validRes = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -355,9 +387,10 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
 
     expect(validRes.status).toBe(201);
     expect(validRes.body.assignee.id).toBe(adminUser.id);
+    trackAction(validRes.body.id);
 
     // 2. Invalid assignment to REQUESTER user
-    const keyBad = `test-act-06-bad-${Date.now()}`;
+    const keyBad = trackKey(`test-act-06-bad-${Date.now()}`);
     const badRes = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -378,7 +411,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
       where: { email: "inactive.staff@toktick.it" },
     });
 
-    const keyInactive = `test-act-06-inactive-${Date.now()}`;
+    const keyInactive = trackKey(`test-act-06-inactive-${Date.now()}`);
     const inactiveRes = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -414,7 +447,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
     expect(noHeaderRes.body.error.code).toBe("MISSING_IDEMPOTENCY_KEY");
 
     // 2. Sequential duplicate replay returns cached 201 response
-    const key = `test-act-07-seq-${Date.now()}`;
+    const key = trackKey(`test-act-07-seq-${Date.now()}`);
     const payload = {
       description: "Sequential idempotency test.",
       result: "Original result.",
@@ -429,6 +462,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
       .send(payload);
 
     expect(res1.status).toBe(201);
+    trackAction(res1.body.id);
 
     const res2 = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
@@ -458,7 +492,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
 
   it("TEST-ACT-07-CONCURRENT: Handles concurrent identical and mismatched idempotent requests via Promise.all (MUST FIX 3)", async () => {
     // 1. Concurrent identical requests (Promise.all)
-    const concurrentKey = `test-act-07-conc-${Date.now()}`;
+    const concurrentKey = trackKey(`test-act-07-conc-${Date.now()}`);
     const identicalPayload = {
       description: "Concurrent identical payload test.",
       result: "Concurrent result.",
@@ -483,6 +517,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
     expect(r1.status).toBe(201);
     expect(r2.status).toBe(201);
     expect(r1.body.id).toBe(r2.body.id);
+    trackAction(r1.body.id);
 
     // Assert database contains exactly ONE ActionTaken record for this idempotency key
     const dbRecordCount = await prisma.idempotencyRecord.count({
@@ -491,7 +526,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
     expect(dbRecordCount).toBe(1);
 
     // 2. Concurrent payload mismatch requests (Promise.all)
-    const mismatchKey = `test-act-07-mismatch-${Date.now()}`;
+    const mismatchKey = trackKey(`test-act-07-mismatch-${Date.now()}`);
     const payloadA = { description: "Payload A", result: "Result A", followUpRequired: false };
     const payloadB = { description: "Payload B", result: "Result B", followUpRequired: false };
 
@@ -512,6 +547,8 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
 
     const statuses = [mA.status, mB.status].sort();
     expect(statuses).toEqual([201, 409]);
+    if (mA.status === 201) trackAction(mA.body.id);
+    if (mB.status === 201) trackAction(mB.body.id);
 
     const recordMismatchCount = await prisma.idempotencyRecord.count({
       where: { idempotencyKey: mismatchKey },
@@ -524,7 +561,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
   // ---------------------------------------------------------------------------
   it("TEST-ACT-08: Updates Action Taken content with expectedUpdatedAt and rejects stale timestamp with 409 STALE_UPDATE (AC-17, BR-10)", async () => {
     // Create initial action
-    const key = `test-act-08-${Date.now()}`;
+    const key = trackKey(`test-act-08-${Date.now()}`);
     const setupRes = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -537,6 +574,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
       });
 
     const actionId = setupRes.body.id;
+    trackAction(actionId);
     const updatedAt = setupRes.body.updatedAt;
 
     // 1. Non-ISO expectedUpdatedAt timestamp string format returns 400 MISSING_EXPECTED_UPDATED_AT
@@ -589,7 +627,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
   // TEST-ACT-09: Action Status Transition Matrix (PENDING -> IN_PROGRESS -> COMPLETED)
   // ---------------------------------------------------------------------------
   it("TEST-ACT-09: Executes status transitions (PENDING -> IN_PROGRESS -> COMPLETED) and rejects terminal transitions (AC-22, Section 8.2)", async () => {
-    const key = `test-act-09-${Date.now()}`;
+    const key = trackKey(`test-act-09-${Date.now()}`);
     const setupRes = await request(app)
       .post(`/api/tickets/${activeTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -602,6 +640,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
       });
 
     const actionId = setupRes.body.id;
+    trackAction(actionId);
     let updatedAt = setupRes.body.updatedAt;
 
     // 1. Transition PENDING -> IN_PROGRESS
@@ -650,7 +689,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
   // TEST-ACT-10: Operations on Cancelled Ticket Rejection (AC-12, AC-18, BR-09)
   // ---------------------------------------------------------------------------
   it("TEST-ACT-10: Rejects Action Taken operations on CANCELLED tickets with 400 TICKET_TERMINAL (AC-12, AC-18, BR-09)", async () => {
-    const key = `test-act-10-${Date.now()}`;
+    const key = trackKey(`test-act-10-${Date.now()}`);
     const createRes = await request(app)
       .post(`/api/tickets/${cancelledTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -695,6 +734,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
         currentStatus: "OPEN",
       },
     });
+    trackTicket(unownedTicket.id);
 
     const unownedRes = await request(app)
       .get(`/api/tickets/${unownedTicket.id}/actions`)
@@ -724,8 +764,9 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
         currentStatus: "IN_PROGRESS",
       },
     });
+    trackTicket(raceTicket.id);
 
-    const key = `test-act-race-${Date.now()}`;
+    const key = trackKey(`test-act-race-${Date.now()}`);
 
     // Concurrently execute Ticket Status Cancellation AND Action Creation using Promise.all
     const [cancelRes, actionRes] = await Promise.all([
@@ -764,6 +805,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
       //    and POST /actions would have been rejected with 400 TICKET_TERMINAL).
       // 2. The persisted action record in DB matches actionRes.body.id.
       expect(actionRes.body).toHaveProperty("id");
+      trackAction(actionRes.body.id);
       expect(finalTicket.actionsTaken.length).toBe(1);
       const createdAction = finalTicket.actionsTaken[0];
       expect(createdAction.id).toBe(actionRes.body.id);
@@ -781,7 +823,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
 
     // Phase 2: Post-Cancellation Verification (Guaranteed Ticket state = CANCELLED)
     // Any subsequent Action creation attempt on this CANCELLED ticket MUST be rejected with 400 TICKET_TERMINAL
-    const postCancelKey = `test-act-race-post-${Date.now()}`;
+    const postCancelKey = trackKey(`test-act-race-post-${Date.now()}`);
     const postCancelRes = await request(app)
       .post(`/api/tickets/${raceTicket.id}/actions`)
       .set("Cookie", `token=${staffToken}`)
@@ -802,5 +844,91 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions.api.test.ts)", () => {
       include: { actionsTaken: true },
     });
     expect(postCancelTicket.actionsTaken.length).toBe(finalTicket.actionsTaken.length);
+  });
+
+  // ---------------------------------------------------------------------------
+  // TEST-ACT-13: attachmentNotes API Persistence (Handout §4.1)
+  // ---------------------------------------------------------------------------
+  it("TEST-ACT-13: Persists trimmed attachmentNotes on create and update, and returns it in the API response (Handout §4.1)", async () => {
+    const key = trackKey(`test-act-13-${Date.now()}`);
+    const createRes = await request(app)
+      .post(`/api/tickets/${activeTicket.id}/actions`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .set("Idempotency-Key", key)
+      .send({
+        description: "Collected diagnostic logs from the workstation.",
+        result: "Logs archived for vendor escalation.",
+        followUpRequired: false,
+        attachmentNotes: "  Event viewer export: evt-2026-10-31.zip  ",
+      });
+
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.attachmentNotes).toBe("Event viewer export: evt-2026-10-31.zip");
+    trackAction(createRes.body.id);
+
+    const dbCreated = await prisma.actionTaken.findUniqueOrThrow({ where: { id: createRes.body.id } });
+    expect(dbCreated.attachmentNotes).toBe("Event viewer export: evt-2026-10-31.zip");
+
+    const updateRes = await request(app)
+      .put(`/api/actions/${createRes.body.id}`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .send({
+        expectedUpdatedAt: createRes.body.updatedAt,
+        attachmentNotes: "Updated reference: vendor case #48213",
+      });
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.attachmentNotes).toBe("Updated reference: vendor case #48213");
+
+    const dbUpdated = await prisma.actionTaken.findUniqueOrThrow({ where: { id: createRes.body.id } });
+    expect(dbUpdated.attachmentNotes).toBe("Updated reference: vendor case #48213");
+
+    const listRes = await request(app)
+      .get(`/api/tickets/${activeTicket.id}/actions`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`);
+    expect(listRes.status).toBe(200);
+    const listed = (listRes.body.data ?? listRes.body).find((a: any) => a.id === createRes.body.id);
+    expect(listed.attachmentNotes).toBe("Updated reference: vendor case #48213");
+  });
+
+  // ---------------------------------------------------------------------------
+  // TEST-ACT-14: Ticket Owner vs Action Performer Separation (BR-02)
+  // ---------------------------------------------------------------------------
+  it("TEST-ACT-14: Action recorded by a non-owner IT Staff keeps performedById = actor and leaves Ticket owner unchanged (BR-02)", async () => {
+    const staffMembers = await prisma.user.findMany({
+      where: { role: "IT_STAFF", isActive: true },
+      orderBy: { id: "asc" },
+    });
+    const ownerStaff = staffMembers.find((u) => u.id !== staffUser.id);
+    expect(ownerStaff).toBeDefined();
+
+    // Ticket is owned by a different staff member than the one recording the action
+    await prisma.ticket.update({ where: { id: activeTicket.id }, data: { ownerId: ownerStaff!.id } });
+
+    const key = trackKey(`test-act-14-${Date.now()}`);
+    const res = await request(app)
+      .post(`/api/tickets/${activeTicket.id}/actions`)
+      .set("Cookie", `token=${staffToken}`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .set("Idempotency-Key", key)
+      .send({
+        description: "Second-line support verified VPN client configuration.",
+        result: "Configuration corrected; awaiting owner follow-up.",
+        followUpRequired: false,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.performedBy.id).toBe(staffUser.id);
+    expect(res.body.performedBy.id).not.toBe(ownerStaff!.id);
+    trackAction(res.body.id);
+
+    const dbAction = await prisma.actionTaken.findUniqueOrThrow({ where: { id: res.body.id } });
+    expect(dbAction.performedById).toBe(staffUser.id);
+
+    const dbTicket = await prisma.ticket.findUniqueOrThrow({ where: { id: activeTicket.id } });
+    expect(dbTicket.ownerId).toBe(ownerStaff!.id);
   });
 });

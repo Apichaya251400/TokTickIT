@@ -3,7 +3,8 @@
 - **System Name**: TokTickIT
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Document Status**: Approved Engineering Test Strategy & Traceability Matrix
-- **Repository Branch**: `feature/lab4-e2e-hardening`
+- **Repository Branch at Specification Time**: `feature/lab4-release`
+- **Target Final Verification Branch**: `main`
 
 ---
 
@@ -14,7 +15,7 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 ### Test Strategy Principles
 1. **Zero Unmapped Criteria**: 100% of Acceptance Criteria, Functional Requirements, Business Rules, and Handout Data Model requirements have at least one explicit automated or manual test case.
 2. **Explicit Migration & Idempotent Seed Testing**: Database migration preservation (`TEST-DB-02`) guarantees zero data loss for Lab 1–3 Users, Tickets, Comments, Notes, and Attachments while supporting legacy 0-action tickets. Idempotent seed testing (`TEST-DB-03`) verifies sequential double-seed execution without duplicate creation.
-3. **Explicit Attachment Notes & UI Style Coverage**: Persistence of `attachmentNotes` (`TEST-ACT-09`) and client card rendering (`TEST-UI-ACT-03`) are explicitly tested alongside Zen Green visual style consistency (`TEST-STYLE-01`).
+3. **Explicit Attachment Notes & UI Style Coverage**: Persistence of `attachmentNotes` (`TEST-ACT-13`) and client card rendering (`TEST-UI-ACT-03`) are explicitly tested alongside Zen Green visual style consistency (`TEST-STYLE-01`).
 4. **Form Data Preservation & Safe Recoverable Failures**: Action Taken submission failures trigger safe alert feedback while preserving user-entered form data for retry (`TEST-FAIL-01`) reusing the client `Idempotency-Key` (`TEST-IDEM-03`).
 5. **Real Concurrency & Server Enforcement**: Race conditions, optimistic concurrency control (`expectedUpdatedAt`), and header-based backend idempotency (`Idempotency-Key`) are tested using parallel execution (`Promise.all`) against real database transactions.
 6. **Full Lab 1–3 Regression Preservation**: Automated test suites guarantee 100% pass rate across all existing Lab 1, Lab 2, and Lab 3 functionality using verified repository CLI commands (`npm --prefix server test`, `npm --prefix client test`, `npx playwright test`).
@@ -24,7 +25,7 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 ## 2. Requirement-to-Test Traceability Matrix
 
 ### 2.1 Test ID Semantic Separation Notice
-- **`TEST-DASH-*` (Backend Query & API Contract Tests)**: Target `server/tests/lab-04/staff-dashboard.api.test.ts`. Verifies backend Prisma aggregate query calculation accuracy, Asia/Bangkok (UTC+7) date boundary filtering, role authorization, and JSON response payloads.
+- **`TEST-DASH-*` (Backend Query & API Contract Tests)**: Covers the Staff and Requester Dashboard API suites (`server/tests/lab-04/staff-dashboard.api.test.ts` and `server/tests/lab-04/requester-dashboard.api.test.ts`). Verifies backend Prisma aggregate query calculation accuracy, Asia/Bangkok (UTC+7) date boundary filtering, role authorization, and JSON response payloads.
 - **`TEST-CARD-*` (UI Presentation & Drill-Down Tests)**: Target `client/tests/lab-04/StaffDashboard.test.tsx` and `RequesterDashboard.test.tsx`. Verifies client UI card rendering, helper subtext, empty state `0` displays, and interactive drill-down URL navigation.
 
 ### 2.2 Functional Requirements (FR) Traceability Summary Table
@@ -52,7 +53,7 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 | Rule ID | Rule Summary | Mapped Acceptance Criteria | Planned Test IDs | Target Test File |
 |---|---|---|---|---|
 | **BR-01** | ActionTaken belongs to exactly 1 Ticket | AC-01 | `TEST-DB-01` | `server/tests/lab-04/db-schema.test.ts` |
-| **BR-02** | Ticket Owner vs Action Performer separation | AC-05 | `TEST-ACT-08` | `server/tests/lab-04/actions-taken.api.test.ts` |
+| **BR-02** | Ticket Owner vs Action Performer separation | AC-05 | `TEST-ACT-14` | `server/tests/lab-04/actions-taken.api.test.ts` |
 | **BR-03** | Performer ID derived strictly from actor session token | AC-02 | `TEST-ACT-02` | `server/tests/lab-04/actions-taken.api.test.ts` |
 | **BR-04** | Action assignee must be active IT Staff or Administrator | AC-21 | `TEST-ACT-06` | `server/tests/lab-04/actions-taken.api.test.ts` |
 | **BR-05** | `followUpNote` mandatory when `followUpRequired = true` | AC-03 | `TEST-ACT-03` | `server/tests/lab-04/actions-taken.api.test.ts` |
@@ -97,15 +98,15 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 | **AC-14 / FR-15** | Visual Responsive Layout Adaptation across Desktop, Tablet, and Mobile viewports | `TEST-RESP-01` | Playwright E2E | `e2e/lab-04/responsive-a11y.spec.ts` | Viewports `1920×1080`, `768×1024`, `375×812` render grid, table, and cards without clipping/overflow | `Pass` |
 | **AC-15 / FR-08, BR-14** | Zero-count metric API payload response validation | `TEST-DASH-04` | Integration / API | `server/tests/lab-04/staff-dashboard.api.test.ts` | Endpoint returns `0` counts for empty datasets in JSON payload | `Pass` |
 | **AC-15 / FR-08, BR-14** | Zero-count metric UI card rendering & empty state text | `TEST-CARD-00` | UI Component | `client/tests/lab-04/StaffDashboard.test.tsx` | Metric cards render `0` and empty lists render clean message (e.g. `"No recent tickets"`) | `Pass` |
-| **AC-16 / FR-14** | Duplicate ActionTaken creation with identical `Idempotency-Key` returns cached response | `TEST-IDEM-01` | Integration / API | `server/tests/lab-04/idempotency.api.test.ts` | `201 Created`, cached response returned, exactly 1 ActionTaken record created in database | `Pass` |
+| **AC-16 / FR-14** | Duplicate ActionTaken creation with identical `Idempotency-Key` returns cached response | `TEST-ACT-07` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `201 Created`, cached response returned, exactly 1 ActionTaken record created in database | `Pass` |
 | **AC-17 / BR-10, FR-12** | Stale ActionTaken or Ticket update using outdated `expectedUpdatedAt` | `TEST-CONCUR-02` | Integration / API | `server/tests/lab-04/concurrency.api.test.ts` | `409 Conflict` (`STALE_UPDATE`), database state unmodified by stale request | `Pass` |
 | **AC-18 / BR-09, FR-04** | ActionTaken creation attempt on `CANCELLED` ticket | `TEST-TERM-02` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` & `ticket-workflow.api.test.ts` | `400 Bad Request` (`TICKET_TERMINAL`), zero actions added | `Pass` |
 | **AC-19 / FR-15** | Interactive Accessibility: keyboard navigation, focus ring, ARIA, touch targets | `TEST-A11Y-01` | Playwright E2E | `e2e/lab-04/responsive-a11y.spec.ts` | Visible focus rings (`2px solid #198754`), valid ARIA roles, touch targets >= 44×44px, no body horizontal overflow | `Pass` |
-| **AC-20 / FR-14** | Reuse existing `Idempotency-Key` with different request payload | `TEST-IDEM-02` | Integration / API | `server/tests/lab-04/idempotency.api.test.ts` | `409 Conflict` (`IDEMPOTENCY_KEY_REUSED`), zero new records created | `Pass` |
+| **AC-20 / FR-14** | Reuse existing `Idempotency-Key` with different request payload | `TEST-ACT-07` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `409 Conflict` (`IDEMPOTENCY_KEY_REUSED`), zero new records created | `Pass` |
 | **AC-21 / BR-04** | Assign action to inactive user, non-staff user, or invalid UUID | `TEST-ACT-06` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `400 Bad Request` (`INVALID_ASSIGNEE`) | `Pass` |
-| **AC-22 / Section 8.2** | Valid action status transitions pass; invalid transitions from terminal states fail | `TEST-ACT-07` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | Permitted status transitions return `200 OK`; terminal `COMPLETED`/`CANCELLED` status changes return `400 Bad Request` | `Pass` |
+| **AC-22 / Section 8.2** | Valid action status transitions pass; invalid transitions from terminal states fail | `TEST-ACT-09` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | Permitted status transitions return `200 OK`; terminal `COMPLETED`/`CANCELLED` status changes return `400 Bad Request` | `Pass` |
 | **AC-23 / BR-16** | Cross-ticket ActionTaken access authorization check (unauthorized ticket) | `TEST-SEC-01` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `403 Forbidden` (`FORBIDDEN`), ActionTaken access bound strictly to parent Ticket authorization | `Pass` |
-| **Handout §4.1** | `Attachment Notes` API persistence on Action Taken | `TEST-ACT-09` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `201 Created`, `attachmentNotes` field stored in DB and returned in JSON response | `Pass` |
+| **Handout §4.1** | `Attachment Notes` API persistence on Action Taken | `TEST-ACT-13` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | `201 Created`, `attachmentNotes` field stored in DB and returned in JSON response | `Pass` |
 | **Handout §4.1** | `Attachment Notes` UI rendering in Actions Taken Workspace | `TEST-UI-ACT-03` | UI Component | `client/tests/lab-04/ActionsTaken.test.tsx` | Card renders `attachmentNotes` string and attachment reference icon | `Pass` |
 | **Handout §4.1** | Database Migration & Backfill Data Preservation | `TEST-DB-02` | Integration / DB | `server/tests/lab-04/migration.test.ts` | Preserves all Lab 1–3 Users, Tickets, Comments, Notes, Attachments; legacy tickets have 0 actions | `Pass` |
 | **Handout §4.1** | Idempotent Seed Execution Verification | `TEST-DB-03` | Integration / DB | `server/tests/lab-04/seed.test.ts` | Sequential double seed execution creates zero duplicates; produces 0/1/many action tickets | `Pass` |
@@ -113,7 +114,7 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 | **Handout §5.2** | Client Retry with original `Idempotency-Key` after network failure | `TEST-IDEM-03` | E2E & API | `e2e/lab-04/actions-taken-flow.spec.ts` | Retry submission sends identical `Idempotency-Key` header preventing duplicate DB record creation | `Pass` |
 | **Handout §9** | Zen Green Visual Theme, Badge Styling & Non-color Status Cues | `TEST-STYLE-01` | UI Component | `client/tests/lab-04/ActionsTaken.test.tsx` | Verifies `#198754` brand accents, priority/status badge color classes, and text/icon non-color cues | `Pass` |
 | **BR-01** | ActionTaken foreign key database constraint binding to Ticket | `TEST-DB-01` | Integration / Database | `server/tests/lab-04/db-schema.test.ts` | Database foreign key constraint enforces `ticketId` binding; invalid `ticketId` throws FK error | `Pass` |
-| **BR-02** | Ticket Owner vs Action Performer separation | `TEST-ACT-08` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | Action created by Staff B on Ticket owned by Staff A records `performedById = Staff B` | `Pass` |
+| **BR-02** | Ticket Owner vs Action Performer separation | `TEST-ACT-14` | Integration / API | `server/tests/lab-04/actions-taken.api.test.ts` | Action created by Staff B on Ticket owned by Staff A records `performedById = Staff B` | `Pass` |
 | **BR-11** | Dashboard metrics calculated server-side | `TEST-DASH-05` | Integration / API | `server/tests/lab-04/staff-dashboard.api.test.ts` | Endpoint returns aggregate totals directly without returning raw item arrays | `Pass` |
 | **BR-12** | Fixed Asia/Bangkok (UTC+7) time boundary calculation | `TEST-UNIT-02` | Unit Test | `server/tests/unit/timezone.test.ts` | `startOfDay` and `startOfNextDay` calculate boundaries in Asia/Bangkok local time | `Pass` |
 | **BR-13** | Ownership-scoped metrics filter strictly by `req.user.id` | `TEST-DASH-06` | Integration / API | `server/tests/lab-04/staff-dashboard.api.test.ts` | Staff dashboard filters `ownerId = req.user.id`; Requester dashboard filters `requesterId = req.user.id` | `Pass` |
@@ -164,12 +165,11 @@ This document establishes the authoritative Test Strategy and Requirement Tracea
 - **`migration.test.ts`**: Tests `TEST-DB-02`. Verifies that applying the Prisma migration preserves 100% of pre-existing Lab 1–3 Users, Tickets, Public Comments, Internal Notes, and Attachments, and ensures legacy tickets without actions are assigned `0 actions` without schema corruption.
 - **`seed.test.ts`**: Tests `TEST-DB-03`. Executes `prisma/seed.ts` sequentially twice, verifying zero unintended duplicate creation, constant record counts, and presence of 0, 1, and multiple `ActionTaken` tickets across assigned/unassigned states and all workflow statuses.
 - **`db-schema.test.ts`**: Tests `TEST-DB-01`. Verifies Prisma foreign key constraints, relation integrity, composite index performance, and `ActionTaken` 1:N binding under `Ticket`.
-- **`actions-taken.api.test.ts`**: Tests `GET /api/tickets/:id/actions`, `POST /api/tickets/:id/actions`, `PUT /api/actions/:id`, `PUT /api/actions/:id/status`. Covers performer auto-attribution (`AC-01`, `AC-02`), follow-up validation (`AC-03`), Requester RBAC block (`AC-04`), chronological ordering (`AC-05`), `attachmentNotes` persistence (`TEST-ACT-09`), terminal state action block (`AC-12` via `TEST-TERM-02`, `TEST-TERM-03`), invalid assignee rejection (`AC-21`), status transition matrix (`AC-22`), and cross-ticket authorization (`AC-23`).
+- **`actions-taken.api.test.ts`**: Tests `GET /api/tickets/:id/actions`, `POST /api/tickets/:id/actions`, `PUT /api/actions/:id`, `PUT /api/actions/:id/status`. Covers performer auto-attribution (`AC-01`, `AC-02`), follow-up validation (`AC-03`), Requester RBAC block (`AC-04`), chronological ordering (`AC-05`), `attachmentNotes` persistence (`TEST-ACT-13`), terminal state action block (`AC-12` via `TEST-TERM-02`, `TEST-TERM-03`), invalid assignee rejection (`AC-21`), status transition matrix (`AC-22`), cross-ticket authorization (`AC-23`), owner vs performer separation (`TEST-ACT-14` / `BR-02`), and header-based backend idempotency deduplication (`AC-16`, `AC-20`, `FR-14` via `TEST-ACT-07` and concurrent race `TEST-ACT-07-CONCURRENT`).
 - **`staff-dashboard.api.test.ts`**: Tests `GET /api/dashboards/staff`. Covers IT Staff metrics (`AC-06`), zero-count API payload empty states (`AC-15` / `TEST-DASH-04`), server-side calculation (`BR-11`), Asia/Bangkok boundaries (`BR-12`), and ownership filtering (`BR-13`).
 - **`requester-dashboard.api.test.ts`**: Tests `GET /api/dashboards/requester`. Covers Requester metrics (`AC-07`), attention-required items, recent tickets, and ownership isolation.
 - **`ticket-workflow.api.test.ts`**: Tests `PUT /api/tickets/:id/status` and `POST /api/tickets/:id/resolve-indicator`. Covers Resolution Gate evaluation (`AC-09`), Requester advisory indication (`AC-10`), and terminal status transition and action creation protection on `CANCELLED` tickets (`AC-12` via `TEST-TERM-01`, `TEST-TERM-02`).
-- **`idempotency.api.test.ts`**: Tests header-based backend idempotency for `POST /api/tickets/:id/actions`. Covers duplicate submission caching (`AC-16`), payload mismatch rejection (`AC-20`), atomic transaction persistence (`§9.2`), and missing header rejection (`400 Bad Request`).
-- **`concurrency.api.test.ts`**: Tests race conditions and optimistic concurrency control using parallel requests (`Promise.all`). Covers concurrent Ticket resolution (`AC-11`), stale `expectedUpdatedAt` rejection (`AC-17`), concurrent idempotency token uniqueness races (`§9.2`), and concurrent Action mutation vs Ticket cancellation (`BR-09`).
+- **`concurrency.api.test.ts`**: Tests race conditions and optimistic concurrency control using parallel requests (`Promise.all`). Covers concurrent Ticket resolution (`AC-11`), stale `expectedUpdatedAt` rejection (`AC-17`), and atomic conditional status updates (`BR-10`).
 
 ### 3.3 UI Component & Style Test Suites (`client/tests/lab-04/`)
 - **`StaffDashboard.test.tsx`**: Renders metric cards for IT Staff dashboard (`TEST-CARD-00..11`). Verifies card total rendering, helper subtext, empty state `0` displays, 403 Forbidden alert UI, and drill-down navigation.
@@ -255,13 +255,21 @@ sequenceDiagram
 
 ---
 
-## 7. Performance-Smoke & Load Benchmark Plan
+## 7. Performance-Smoke & Concurrency Benchmark Execution Results
 
-| Benchmark ID | Scenario Description | Execution Method | Threshold Target | Expected Status |
-|---|---|---|---|---|
-| **PERF-01** | Staff Dashboard aggregate query response time | `autocannon` / `supertest` timing | Response time < 200ms | `200 OK` |
-| **PERF-02** | Requester Dashboard aggregate query response time | `autocannon` / `supertest` timing | Response time < 200ms | `200 OK` |
-| **PERF-03** | Concurrent idempotency key collisions (10 parallel requests) | `Promise.all` parallel requests | All 10 requests succeed (`201 Created`); exactly 1 `ActionTaken` record mutated in DB; all 10 responses return identical cached payloads | `201 Created` |
+> [!NOTE]
+> Benchmarks represent local single-node performance-smoke and concurrent load measurements executed via `server/scripts/run-performance-benchmark.ts` against the live PostgreSQL backend. Full raw execution metrics, environment configuration, throughput, and percentiles (p50, p90, p95, p99) are captured in [`artifacts/lab-04/screenshots/release/EVD-PERF-01.txt`](../../artifacts/lab-04/screenshots/release/EVD-PERF-01.txt).
+
+| Benchmark ID | Scenario Description | Workload Pattern & Execution Method | Threshold Target | Actual Benchmark Result | Status |
+|---|---|---|---|---|---|
+| **PERF-01-SEQ** | Staff Dashboard aggregate query (Sequential) | 100 sequential HTTP requests via supertest | Response time < 200 ms | **p50 = 5.87 ms**, **p95 = 8.46 ms**, max = 48.84 ms, throughput = 151.94 req/s (0 errors) | `Pass` |
+| **PERF-01-CONC** | Staff Dashboard aggregate query (Concurrent) | 50 requests in batches of 10 concurrent requests (`Promise.all`) | Response time < 200 ms | **p50 = 21.91 ms**, **p95 = 84.26 ms**, max = 84.75 ms, throughput = 262.06 req/s (0 errors) | `Pass` |
+| **PERF-02-SEQ** | Requester Dashboard aggregate query (Sequential) | 100 sequential HTTP requests via supertest | Response time < 200 ms | **p50 = 6.22 ms**, **p95 = 7.79 ms**, max = 8.35 ms, throughput = 159.17 req/s (0 errors) | `Pass` |
+| **PERF-02-CONC** | Requester Dashboard aggregate query (Concurrent) | 50 requests in batches of 10 concurrent requests (`Promise.all`) | Response time < 200 ms | **p50 = 20.93 ms**, **p95 = 34.08 ms**, max = 34.23 ms, throughput = 366.07 req/s (0 errors) | `Pass` |
+| **PERF-03** | Concurrent idempotency key collisions | 10 parallel HTTP requests sharing identical key via `Promise.all` | All 10 succeed (`201 Created`), 1 DB mutation, identical cached bodies | **10/10 returned `201 Created`**, matching body ID, exactly 1 DB record; **p50 = 64.8 ms**, **p95 = 75.38 ms** | `Pass` |
+
+- **Execution Evidence Artifact**: `artifacts/lab-04/screenshots/release/EVD-PERF-01.txt`
+- **Environment**: Windows 11 (x64), 12th Gen Intel Core i5-12500H (16 vCPUs), Node.js v24.14.0, PostgreSQL (Prisma Client pool).
 
 ---
 
@@ -314,7 +322,7 @@ npx playwright test e2e/lab-04
 |---|---|---|---|
 | **`EVD-TEST-01`** | Rendered `tests.md` documentation screenshot | `docs/lab-04/tests.md` | Markdown artifact view & repository check |
 | **`EVD-TEST-02`** | AC → Test → Evidence ID traceability matrix | `docs/lab-04/tests.md` Section 2 | Traceability matrix cross-check |
-| **`EVD-TEST-03`** | Final passing test summary from main | `server/tests/lab-04/`, `client/tests/lab-04/`, `e2e/lab-04/` | CLI test runner log output (`npm --prefix server test` & `npx playwright test`) |
+| **`EVD-TEST-03`** | Pre-merge release-candidate test summary from `feature/lab4-release` (final evidence regenerated from `main` post-merge) | `server/tests/lab-04/`, `client/tests/lab-04/`, `e2e/lab-04/` | CLI test runner log output (`npm --prefix server test` & `npx playwright test`) |
 | **`EVD-E2E-01`** | Full integrated Playwright test suite execution log (72 passing tests) | `artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-01.txt` | Terminal execution log file |
 | **`EVD-E2E-02`** | Actions Taken full lifecycle transitions, assignee assignment & DB state | `artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-02.png` | Playwright test `E2E-ACT-07` artifact capture |
 | **`EVD-E2E-03`** | Ticket Resolution Gate valid resolution path #2 without resolution note | `artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-03.png`, `.json` | Playwright test `E2E-FLOW-08` artifact capture |
@@ -326,13 +334,13 @@ npx playwright test e2e/lab-04
 ---
 
 ## 11. Authoritative Verified Test Execution Summary (Lab 4 Increment)
-
-All test suites have been executed against the active repository state on branch `feature/lab4-e2e-hardening`:
-
+ 
+All test suites have been executed against the active repository state on branch `feature/lab4-release` (final integrated verification baseline post-merge will be `main`):
+ 
 | Test Suite / Level | Framework / Tool | Test Files / Specs | Automated Tests Passed | Status |
 |---|---|---|---|---|
-| **Server API & Integration Suite** | Vitest + Supertest | `29 / 29` files | **282 / 282 PASS** | **100% PASS** |
+| **Server API & Integration Suite** | Vitest + Supertest | `29 / 29` files | **284 / 284 PASS** | **100% PASS** |
 | **Client UI Component Suite** | Vitest + React Testing Library | `17 / 17` files | **129 / 129 PASS** | **100% PASS** |
 | **Playwright Full E2E Hardening Suite** | Playwright Chromium | `13 / 13` specs | **72 / 72 PASS** | **100% PASS** |
 | **Production Build Suite** | TypeScript + Vite | `server + client` | **0 errors / built OK** | **100% PASS** |
-| **Integrated TokTickIT Total** | — | **59 test files** | **483 / 483 PASS (100% GREEN)** | **100% PASS** |
+| **Integrated TokTickIT Total** | — | **59 test files** | **485 / 485 PASS (100% GREEN)** | **100% PASS** |

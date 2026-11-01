@@ -14,7 +14,7 @@ TokTickIT provides an end-to-end IT service desk experience across three distinc
 - **Role-Based Navigation & Landing (Lab 4)**: IT Staff and Administrators automatically land on the Operational Dashboard (`staff-dashboard`), while Requesters land on My Tickets / Requester Dashboard. Role badges and context are strictly verified.
 - **IT Staff Dashboard (`/api/dashboards/staff`)**: Aggregate metrics (Unassigned Active, My Active Workload, Actions Recorded Today, Urgent Unresolved), quick action shortcuts, recent tickets, and drill-down links to filtered queue views.
 - **Requester Dashboard (`/api/dashboards/requester`)**: Owned metric cards (My Open Tickets, Waiting for Response, In Progress, Recently Resolved in last 30 days), attention required queues, and drill-down navigation to My Tickets.
-- **Actions Taken Workspace (`/api/tickets/:id/actions`)**: Structured operational activity recording. Staff record technical diagnosis, assignees, duration, status progression (`PENDING` → `IN_PROGRESS` → `COMPLETED` / `CANCELLED`), attachments, and conditional follow-up notes. Requesters have strict read-only inspection (`AC-04`).
+- **Actions Taken Workspace (`/api/tickets/:id/actions`)**: Structured operational activity recording. Staff record technical diagnosis, action date/time, description, result, assignees, status progression (`PENDING` → `IN_PROGRESS` → `COMPLETED` / `CANCELLED`), attachments, follow-up requirements, and attachment notes. Requesters have strict read-only inspection (`AC-04`).
 - **Ticket Workflow & Resolution Gate (`/api/tickets/:id/status`)**: State machine transitions (`NEW` → `OPEN` → `IN_PROGRESS` ⇄ `WAITING_FOR_REQUESTER` → `RESOLVED` → `CLOSED` / `REOPENED`). Enforces Resolution Gate requiring >= 1 completed ActionTaken or a mandatory staff `resolutionNote`. Terminal status transition and action creation protection on `CANCELLED` tickets.
 - **Concurrency & Race-Condition Protection**: Optimistic concurrency control via `expectedUpdatedAt` / atomic conditional updates (`WHERE id=:id AND updatedAt=:expectedUpdatedAt`) rejecting stale concurrent mutations with `409 Conflict`.
 - **Backend Idempotency Protection**: Header-based `Idempotency-Key` deduplication on action mutations, caching identical `201 Created` responses and preventing double-submission on network retries.
@@ -26,7 +26,7 @@ TokTickIT provides an end-to-end IT service desk experience across three distinc
 
 - **Frontend**: React 18 + TypeScript + Vite + Bootstrap 5
 - **Backend**: Node.js + Express + TypeScript
-- **Database**: PostgreSQL (v16 / Docker container `tok-postgres`) / SQLite (development/test fallback)
+- **Database**: PostgreSQL 16 (Docker container `tok-postgres` / local instance)
 - **ORM**: Prisma ORM v5
 - **Testing Tools**:
   - **Unit & Integration / API**: Vitest + Supertest
@@ -171,11 +171,11 @@ npm --prefix client run build
 
 | Suite / Level | Tooling | Test Files | Automated Tests Passed | Status |
 |---|---|---|---|---|
-| **Server API & Integration Suite** | Vitest + Supertest | `29 / 29` files | **282 / 282 PASS** | **100% PASS** |
+| **Server API & Integration Suite** | Vitest + Supertest | `29 / 29` files | **284 / 284 PASS** | **100% PASS** |
 | **Client UI Component Suite** | Vitest + RTL + jsdom | `17 / 17` files | **129 / 129 PASS** | **100% PASS** |
 | **Playwright Full E2E Hardening Suite** | Playwright Chromium | `13 / 13` specs | **72 / 72 PASS** | **100% PASS** |
 | **Production Build Suite** | TypeScript + Vite | `server + client` | **0 errors / built OK** | **100% PASS** |
-| **Integrated Total** | — | **59 test files** | **483 / 483 PASS (100% GREEN)** | **100% PASS** |
+| **Integrated Total** | — | **59 test files** | **485 / 485 PASS (100% GREEN)** | **100% PASS** |
 
 ### Lab 4 Evidence Deliverables Traceability
 

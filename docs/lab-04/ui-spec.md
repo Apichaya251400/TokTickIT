@@ -3,7 +3,8 @@
 - **System Name**: TokTickIT
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Document Status**: Final Approved UI Specification (Sprint 4 Release)
-- **Repository Branch**: `feature/lab4-visual-qa`
+- **Repository Branch at Specification Time**: `feature/lab4-visual-qa`
+- **Target Final Verification Branch**: `main`
 
 ---
 

@@ -8,17 +8,17 @@
 
 ## 1. Executive Summary
 
-The TokTickIT service desk application has successfully completed the continuous and final regression suites against the fully integrated system. All functional requirements, security boundaries, ownership rules, UI behaviors, and data integrity guarantees from Labs 1, 2, and 3 remain 100% green without silencing, weakening, or skipping any tests.
+The Lab 4 release candidate has successfully completed the pre-merge regression and product-hardening suites against the integrated system on branch `feature/lab4-release`. All functional requirements, security boundaries, ownership rules, UI behaviors, and data integrity guarantees from Labs 1, 2, and 3 remain 100% green without silencing, weakening, or skipping any tests. Final integrated verification will be repeated after the release candidate is merged into `lab4-staging` and again validated on `main`.
 
 ### Overall Verification Summary
 
 | Test Domain | Target Suite | Test Files | Tests Run | Tests Passed | Pass Rate | Status |
 |---|---|---|---|---|---|---|
-| **Server API & Integration** | Vitest + Supertest | `29 / 29` files | 282 | **282** | 100% | **GREEN** |
+| **Server API & Integration** | Vitest + Supertest | `29 / 29` files | 284 | **284** | 100% | **GREEN** |
 | **Client UI Components** | Vitest + RTL + jsdom | `17 / 17` files | 129 | **129** | 100% | **GREEN** |
-| **Playwright End-to-End** | Playwright Chromium | `11 / 11` specs | 56 | **56** | 100% | **GREEN** |
+| **Playwright End-to-End** | Playwright Chromium | `13 / 13` specs | 72 | **72** | 100% | **GREEN** |
 | **Production Build** | TypeScript + Vite | Server + Client | 2 builds | **2 builds** | 100% | **GREEN** |
-| **Integrated Total** | **All Levels** | **57 test files** | **467** | **467** | **100%** | **GREEN** |
+| **Integrated Total** | **All Levels** | **59 test files** | **485** | **485** | **100%** | **GREEN** |
 
 ---
 
@@ -67,10 +67,10 @@ The TokTickIT service desk application has successfully completed the continuous
 
 | Evidence ID | Description | File Location |
 |---|---|---|
-| **`EVD-REG-01`** | Integrated regression terminal test log (Server: 282, Client: 129, E2E: 56) | `artifacts/lab-04/screenshots/regression/EVD-REG-01.txt` |
-| **`EVD-REG-01-server`** | Server automated test execution log (282 / 282 PASS) | `artifacts/lab-04/screenshots/regression/EVD-REG-01-server.txt`, `.log` |
+| **`EVD-REG-01`** | Integrated regression terminal test log (baseline Server: 282, Client: 129, E2E: 56; final release: Server: 284, Client: 129, E2E: 72) | `artifacts/lab-04/screenshots/regression/EVD-REG-01.txt` |
+| **`EVD-REG-01-server`** | Server automated test execution log (284 / 284 PASS) | `artifacts/lab-04/screenshots/regression/EVD-REG-01-server.txt`, `.log` |
 | **`EVD-REG-01-client`** | Client automated test execution log (129 / 129 PASS) | `artifacts/lab-04/screenshots/regression/EVD-REG-01-client.txt`, `.log` |
-| **`EVD-REG-01-e2e`** | Playwright E2E automated test execution log (56 / 56 PASS) | `artifacts/lab-04/screenshots/regression/EVD-REG-01-e2e.txt`, `.log` |
+| **`EVD-REG-01-e2e`** | Playwright E2E automated test execution log (72 / 72 PASS) | `artifacts/lab-04/screenshots/regression/EVD-REG-01-e2e.txt`, `.log` |
 | **`EVD-REG-02`** | Representative regression E2E cross-role workflow screenshot | `artifacts/lab-04/screenshots/regression/EVD-REG-02.png` |
 | **`EVD-REG-03`** | Lab 1–3 regression evidence summary report (this document) | `docs/lab-04/regression-evidence.md` |
 | **`EVD-REG-04`** | Failure state form preservation (`TEST-FAIL-01`) & idempotency retry deduplication (`TEST-IDEM-01..03`) | `artifacts/lab-04/screenshots/regression/EVD-REG-04.png`, `.json` |
