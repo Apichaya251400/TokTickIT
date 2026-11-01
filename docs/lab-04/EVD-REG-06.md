@@ -127,3 +127,30 @@ Result: **0 errors**; optimized production bundle generated in `client/dist/`.
 | **Total Automated** | — | **485 / 485 PASS (100% GREEN)** | — |
 
 All setup, migration, seed, build, and test instructions in `README.md` are verified to be fully accurate and operational.
+
+---
+
+## 6. Rendered README.md: Lab 4 Overview and Prerequisites
+
+**Document Link**: [README.md](../../README.md)
+
+### Figure 1.6.1 — Project Overview & Lab 4 Features
+![Figure 1.6.1](../../artifacts/lab-04/screenshots/release/EVD-README-01.png)
+*Figure 1.6.1: Rendered README.md: Project Overview & Lab 4 Features (Actions Taken, Staff & Requester Dashboards, Ticket Workflow, Resolution Gate, Concurrency Protection, Idempotency, Responsive UI & Accessibility).*
+
+### Figure 1.6.2 — Tech Stack & Project Setup
+![Figure 1.6.2](../../artifacts/lab-04/screenshots/release/EVD-README-02.png)
+*Figure 1.6.2: Rendered README.md: Tech Stack, Prerequisites & Setup Commands (React 18, TypeScript, Node.js, Express, PostgreSQL 16, Prisma ORM, Vitest, Playwright).*
+
+### Figure 1.6.3 — Database Setup & Seed Data
+![Figure 1.6.3](../../artifacts/lab-04/screenshots/release/EVD-README-03.png)
+*Figure 1.6.3: Rendered README.md: Database Setup, Idempotent Seed Data & Sequence Synchronization (PostgreSQL container, pure SQL migrations, 0/1/many actions, dynamic ticket_number_seq sync, and default seed user credentials table).*
+
+### Figure 1.6.4 — Automated Testing & Evidence Summary
+![Figure 1.6.4](../../artifacts/lab-04/screenshots/release/EVD-README-04.png)
+*Figure 1.6.4: Rendered README.md: Running the Application, Automated Testing Commands & 485-Test Evidence Summary Table (Server 284, Client 129, E2E 72, Production Build OK).*
+
+### Verification Highlights
+- **Lab 4 Scope**: The README documents the Sprint 4 increment, including Actions Taken, operational dashboards, Ticket Workflow and Resolution Gate enforcement, optimistic concurrency protection, backend idempotency, responsive UI, accessibility, and automated regression verification.
+- **Reproducibility**: The README provides prerequisites, project setup, PostgreSQL configuration, seed instructions, application startup commands, automated test commands, and production build verification.
+- **Verification**: The README serves as the repository-level entry point for reproducing and verifying the Lab 4 implementation and links the documented functionality to the project structure and test evidence.
