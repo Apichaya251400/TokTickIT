@@ -18,6 +18,7 @@ vi.mock("../../src/api", async () => {
     fetchInternalNotes: vi.fn(),
     postInternalNote: vi.fn(),
     fetchAssignees: vi.fn(),
+    fetchTicketActions: vi.fn(),
   };
 });
 
@@ -69,6 +70,7 @@ describe("Issue 8: StaffTicketDetail Component Suite (StaffTicketDetail.test.tsx
     vi.mocked(api.fetchAssignees).mockResolvedValue({ assignees: mockAssignees });
     vi.mocked(api.fetchTicketComments).mockResolvedValue({ comments: [] });
     vi.mocked(api.fetchInternalNotes).mockResolvedValue({ notes: [] });
+    vi.mocked(api.fetchTicketActions).mockResolvedValue({ data: [] });
   });
 
   it("renders ticket detail metadata, badges, and owner info correctly", async () => {
@@ -211,7 +213,7 @@ describe("Issue 8: StaffTicketDetail Component Suite (StaffTicketDetail.test.tsx
     });
   });
 
-  it("renders Administrator mode with read-only / disabled status & IT priority controls", async () => {
+  it("renders Administrator mode with read-only IT priority controls and permitted status transitions", async () => {
     render(
       <StaffTicketDetail
         ticketId="test-ticket-uuid-001"
@@ -227,6 +229,6 @@ describe("Issue 8: StaffTicketDetail Component Suite (StaffTicketDetail.test.tsx
     expect(screen.getByText(/Administrator Mode/)).toBeInTheDocument();
     expect(screen.getByTestId("it-priority-select")).toBeDisabled();
     expect(screen.queryByTestId("update-priority-btn")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("status-transition-btn-RESOLVED")).not.toBeInTheDocument();
+    expect(screen.getByTestId("status-transition-btn-RESOLVED")).toBeInTheDocument();
   });
 });

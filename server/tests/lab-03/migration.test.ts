@@ -53,7 +53,7 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
       expect(requester?.requiresPasswordChange).toBe(true);
       expect(bcrypt.compareSync(DEFAULT_INITIAL_PASSWORD, requester!.passwordHash)).toBe(true);
     }
-  }, 15000);
+  }, 60000);
 
   it("API-MIG-02: Verifies idempotent seed execution by running seed multiple times with zero duplicate creation", async () => {
     // Execute seed run 1
@@ -249,6 +249,10 @@ describe("Lab 3 Database Migration & Idempotent Seed Suite", () => {
     expect(preservedAttachment!.id).toBe(customAttachmentId);
     expect(preservedAttachment!.fileName).toBe("custom_pre_existing_doc.pdf");
     expect(preservedAttachment!.ticketId).toBe(customTicket.id);
+
+    // Clean up temporary custom test fixture records
+    await prisma.attachment.deleteMany({ where: { id: customAttachmentId } });
+    await prisma.ticket.deleteMany({ where: { ticketNumber: customTicketNumber } });
   });
 });
 

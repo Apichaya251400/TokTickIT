@@ -1,0 +1,19 @@
+{
+  "evidenceId": "EVD-E2E-03",
+  "title": "Resolution Gate Preconditions, Valid/Invalid Paths & Concurrency Evidence",
+  "timestamp": "2026-10-31T15:18:05.484Z",
+  "ticketNumber": "TKT-2026-000003",
+  "verifiedPaths": {
+    "invalidPath": "0 completed actions + empty note => rejected by Resolution Gate",
+    "validPath1": "Staff resolution note provided => transitions to RESOLVED",
+    "validPath2": ">= 1 completed ActionTaken present => note optional => transitions to RESOLVED",
+    "concurrencyProtection": "Stale update detects collision => returns 409 Conflict with safe refresh",
+    "terminalStateProtection": "CANCELLED tickets locked against transitions and actions"
+  },
+  "preconditionDetails": {
+    "completedActionsCount": 1,
+    "resolutionNoteRequired": false,
+    "resultingStatus": "RESOLVED"
+  },
+  "status": "PASS"
+}

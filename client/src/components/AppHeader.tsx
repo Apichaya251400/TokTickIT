@@ -1,7 +1,7 @@
 import React from "react";
 import { User, logoutApi } from "../api";
 
-export type NavTab = "my-tickets" | "create-ticket" | "staff-queue" | "user-management" | "ticket-lookup";
+export type NavTab = "my-tickets" | "create-ticket" | "staff-queue" | "user-management" | "ticket-lookup" | "staff-dashboard" | "requester-dashboard";
 
 interface AppHeaderProps {
   user: User;
@@ -50,23 +50,44 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
       <div className="container-fluid p-0 d-flex flex-wrap align-items-center justify-content-between gap-3">
         {/* Brand & Title */}
         <div className="d-flex align-items-center me-3">
-          <span className="navbar-brand fw-bold fs-4 mb-0 text-success me-2">
+          <a
+            href="/"
+            className="navbar-brand fw-bold fs-4 mb-0 text-success me-2 text-decoration-none"
+            onClick={(e) => {
+              e.preventDefault();
+              if (user.role === "REQUESTER") {
+                onTabChange("requester-dashboard");
+              } else {
+                onTabChange("staff-dashboard");
+              }
+            }}
+          >
             TokTick<span className="text-dark">IT</span>
-          </span>
+          </a>
           <span className="text-muted small border-start ps-2 d-none d-sm-inline">
             IT Service Desk
           </span>
         </div>
 
         {/* Role-based Navigation Links */}
-        <div className="d-flex align-items-center gap-2 flex-grow-1 flex-sm-grow-0">
+        <div className="d-flex flex-wrap align-items-center gap-2 flex-grow-1 flex-sm-grow-0">
           {user.role === "REQUESTER" && (
             <>
+              <button
+                type="button"
+                className={`btn btn-sm ${activeTab === "requester-dashboard" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "requester-dashboard" ? "page" : undefined}
+                onClick={() => onTabChange("requester-dashboard")}
+                data-testid="nav-requester-dashboard"
+              >
+                Dashboard
+              </button>
               <button
                 type="button"
                 className={`btn btn-sm ${activeTab === "my-tickets" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "my-tickets" ? "page" : undefined}
                 onClick={() => onTabChange("my-tickets")}
+                data-testid="nav-my-tickets"
               >
                 My Tickets
               </button>
@@ -75,6 +96,7 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
                 className={`btn btn-sm ${activeTab === "create-ticket" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "create-ticket" ? "page" : undefined}
                 onClick={() => onTabChange("create-ticket")}
+                data-testid="nav-create-ticket"
               >
                 Create Ticket
               </button>
@@ -85,19 +107,21 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
             <>
               <button
                 type="button"
-                className={`btn btn-sm ${activeTab === "staff-queue" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
-                aria-current={activeTab === "staff-queue" ? "page" : undefined}
-                onClick={() => onTabChange("staff-queue")}
+                className={`btn btn-sm ${activeTab === "staff-dashboard" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "staff-dashboard" ? "page" : undefined}
+                onClick={() => onTabChange("staff-dashboard")}
+                data-testid="nav-staff-dashboard"
               >
-                My Queue
+                Dashboard
               </button>
               <button
                 type="button"
-                className={`btn btn-sm ${activeTab === "create-ticket" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
-                aria-current={activeTab === "create-ticket" ? "page" : undefined}
-                onClick={() => onTabChange("create-ticket")}
+                className={`btn btn-sm ${activeTab === "staff-queue" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "staff-queue" ? "page" : undefined}
+                onClick={() => onTabChange("staff-queue")}
+                data-testid="nav-it-queue"
               >
-                Create Ticket
+                IT Queue
               </button>
             </>
           )}
@@ -106,9 +130,28 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
             <>
               <button
                 type="button"
+                className={`btn btn-sm ${activeTab === "staff-dashboard" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "staff-dashboard" ? "page" : undefined}
+                onClick={() => onTabChange("staff-dashboard")}
+                data-testid="nav-staff-dashboard"
+              >
+                Dashboard
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${activeTab === "staff-queue" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
+                aria-current={activeTab === "staff-queue" ? "page" : undefined}
+                onClick={() => onTabChange("staff-queue")}
+                data-testid="nav-it-queue"
+              >
+                IT Queue
+              </button>
+              <button
+                type="button"
                 className={`btn btn-sm ${activeTab === "user-management" ? "btn-success fw-semibold" : "btn-outline-secondary"}`}
                 aria-current={activeTab === "user-management" ? "page" : undefined}
                 onClick={() => onTabChange("user-management")}
+                data-testid="nav-user-management"
               >
                 User Management
               </button>
@@ -125,8 +168,8 @@ export default function AppHeader({ user, activeTab, onTabChange, onLogout }: Ap
         </div>
 
         {/* User Info & Logout Button */}
-        <div className="d-flex align-items-center gap-3">
-          <div className="d-flex align-items-center gap-2">
+        <div className="d-flex flex-wrap align-items-center gap-3">
+          <div className="d-flex flex-wrap align-items-center gap-2">
             <span className="fw-semibold text-dark">{user.name}</span>
             {renderRoleBadge()}
           </div>

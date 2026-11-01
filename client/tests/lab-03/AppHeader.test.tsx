@@ -71,12 +71,12 @@ describe("AppHeader Component - Role-Based Navigation & Shell", () => {
 
     expect(screen.getByText("Bob Staff")).toBeInTheDocument();
     expect(screen.getByText("IT Staff")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "My Queue" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Create Ticket" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "IT Queue" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Create Ticket" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "My Tickets" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "User Management" })).not.toBeInTheDocument();
 
-    const staffQueueBtn = screen.getByRole("button", { name: "My Queue" });
+    const staffQueueBtn = screen.getByRole("button", { name: "IT Queue" });
     expect(staffQueueBtn).toHaveAttribute("aria-current", "page");
   });
 
@@ -102,6 +102,7 @@ describe("AppHeader Component - Role-Based Navigation & Shell", () => {
     expect(screen.getByText("Charlie Admin")).toBeInTheDocument();
     expect(screen.getByText("Administrator")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "User Management" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "IT Queue" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ticket Lookup" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "My Tickets" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "My Queue" })).not.toBeInTheDocument();

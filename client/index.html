@@ -8,6 +8,53 @@
       body {
         background-color: #F5F7F6;
       }
+      :focus-visible,
+      .form-control:focus,
+      .form-select:focus,
+      .btn:focus,
+      .btn:focus-visible,
+      a:focus,
+      a:focus-visible {
+        outline: 2px solid #198754 !important;
+        outline-offset: 2px;
+        border-color: #198754 !important;
+      }
+      @media (max-width: 768px) {
+        nav .btn,
+        button.btn,
+        .btn,
+        .btn-touch {
+          min-height: 44px !important;
+          min-width: 44px !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        .form-select,
+        .form-control {
+          min-height: 44px !important;
+        }
+        .btn-close {
+          min-height: 44px !important;
+          min-width: 44px !important;
+        }
+        .form-check {
+          min-height: 44px;
+          display: flex;
+          align-items: center;
+          padding-left: 3.5rem;
+        }
+        .form-switch .form-check-input {
+          min-width: 50px !important;
+          min-height: 44px !important;
+          margin-left: -3.5rem !important;
+          border-radius: 22px !important;
+        }
+        .form-check-input:not(.form-switch .form-check-input) {
+          min-width: 44px !important;
+          min-height: 44px !important;
+        }
+      }
     </style>
   </head>
   <body>

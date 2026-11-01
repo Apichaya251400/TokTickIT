@@ -23,7 +23,10 @@ import AppHeader, { NavTab } from "./components/AppHeader";
 import PublicComments from "./components/PublicComments";
 import StaffTicketQueue from "./components/StaffTicketQueue";
 import { StaffTicketDetail } from "./components/StaffTicketDetail";
+import StaffDashboard from "./components/StaffDashboard";
 import UserManagement from "./components/UserManagement";
+import { ActionsTakenWorkspace } from "./components/ActionsTakenWorkspace";
+import RequesterDashboard from "./components/RequesterDashboard";
 
 type UiState = "idle" | "loading" | "success" | "error";
 
@@ -46,8 +49,7 @@ function formatDateTime(dateStr?: string): string {
 }
 
 function getDefaultTab(role: Role): NavTab {
-  if (role === "IT_STAFF") return "staff-queue";
-  if (role === "ADMINISTRATOR") return "user-management";
+  if (role === "IT_STAFF" || role === "ADMINISTRATOR") return "staff-dashboard";
   return "my-tickets";
 }
 
@@ -64,6 +66,13 @@ export default function App() {
   // 3. Navigation Tab & Ticket Detail Selection State
   const [activeTab, setActiveTab] = useState<NavTab>("my-tickets");
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [lookupInput, setLookupInput] = useState<string>("");
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [queueInitialFilters, setQueueInitialFilters] = useState<{
+    owner?: "all" | "my_queue" | "unassigned";
+    itPriority?: string;
+    view?: "today_actions" | "unassigned_active" | "my_queue_active" | "urgent_workload";
+  } | null>(null);
 
   // 4. My Tickets Query & Data State
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -71,6 +80,7 @@ export default function App() {
   const [filterRelatedSystemId, setFilterRelatedSystemId] = useState<string>("");
   const [filterRequestedPriority, setFilterRequestedPriority] = useState<string>("");
   const [filterCurrentStatus, setFilterCurrentStatus] = useState<string>("");
+  const [filterResolvedWithinDays, setFilterResolvedWithinDays] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("createdAt");
   const [sortOrder, setSortOrder] = useState<string>("desc");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -174,6 +184,7 @@ export default function App() {
     filterRelatedSystemId,
     filterRequestedPriority,
     filterCurrentStatus,
+    filterResolvedWithinDays,
     sortBy,
     sortOrder,
     currentPage,
@@ -214,6 +225,7 @@ export default function App() {
         relatedSystemId: filterRelatedSystemId,
         requestedPriority: filterRequestedPriority,
         currentStatus: filterCurrentStatus,
+        resolvedWithinDays: filterResolvedWithinDays || undefined,
         sortBy,
         sortOrder,
         page: pageToLoad,
@@ -671,15 +683,56 @@ export default function App() {
         onTabChange={(tab) => {
           setActiveTab(tab);
           setSelectedTicketId(null);
+          if (tab !== "staff-queue") {
+            setQueueInitialFilters(null);
+          }
         }}
         onLogout={handleLogout}
       />
+
+      {/* Requester Dashboard */}
+      {activeTab === "requester-dashboard" && !selectedTicketId && (
+        <section className="mb-5">
+          <RequesterDashboard
+            currentUser={currentUser}
+            onNavigateToMyTickets={(status, resolvedWithinDays) => {
+              setFilterCurrentStatus(status || "");
+              setFilterResolvedWithinDays(resolvedWithinDays ? String(resolvedWithinDays) : "");
+              setSelectedTicketId(null);
+              setActiveTab("my-tickets");
+            }}
+            onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+            onCreateTicket={() => {
+              setSelectedTicketId(null);
+              setActiveTab("create-ticket");
+            }}
+          />
+        </section>
+      )}
+
+      {/* IT Staff & Administrator Dashboard */}
+      {activeTab === "staff-dashboard" && !selectedTicketId && (
+        <section className="mb-5">
+          <StaffDashboard
+            currentUser={currentUser}
+            onNavigateToQueue={(filters) => {
+              setQueueInitialFilters(filters || null);
+              setSelectedTicketId(null);
+              setActiveTab("staff-queue");
+            }}
+            onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
+          />
+        </section>
+      )}
 
       {/* IT Staff Ticket Queue */}
       {activeTab === "staff-queue" && !selectedTicketId && (
         <section className="mb-5">
           <StaffTicketQueue
             currentUser={currentUser}
+            initialOwnerFilter={queueInitialFilters?.owner}
+            initialItPriorityFilter={queueInitialFilters?.itPriority}
+            initialViewFilter={queueInitialFilters?.view}
             onSelectTicket={(ticketId) => setSelectedTicketId(ticketId)}
           />
         </section>
@@ -692,14 +745,55 @@ export default function App() {
         </section>
       )}
 
-      {/* Ticket Lookup Placeholder */}
-      {activeTab === "ticket-lookup" && (
+      {/* Ticket Lookup */}
+      {activeTab === "ticket-lookup" && !selectedTicketId && (
         <section className="mb-5">
           <div className="card shadow-sm p-4 bg-light border-0">
             <h2 className="h5 fw-bold text-success mb-2">Ticket Lookup</h2>
-            <p className="text-muted mb-0">
-              Welcome, <strong>{currentUser.name}</strong>. Administrator ticket lookup & search view will be available in Sprint 4.
+            <p className="text-muted small mb-3">
+              Enter a Ticket UUID to inspect ticket details and perform administrative operations.
             </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const trimmed = lookupInput.trim();
+                if (!trimmed) {
+                  setLookupError("Please enter a Ticket UUID.");
+                  return;
+                }
+                setLookupError(null);
+                setSelectedTicketId(trimmed);
+              }}
+              className="row g-2 align-items-center"
+            >
+              <div className="col-12 col-md-8">
+                <input
+                  type="text"
+                  data-testid="ticket-lookup-input"
+                  className="form-control"
+                  placeholder="Enter Ticket UUID (e.g. 550e8400-e29b-41d4-a716-446655440000)"
+                  value={lookupInput}
+                  onChange={(e) => {
+                    setLookupInput(e.target.value);
+                    if (lookupError) setLookupError(null);
+                  }}
+                />
+              </div>
+              <div className="col-12 col-md-4">
+                <button
+                  type="submit"
+                  data-testid="ticket-lookup-submit-btn"
+                  className="btn btn-success w-100"
+                >
+                  Lookup Ticket
+                </button>
+              </div>
+              {lookupError && (
+                <div className="col-12">
+                  <div className="text-danger small mt-1">{lookupError}</div>
+                </div>
+              )}
+            </form>
           </div>
         </section>
       )}
@@ -718,14 +812,17 @@ export default function App() {
             />
           ) : (
             <>
-              <div className="d-flex justify-content-between align-items-center mb-4">
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
             <h2 className="h4 fw-bold mb-0">
               Ticket Detail {detailTicket ? `— ${detailTicket.ticketNumber}` : ""}
             </h2>
             <button
               type="button"
               className="btn btn-outline-secondary btn-sm"
-              onClick={() => setSelectedTicketId(null)}
+              onClick={() => {
+                setSelectedTicketId(null);
+                setActiveTab("my-tickets");
+              }}
               style={{ outlineColor: "#0B7A46" }}
             >
               Back to My Tickets
@@ -739,8 +836,19 @@ export default function App() {
           )}
 
           {detailError && (
-            <div className="alert alert-danger mb-4" role="alert">
-              {detailError}
+            <div className="alert alert-danger mb-4 d-flex justify-content-between align-items-center" role="alert">
+              <span>{detailError}</span>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger"
+                onClick={() => {
+                  setSelectedTicketId(null);
+                  setDetailError(null);
+                  setActiveTab("my-tickets");
+                }}
+              >
+                Return to My Tickets &rarr;
+              </button>
             </div>
           )}
 
@@ -773,7 +881,7 @@ export default function App() {
                     </div>
                     <div className="col-12 col-md-4">
                       <label className="form-label small text-muted d-block">Priority / Status</label>
-                      <div className="d-flex align-items-center gap-2 mt-1">
+                      <div className="d-flex flex-wrap align-items-center gap-2 mt-1">
                         {renderPriorityBadge(detailTicket.requestedPriority)}
                         <span className="badge bg-primary">{detailTicket.currentStatus || "NEW"}</span>
                       </div>
@@ -818,8 +926,8 @@ export default function App() {
                         return (
                           <li key={att.id} className="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2 p-3">
                             <div>
-                              <div className="fw-bold d-flex align-items-center gap-2">
-                                <span>{att.fileName}</span>
+                              <div className="fw-bold d-flex flex-wrap align-items-center gap-2">
+                                <span className="text-break">{att.fileName}</span>
                                 {isRemoved && <span className="badge bg-secondary">Removed</span>}
                               </div>
                               <div className="small text-muted">
@@ -831,7 +939,7 @@ export default function App() {
                                 </div>
                               )}
                             </div>
-                            <div className="d-flex align-items-center gap-2">
+                            <div className="d-flex flex-wrap align-items-center gap-2">
                               {!isRemoved ? (
                                 <>
                                   <button
@@ -866,6 +974,14 @@ export default function App() {
                   )}
                 </div>
               </div>
+
+              {/* Actions Taken Workspace (Lab 4 - Requester Read-Only View) */}
+              <ActionsTakenWorkspace
+                ticketId={detailTicket.id}
+                currentUser={currentUser}
+                isTicketCancelled={detailTicket.currentStatus === "CANCELLED"}
+                readOnly={true}
+              />
 
               {/* Requester Signalling Action Bar */}
               {currentUser.role === "REQUESTER" && (
@@ -1079,12 +1195,21 @@ export default function App() {
                     value={filterCurrentStatus}
                     onChange={(e) => {
                       setFilterCurrentStatus(e.target.value);
+                      setFilterResolvedWithinDays("");
                       setCurrentPage(1);
                     }}
                     style={{ outlineColor: "#0B7A46" }}
                   >
                     <option value="">All Statuses</option>
+                    <option value="open">Open Workload</option>
                     <option value="NEW">NEW</option>
+                    <option value="OPEN">OPEN</option>
+                    <option value="IN_PROGRESS">IN_PROGRESS</option>
+                    <option value="WAITING_FOR_REQUESTER">WAITING_FOR_REQUESTER</option>
+                    <option value="RESOLVED">RESOLVED</option>
+                    <option value="CLOSED">CLOSED</option>
+                    <option value="REOPENED">REOPENED</option>
+                    <option value="CANCELLED">CANCELLED</option>
                   </select>
                 </div>
 

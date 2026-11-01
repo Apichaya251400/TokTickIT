@@ -57,6 +57,7 @@ export interface TicketQueryParams {
   relatedSystemId?: string | number;
   requestedPriority?: string;
   currentStatus?: string;
+  resolvedWithinDays?: string | number;
   sortBy?: string;
   sortOrder?: string;
   page?: number;
@@ -201,6 +202,7 @@ export async function fetchMyTickets(
     if (params.relatedSystemId) searchParams.set("relatedSystemId", String(params.relatedSystemId));
     if (params.requestedPriority) searchParams.set("requestedPriority", params.requestedPriority);
     if (params.currentStatus) searchParams.set("currentStatus", params.currentStatus);
+    if (params.resolvedWithinDays) searchParams.set("resolvedWithinDays", String(params.resolvedWithinDays));
     if (params.sortBy) searchParams.set("sortBy", params.sortBy);
     if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
     if (params.page) searchParams.set("page", String(params.page));
@@ -228,6 +230,7 @@ export interface QueueQueryParams {
   sortDir?: "asc" | "desc";
   page?: number;
   limit?: number;
+  view?: "today_actions" | "unassigned_active" | "my_queue_active" | "urgent_workload";
 }
 
 export async function fetchQueueTickets(
@@ -245,6 +248,7 @@ export async function fetchQueueTickets(
     if (params.sortDir) searchParams.set("sortDir", params.sortDir);
     if (params.page) searchParams.set("page", String(params.page));
     if (params.limit) searchParams.set("limit", String(params.limit));
+    if (params.view) searchParams.set("view", params.view);
   }
 
   const queryString = searchParams.toString();
@@ -448,11 +452,22 @@ export async function updateItPriorityApi(ticketId: string, itPriority: string):
   return res.json();
 }
 
-export async function updateTicketStatusApi(ticketId: string, status: string): Promise<any> {
+export async function updateTicketStatusApi(
+  ticketId: string,
+  status: string,
+  expectedUpdatedAt: string,
+  resolutionNote?: string
+): Promise<any> {
+  const payload: any = {
+    status,
+    expectedUpdatedAt,
+    ...(resolutionNote !== undefined ? { resolutionNote } : {}),
+  };
+
   const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/status`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
@@ -587,4 +602,217 @@ export async function resetUserInitialPassword(
   }
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Actions Taken API (Lab 4 Sprint 4)
+// ---------------------------------------------------------------------------
+
+export type ActionStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+
+export interface ActionTaken {
+  id: string;
+  ticketId: string;
+  performedBy: {
+    id: number;
+    name: string;
+    role: Role;
+  };
+  assignee: {
+    id: number;
+    name: string;
+    role: Role;
+  } | null;
+  description: string;
+  result: string;
+  status: ActionStatus;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateActionPayload {
+  description: string;
+  result: string;
+  assigneeId?: number | null;
+  followUpRequired: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+export interface UpdateActionPayload {
+  expectedUpdatedAt: string;
+  description?: string;
+  result?: string;
+  assigneeId?: number | null;
+  followUpRequired?: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+}
+
+export interface UpdateActionStatusPayload {
+  status: ActionStatus;
+  expectedUpdatedAt: string;
+}
+
+export async function fetchTicketActions(ticketId: string): Promise<{ data: ActionTaken[] }> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/actions`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function createTicketAction(
+  ticketId: string,
+  payload: CreateActionPayload,
+  idempotencyKey: string
+): Promise<ActionTaken> {
+  const res = await fetchWithAuth(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function updateTicketAction(
+  actionId: string,
+  payload: UpdateActionPayload
+): Promise<ActionTaken> {
+  const res = await fetchWithAuth(`${API_URL}/api/actions/${actionId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export async function updateTicketActionStatus(
+  actionId: string,
+  payload: UpdateActionStatusPayload
+): Promise<ActionTaken> {
+  const res = await fetchWithAuth(`${API_URL}/api/actions/${actionId}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Staff & Administrator Dashboard API (Lab 4 Sprint 4)
+// ---------------------------------------------------------------------------
+
+export interface StaffDashboardMetrics {
+  unassignedCount: number;
+  myAssignedCount: number;
+  todayActionsCount: number;
+  urgentWorkloadCount: number;
+}
+
+export interface RecentWorkloadTicket {
+  id: string;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: string;
+  requestedPriority: string;
+  itPriority: string | null;
+  updatedAt: string;
+}
+
+export interface RecentStaffAction {
+  id: string;
+  ticketId: string;
+  ticketNumber: string;
+  description: string;
+  result: string;
+  createdAt: string;
+}
+
+export interface StaffDashboardResponse {
+  metrics: StaffDashboardMetrics;
+  myRecentTickets: RecentWorkloadTicket[];
+  currentStaffActions: RecentStaffAction[];
+}
+
+export async function fetchStaffDashboard(): Promise<StaffDashboardResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/dashboards/staff`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export const fetchStaffDashboardApi = fetchStaffDashboard;
+
+// ---------------------------------------------------------------------------
+// Requester Dashboard API (Lab 4 Sprint 4)
+// ---------------------------------------------------------------------------
+
+export interface RequesterDashboardMetrics {
+  openTicketsCount: number;
+  waitingForRequesterCount: number;
+  inProgressCount: number;
+  recentlyResolvedCount: number;
+}
+
+export interface RequesterRecentTicket {
+  id: string;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: string;
+  requestedPriority: string;
+  updatedAt: string;
+}
+
+export interface RequesterAttentionTicket {
+  id: string;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: string;
+  requestedPriority: string;
+  updatedAt: string;
+}
+
+export interface RequesterDashboardResponse {
+  metrics: RequesterDashboardMetrics;
+  recentTickets: RequesterRecentTicket[];
+  attentionRequiredTickets: RequesterAttentionTicket[];
+}
+
+export async function fetchRequesterDashboard(): Promise<RequesterDashboardResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/dashboards/requester`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw { status: res.status, data: errorData };
+  }
+  return res.json();
+}
+
+export const fetchRequesterDashboardApi = fetchRequesterDashboard;
+
+
 

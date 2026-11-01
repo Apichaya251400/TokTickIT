@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>README Rendered View - TokTickIT Lab 4</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 30px;
+      background: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.55;
+    }
+    .card-section {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      padding: 32px 36px;
+      margin-bottom: 40px;
+      max-width: 1040px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .h1-title {
+      font-size: 26pt;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 0;
+      margin-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 12px;
+    }
+    .h2-section {
+      font-size: 16pt;
+      font-weight: 700;
+      color: #15803d;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 6px;
+    }
+    .h3-sub {
+      font-size: 12pt;
+      font-weight: 600;
+      color: #334155;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+    .p-text {
+      font-size: 10pt;
+      color: #334155;
+      margin-bottom: 12px;
+    }
+    .divider {
+      border: 0;
+      height: 1px;
+      background: #e2e8f0;
+      margin: 20px 0;
+    }
+    ul {
+      margin: 8px 0 16px 20px;
+      padding: 0;
+      font-size: 10pt;
+      color: #334155;
+    }
+    li {
+      margin-bottom: 7px;
+      line-height: 1.5;
+    }
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 8.8pt;
+      background: #f1f5f9;
+      color: #0f766e;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+    .code-box {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 14px 18px;
+      border-radius: 6px;
+      font-size: 9pt;
+      line-height: 1.5;
+      overflow-x: auto;
+      margin: 12px 0 16px 0;
+    }
+    .code-box code {
+      background: transparent;
+      color: #38bdf8;
+      border: none;
+      padding: 0;
+    }
+    .table-custom {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 18px 0;
+      font-size: 9pt;
+    }
+    .table-custom th {
+      background: #f8fafc;
+      color: #1e293b;
+      font-weight: 700;
+      border: 1px solid #cbd5e1;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    .table-custom td {
+      border: 1px solid #e2e8f0;
+      padding: 8px 12px;
+      color: #334155;
+    }
+    .table-custom tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    a {
+      color: #16a34a;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .badge-zen {
+      display: inline-block;
+      padding: 2px 7px;
+      font-size: 8pt;
+      font-weight: 700;
+      border-radius: 4px;
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Figure 1.6.1: Project Overview & Lab 4 Features -->
+  <div id="section-1" class="card-section">
+    <h1 class="h1-title">TokTickIT</h1>
+<p class="p-text">IT Service Desk Application — CPE 334 Software Engineering Lab 4 (Sprint 4).</p>
+<p class="p-text">TokTickIT is a production-grade full-stack IT service desk application built for Requesters, IT Staff, and Administrators to create, process, manage, and audit IT support tickets, internal notes, attachments, action histories, operational dashboards, and system users. Lab 4 delivers advanced operational dashboards, Actions Taken workspace, formal Resolution Gate workflow controls, optimistic concurrency protection, backend idempotency, responsive visual design (Zen Green), and comprehensive automated regression suites.</p>
+<hr class="divider" />
+<h2 class="h2-section">1. Project Overview</h2>
+<p class="p-text">TokTickIT provides an end-to-end IT service desk experience across three distinct system roles:</p>
+<ul>
+<li><strong>Authentication & Security (Lab 3 Foundation)</strong>: JWT authentication (cookie/header <code>Bearer</code>), server-side token revocation blocklist (<code>/api/auth/logout</code>), real-time DB identity verification (<code>isActive = true</code>), and mandatory initial password change enforcement (<code>requiresPasswordChange</code>).</li>
+<li><strong>Role-Based Navigation & Landing (Lab 4)</strong>: IT Staff and Administrators automatically land on the Operational Dashboard (<code>staff-dashboard</code>), while Requesters land on My Tickets / Requester Dashboard. Role badges and context are strictly verified.</li>
+<li><strong>IT Staff Dashboard (<code>/api/dashboards/staff</code>)</strong>: Aggregate metrics (Unassigned Active, My Active Workload, Actions Recorded Today, Urgent Unresolved), quick action shortcuts, recent tickets, and drill-down links to filtered queue views.</li>
+<li><strong>Requester Dashboard (<code>/api/dashboards/requester</code>)</strong>: Owned metric cards (My Open Tickets, Waiting for Response, In Progress, Recently Resolved in last 30 days), attention required queues, and drill-down navigation to My Tickets.</li>
+<li><strong>Actions Taken Workspace (<code>/api/tickets/:id/actions</code>)</strong>: Structured operational activity recording. Staff record technical diagnosis, action date/time, description, result, assignees, status progression (<code>PENDING</code> → <code>IN_PROGRESS</code> → <code>COMPLETED</code> / <code>CANCELLED</code>), attachments, follow-up requirements, and attachment notes. Requesters have strict read-only inspection (<code>AC-04</code>).</li>
+<li><strong>Ticket Workflow & Resolution Gate (<code>/api/tickets/:id/status</code>)</strong>: State machine transitions (<code>NEW</code> → <code>OPEN</code> → <code>IN_PROGRESS</code> ⇄ <code>WAITING_FOR_REQUESTER</code> → <code>RESOLVED</code> → <code>CLOSED</code> / <code>REOPENED</code>). Enforces Resolution Gate requiring >= 1 completed ActionTaken or a mandatory staff <code>resolutionNote</code>. Terminal status transition and action creation protection on <code>CANCELLED</code> tickets.</li>
+<li><strong>Concurrency & Race-Condition Protection</strong>: Optimistic concurrency control via <code>expectedUpdatedAt</code> / atomic conditional updates (<code>WHERE id=:id AND updatedAt=:expectedUpdatedAt</code>) rejecting stale concurrent mutations with <code>409 Conflict</code>.</li>
+<li><strong>Backend Idempotency Protection</strong>: Header-based <code>Idempotency-Key</code> deduplication on action mutations, caching identical <code>201 Created</code> responses and preventing double-submission on network retries.</li>
+<li><strong>Responsive Viewports & Accessibility</strong>: Verified adaptation across Desktop (<code>1920×1080</code>), Tablet (<code>768×1024</code>), and Mobile (<code>375×812</code>) viewports without page-level horizontal overflow, visible focus rings (<code>2px solid #198754</code>), touch targets >= 44×44px, and non-color status/priority cues.</li>
+</ul>
+<hr class="divider" />
+  </div>
+
+  <!-- Figure 1.6.2: Tech Stack & Project Setup -->
+  <div id="section-2" class="card-section">
+    <h2 class="h2-section">2. Tech Stack</h2>
+<ul>
+<li><strong>Frontend</strong>: React 18 + TypeScript + Vite + Bootstrap 5</li>
+<li><strong>Backend</strong>: Node.js + Express + TypeScript</li>
+<li><strong>Database</strong>: PostgreSQL 16 (Docker container <code>tok-postgres</code> / local instance)</li>
+<li><strong>ORM</strong>: Prisma ORM v5</li>
+<li><strong>Testing Tools</strong>:</li>
+</ul>
+<p class="p-text">  - <strong>Unit & Integration / API</strong>: Vitest + Supertest</p>
+<p class="p-text">  - <strong>UI Component</strong>: Vitest + React Testing Library (RTL) + jsdom</p>
+<p class="p-text">  - <strong>End-to-End (E2E) & Visual QA</strong>: Playwright Chrome (Desktop 1920x1080, Tablet 768x1024, Mobile 375x812)</p>
+<hr class="divider" />
+<h2 class="h2-section">3. Prerequisites</h2>
+<ul>
+<li><strong>Node.js</strong>: v20+</li>
+<li><strong>PostgreSQL</strong>: Server running on <code>localhost:5432</code> (or port <code>5433</code> via Docker container <code>tok-postgres</code>)</li>
+<li><strong>Docker Desktop</strong>: (Optional, for running PostgreSQL container)</li>
+</ul>
+<hr class="divider" />
+<h2 class="h2-section">4. Project Setup</h2>
+<p class="p-text">Clone the repository and install dependencies for both <code>server</code> and <code>client</code>:</p>
+<pre class="code-box"><code>git clone https://github.com/Apichaya251400/TokTickIT.git
+cd TokTickIT
+
+# Install Backend Server dependencies
+cd server
+npm install
+
+# Install Frontend Client dependencies
+cd ../client
+npm install</code></pre>
+<hr class="divider" />
+  </div>
+
+  <!-- Figure 1.6.3: Database Setup & Seed Data -->
+  <div id="section-3" class="card-section">
+    <h2 class="h2-section">5. Database Setup</h2>
+<h3 class="h3-sub">1. Database Instance (Local PostgreSQL or Docker)</h3>
+<p class="p-text">If using Docker to run PostgreSQL locally:</p>
+<pre class="code-box"><code>docker run --name tok-postgres -e POSTGRES_USER=toktickit -e POSTGRES_PASSWORD=toktickit -e POSTGRES_DB=toktickit -p 5432:5432 -d postgres:16-alpine</code></pre>
+<h3 class="h3-sub">2. Configure Environment Variables</h3>
+<p class="p-text">Copy <code>.env.example</code> to <code>.env</code> in the <code>server/</code> directory:</p>
+<pre class="code-box"><code>cd server
+cp .env.example .env</code></pre>
+<p class="p-text">Verify <code>DATABASE_URL</code> inside <code>server/.env</code> (default: <code>postgresql://toktickit:toktickit@localhost:5432/toktickit?schema=public</code>).</p>
+<h3 class="h3-sub">3. Run Pure SQL Migrations and Idempotent Seed Data</h3>
+<p class="p-text">Apply database schema migrations and seed initial system data:</p>
+<pre class="code-box"><code>npm run prisma:migrate
+npm run prisma:seed</code></pre>
+<p class="p-text"><code>prisma/seed.ts</code> is idempotent and seeds:</p>
+<ul>
+<li>4 active Requesters, 1 inactive Requester</li>
+<li>3 active IT Staff, 1 inactive IT Staff</li>
+<li>2 active Administrators</li>
+<li>4 Categories, 7 Related Systems</li>
+<li>8 sample tickets across all statuses with attachments, public comments, internal notes</li>
+<li>Sample Actions Taken (0, 1, and multiple action scenarios across various statuses)</li>
+<li>Synchronizes <code>ticket_number_seq</code> dynamically to max ticket number suffix (<code>TEST-DB-SEQ-01</code>)</li>
+</ul>
+<h3 class="h3-sub">4. Default Seed User Accounts & Roles</h3>
+<p class="p-text">All seeded accounts use the default password <code>InitialPassword123!</code>:</p>
+<table class="table-custom"><thead>
+<tr><th>Role</th><th>Name</th><th>Email</th><th>Password</th><th>Initial State / Note</th></tr>
+</thead><tbody>
+<tr><td><strong>Requester</strong></td><td>Alice Johnson</td><td><code>alice@example.com</code></td><td><code>InitialPassword123!</code></td><td>First login requires password change (<code>requiresPasswordChange: true</code>)</td></tr>
+<tr><td><strong>Requester</strong></td><td>Bob Smith</td><td><code>bob@example.com</code></td><td><code>InitialPassword123!</code></td><td>Active Requester (owns <code>TKT-2026-000002</code>..)</td></tr>
+<tr><td><strong>Requester</strong></td><td>Charlie Brown</td><td><code>charlie@example.com</code></td><td><code>InitialPassword123!</code></td><td>Active Requester</td></tr>
+<tr><td><strong>Requester</strong></td><td>Diana Prince</td><td><code>diana@example.com</code></td><td><code>InitialPassword123!</code></td><td>Active Requester</td></tr>
+<tr><td><strong>IT Staff</strong></td><td>John Staff</td><td><code>john.staff@toktick.it</code></td><td><code>InitialPassword123!</code></td><td>Active IT Staff (primary queue & dashboard)</td></tr>
+<tr><td><strong>IT Staff</strong></td><td>Sarah Staff</td><td><code>sarah.staff@toktick.it</code></td><td><code>InitialPassword123!</code></td><td>Active IT Staff</td></tr>
+<tr><td><strong>IT Staff</strong></td><td>Mike Staff</td><td><code>mike.staff@toktick.it</code></td><td><code>InitialPassword123!</code></td><td>Active IT Staff</td></tr>
+<tr><td><strong>Administrator</strong></td><td>System Admin</td><td><code>admin@toktick.it</code></td><td><code>InitialPassword123!</code></td><td>Full admin management & queue access</td></tr>
+<tr><td><strong>Administrator</strong></td><td>Super Admin</td><td><code>superadmin@toktick.it</code></td><td><code>InitialPassword123!</code></td><td>Full admin access</td></tr>
+<tr><td><strong>Inactive Staff</strong></td><td>Decommissioned Staff</td><td><code>inactive.staff@toktick.it</code></td><td><code>InitialPassword123!</code></td><td><code>isActive: false</code> (assignee rejection tests)</td></tr>
+<tr><td><strong>Inactive Requester</strong></td><td>Former Employee</td><td><code>inactive.user@example.com</code></td><td><code>InitialPassword123!</code></td><td><code>isActive: false</code> (login rejection tests)</td></tr>
+</tbody></table>
+<hr class="divider" />
+  </div>
+
+  <!-- Figure 1.6.4: Automated Testing & Evidence Summary -->
+  <div id="section-4" class="card-section">
+    <h2 class="h2-section">6. Running the Application</h2>
+<p class="p-text">Start the backend API and frontend client in two separate terminal windows:</p>
+<h3 class="h3-sub">Terminal 1: Backend Server (Port 3000)</h3>
+<pre class="code-box"><code>cd server
+npm run dev</code></pre>
+<h3 class="h3-sub">Terminal 2: Frontend Client (Port 5173)</h3>
+<pre class="code-box"><code>cd client
+npm run dev</code></pre>
+<p class="p-text">Open <code>http://localhost:5173</code> in your web browser.</p>
+<hr class="divider" />
+<h2 class="h2-section">7. Automated Testing & Verification</h2>
+<p class="p-text">Run the full regression test suites using the following commands:</p>
+<h3 class="h3-sub">1. Server Unit & API Integration Tests (Vitest + Supertest)</h3>
+<pre class="code-box"><code>cd server
+npm run prisma:seed
+npm test</code></pre>
+<h3 class="h3-sub">2. Client UI & Component Tests (Vitest + React Testing Library)</h3>
+<pre class="code-box"><code>cd client
+npm test</code></pre>
+<h3 class="h3-sub">3. Playwright End-to-End (E2E) Regression Suites</h3>
+<pre class="code-box"><code>npx playwright test</code></pre>
+<h3 class="h3-sub">4. Production Build Verification</h3>
+<pre class="code-box"><code>npm --prefix server run build
+npm --prefix client run build</code></pre>
+<hr class="divider" />
+<h2 class="h2-section">8. Final Test Evidence Summary (Lab 4 Increment)</h2>
+<table class="table-custom"><thead>
+<tr><th>Suite / Level</th><th>Tooling</th><th>Test Files</th><th>Automated Tests Passed</th><th>Status</th></tr>
+</thead><tbody>
+<tr><td><strong>Server API & Integration Suite</strong></td><td>Vitest + Supertest</td><td><code>29 / 29</code> files</td><td><strong>284 / 284 PASS</strong></td><td><strong>100% PASS</strong></td></tr>
+<tr><td><strong>Client UI Component Suite</strong></td><td>Vitest + RTL + jsdom</td><td><code>17 / 17</code> files</td><td><strong>129 / 129 PASS</strong></td><td><strong>100% PASS</strong></td></tr>
+<tr><td><strong>Playwright Full E2E Hardening Suite</strong></td><td>Playwright Chromium</td><td><code>13 / 13</code> specs</td><td><strong>72 / 72 PASS</strong></td><td><strong>100% PASS</strong></td></tr>
+<tr><td><strong>Production Build Suite</strong></td><td>TypeScript + Vite</td><td><code>server + client</code></td><td><strong>0 errors / built OK</strong></td><td><strong>100% PASS</strong></td></tr>
+<tr><td><strong>Integrated Total</strong></td><td>—</td><td><strong>59 test files</strong></td><td><strong>485 / 485 PASS (100% GREEN)</strong></td><td><strong>100% PASS</strong></td></tr>
+</tbody></table>
+<h3 class="h3-sub">Lab 4 Evidence Deliverables Traceability</h3>
+<ul>
+<li><strong><code>EVD-REG-01..07</code></strong>: Sprint 4 Regression and Product Hardening suite (<code>artifacts/lab-04/screenshots/regression/</code>, <code>docs/lab-04/regression-evidence.md</code>, <code>docs/lab-04/EVD-REG-06.md</code>).</li>
+<li><strong><code>EVD-QA-01..08</code></strong>: Sprint 4 Visual, Responsive, and Accessibility QA evidence suite (<code>artifacts/lab-04/screenshots/visual-qa/</code>, <code>EVD-QA-04.json</code>, <code>docs/lab-04/visual-qa.md</code>).</li>
+<li><strong><code>EVD-E2E-01..07</code></strong>: Sprint 4 Final E2E Business Flows & Product Hardening evidence suite (Issue #82 / LAB4-11):</li>
+</ul>
+<p class="p-text">  - <strong><code>EVD-E2E-01</code></strong>: Full integrated terminal test run output of passing Playwright test suite (72 / 72 PASS) (<code>artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-01.txt</code>).</p>
+<p class="p-text">  - <strong><code>EVD-E2E-02</code></strong>: Full Action Taken lifecycle (<code>PENDING</code> $\to$ <code>IN_PROGRESS</code> $\to$ <code>COMPLETED</code>), assignee assignment, edit modal, and ticket state reflection (<code>artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-02.png</code>).</p>
+<p class="p-text">  - <strong><code>EVD-E2E-03</code></strong>: Ticket Resolution Gate valid resolution path #2 without resolution note precondition satisfied by completed action taken (<code>artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-03.png</code>, <code>.json</code>).</p>
+<p class="p-text">  - <strong><code>EVD-E2E-04</code></strong>: Operational Dashboards (IT Staff & Requester) calculated metrics, strict ownership isolation, queue/ticket drill-downs, and Admin access (<code>artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-04.png</code>, <code>.json</code>).</p>
+<p class="p-text">  - <strong><code>EVD-E2E-05</code></strong>: Concurrency conflict (<code>409 STALE_UPDATE</code>) safe error banner, form data preservation, and refresh recovery (<code>artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-05.png</code>, <code>.json</code>).</p>
+<p class="p-text">  - <strong><code>EVD-E2E-06</code></strong>: Reproducible hardening checklist and verification runbook (<code>docs/lab-04/EVD-E2E-06.md</code>).</p>
+<p class="p-text">  - <strong><code>EVD-E2E-07</code></strong>: Multi-viewport responsive business flows and accessibility audit (<code>artifacts/lab-04/screenshots/e2e-hardening/EVD-E2E-07.png</code>, <code>.json</code>).</p>
+  </div>
+
+</body>
+</html>

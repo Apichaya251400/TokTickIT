@@ -8,6 +8,7 @@ import { validateSummary, validateDescription, validateFileSize, sanitizeFileNam
 import { generateTicketNumber, getNextTicketSequence } from "../utils/ticketNumber.js";
 import { sanitizeHtml } from "../utils/sanitizer.js";
 import { Priority } from "@prisma/client";
+import { getBangkokDayBoundaries, getBangkokDaysAgoBoundaries } from "../utils/timezone.js";
 
 export const ticketRouter = Router();
 
@@ -248,6 +249,7 @@ ticketRouter.post(
         updatedAt: ticket.updatedAt,
       });
     } catch (error) {
+      console.error("Failed to create ticket:", error);
       res.status(500).json({
         error: {
           code: "INTERNAL_SERVER_ERROR",
@@ -276,11 +278,27 @@ const QUEUE_ALLOWED_PRIORITIES = new Set(["LOW", "MEDIUM", "HIGH", "URGENT"]);
 const QUEUE_ALLOWED_OWNERS = new Set(["all", "my_queue", "unassigned"]);
 const QUEUE_ALLOWED_SORT_BY = new Set(["createdAt", "itPriority", "updatedAt", "ticketNumber"]);
 const QUEUE_ALLOWED_SORT_DIR = new Set(["asc", "desc"]);
+const QUEUE_ALLOWED_VIEWS = new Set([
+  "today_actions",
+  "unassigned_active",
+  "my_queue_active",
+  "urgent_workload",
+]);
 
 const ALLOWED_SORT_BY = new Set(["createdAt", "updatedAt", "ticketNumber", "requestedPriority"]);
 const ALLOWED_SORT_ORDER = new Set(["asc", "desc"]);
 const ALLOWED_PAGE_SIZES = new Set([10, 20, 50]);
-const ALLOWED_STATUSES = new Set(["NEW"]);
+const ALLOWED_STATUSES = new Set([
+  "NEW",
+  "OPEN",
+  "IN_PROGRESS",
+  "WAITING_FOR_REQUESTER",
+  "RESOLVED",
+  "CLOSED",
+  "REOPENED",
+  "CANCELLED",
+  "open",
+]);
 
 export async function handleMyTickets(req: AuthenticatedRequest, res: Response): Promise<void> {
   const {
@@ -289,6 +307,7 @@ export async function handleMyTickets(req: AuthenticatedRequest, res: Response):
     relatedSystemId,
     requestedPriority,
     currentStatus,
+    resolvedWithinDays,
     sortBy: sortByRaw,
     sortOrder: sortOrderRaw,
     page: pageRaw,
@@ -415,6 +434,26 @@ export async function handleMyTickets(req: AuthenticatedRequest, res: Response):
       strStatus = s;
     }
 
+    let parsedResolvedWithinDays: number | undefined;
+    if (resolvedWithinDays !== undefined) {
+      const days = Number(resolvedWithinDays);
+      if (
+        !Number.isInteger(days) ||
+        days !== 30 ||
+        strStatus !== "RESOLVED" ||
+        String(resolvedWithinDays).trim() === ""
+      ) {
+        res.status(400).json({
+          error: {
+            code: "INVALID_QUERY_PARAMETER",
+            message: "Invalid query parameter value.",
+          },
+        });
+        return;
+      }
+      parsedResolvedWithinDays = days;
+    }
+
     const requesterId = (req as any).requesterId!;
     const prisma = getPrisma();
 
@@ -434,7 +473,22 @@ export async function handleMyTickets(req: AuthenticatedRequest, res: Response):
     if (parsedCatId !== undefined) where.categoryId = parsedCatId;
     if (parsedSysId !== undefined) where.relatedSystemId = parsedSysId;
     if (strPriority !== undefined) where.requestedPriority = strPriority;
-    if (strStatus !== undefined) where.currentStatus = strStatus;
+    if (strStatus !== undefined) {
+      if (strStatus === "open") {
+        where.currentStatus = {
+          notIn: ["RESOLVED", "CLOSED", "CANCELLED"],
+        };
+      } else {
+        where.currentStatus = strStatus;
+        if (strStatus === "RESOLVED" && parsedResolvedWithinDays === 30) {
+          const { startOfDay, startOfNextDay } = getBangkokDaysAgoBoundaries(29);
+          where.updatedAt = {
+            gte: startOfDay,
+            lt: startOfNextDay,
+          };
+        }
+      }
+    }
 
     const orderBy: any[] = [];
     if (sortBy === "requestedPriority") {
@@ -521,7 +575,7 @@ ticketRouter.get(
     if (isLegacyRequesterHeader && req.user?.role === "REQUESTER") {
       return handleMyTickets(req, res);
     }
-    if (req.user?.role !== "IT_STAFF") {
+    if (req.user?.role !== "IT_STAFF" && req.user?.role !== "ADMINISTRATOR") {
       res.status(403).json({
         error: "FORBIDDEN",
         message: "Access denied",
@@ -539,6 +593,7 @@ ticketRouter.get(
       sortDir: sortDirRaw,
       page: pageRaw,
       limit: limitRaw,
+      view,
     } = req.query;
 
     let page = 1;
@@ -643,6 +698,16 @@ ticketRouter.get(
       sortDir = sortDirRaw as "asc" | "desc";
     }
 
+    if (view !== undefined && (typeof view !== "string" || !QUEUE_ALLOWED_VIEWS.has(view))) {
+      res.status(400).json({
+        error: {
+          code: "INVALID_QUERY_PARAMETER",
+          message: "Invalid view filter.",
+        },
+      });
+      return;
+    }
+
     const prisma = getPrisma();
     const where: any = {};
 
@@ -664,6 +729,34 @@ ticketRouter.get(
       where.ownerId = req.user!.id;
     } else if (ownerFilter === "unassigned") {
       where.ownerId = null;
+    }
+
+    if (view === "today_actions") {
+      const { startOfDay, startOfNextDay } = getBangkokDayBoundaries();
+      where.actionsTaken = {
+        some: {
+          performedById: req.user!.id,
+          createdAt: {
+            gte: startOfDay,
+            lt: startOfNextDay,
+          },
+        },
+      };
+    } else if (view === "unassigned_active") {
+      where.ownerId = null;
+      if (!status) {
+        where.currentStatus = { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] };
+      }
+    } else if (view === "my_queue_active") {
+      where.ownerId = req.user!.id;
+      if (!status) {
+        where.currentStatus = { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] };
+      }
+    } else if (view === "urgent_workload") {
+      where.itPriority = "URGENT";
+      if (!status) {
+        where.currentStatus = { in: ["NEW", "OPEN", "IN_PROGRESS"] };
+      }
     }
 
     const include = {
@@ -875,6 +968,7 @@ ticketRouter.get(
         description: ticket.description,
         requesterResolvedIndicatedAt: ticket.requesterResolvedIndicatedAt,
         requesterReopenRequestedAt: ticket.requesterReopenRequestedAt,
+        resolutionNote: ticket.resolutionNote,
         createdAt: ticket.createdAt,
         updatedAt: ticket.updatedAt,
         attachments: ticket.attachments.map((att) => ({
@@ -1200,11 +1294,11 @@ const PERMITTED_STATUS_TRANSITIONS: Record<string, string[]> = {
   CANCELLED: [],
 };
 
-// PUT /api/tickets/:id/status - Perform Ticket Status Transition (IT Staff Only / Status Transition Matrix / FR-10)
+// PUT /api/tickets/:id/status - Perform Ticket Status Transition (IT Staff & Administrator / Status Transition Matrix / FR-10 / LAB4-06)
 ticketRouter.put(
   "/tickets/:id/status",
   authenticateToken,
-  requireRole("IT_STAFF"),
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const ticketId = req.params.id;
 
@@ -1218,7 +1312,30 @@ ticketRouter.put(
       return;
     }
 
-    const { status } = req.body || {};
+    const { status, expectedUpdatedAt, resolutionNote } = req.body || {};
+
+    // Validate expectedUpdatedAt (MANDATORY per BR-10 and api-spec.md Section 4.1)
+    if (!expectedUpdatedAt || typeof expectedUpdatedAt !== "string" || expectedUpdatedAt.trim() === "") {
+      res.status(400).json({
+        error: {
+          code: "MISSING_EXPECTED_UPDATED_AT",
+          message: "expectedUpdatedAt timestamp is required.",
+        },
+      });
+      return;
+    }
+
+    const expectedDate = new Date(expectedUpdatedAt);
+    if (!expectedUpdatedAt.includes("T") || isNaN(expectedDate.getTime())) {
+      res.status(400).json({
+        error: {
+          code: "MISSING_EXPECTED_UPDATED_AT",
+          message: "expectedUpdatedAt must be a valid ISO 8601 timestamp.",
+        },
+      });
+      return;
+    }
+
     if (!status || typeof status !== "string" || !QUEUE_ALLOWED_STATUSES.has(status)) {
       res.status(400).json({
         error: {
@@ -1229,14 +1346,122 @@ ticketRouter.put(
       return;
     }
 
+    // Validate resolutionNote if provided (trimmed, max 2000 chars)
+    let cleanResolutionNote: string | null = null;
+    if (resolutionNote !== undefined && resolutionNote !== null) {
+      if (typeof resolutionNote !== "string") {
+        res.status(400).json({
+          error: {
+            code: "BAD_REQUEST",
+            message: "Resolution note must be a string.",
+          },
+        });
+        return;
+      }
+      const trimmed = resolutionNote.trim();
+      if (trimmed.length > 2000) {
+        res.status(400).json({
+          error: {
+            code: "BAD_REQUEST",
+            message: "Resolution note cannot exceed 2000 characters.",
+          },
+        });
+        return;
+      }
+      cleanResolutionNote = trimmed.length > 0 ? trimmed : "";
+    }
+
     const prisma = getPrisma();
 
     try {
-      const ticket = await prisma.ticket.findUnique({
-        where: { id: ticketId },
+      let updatedTicketPayload: any = null;
+
+      await prisma.$transaction(async (tx) => {
+        // 1. Lock the Ticket row with FOR UPDATE to serialize concurrent mutations
+        const [lockedTicket] = await tx.$queryRaw<Array<{ id: string; currentStatus: string; updatedAt: Date }>>`
+          SELECT id, "currentStatus", "updatedAt"
+          FROM "Ticket"
+          WHERE id = ${ticketId}
+          FOR UPDATE
+        `;
+
+        if (!lockedTicket) {
+          throw new Error("NOT_FOUND");
+        }
+
+        // 2. Concurrency / Stale Update check (BR-10, AC-11): If locked ticket's updatedAt differs from expectedDate,
+        // the ticket was concurrently modified by another user.
+        if (new Date(lockedTicket.updatedAt).getTime() !== expectedDate.getTime()) {
+          throw new Error("STALE_UPDATE");
+        }
+
+        // 3. Terminal state lock (CANCELLED tickets cannot be modified)
+        if (lockedTicket.currentStatus === "CANCELLED") {
+          throw new Error("TICKET_TERMINAL");
+        }
+
+        // 4. Permitted status transition check
+        const permittedNext = PERMITTED_STATUS_TRANSITIONS[lockedTicket.currentStatus] || [];
+        if (!permittedNext.includes(status)) {
+          throw new Error(`INVALID_TRANSITION:${lockedTicket.currentStatus}:${status}`);
+        }
+
+        // 4. Server-Side Resolution Gate enforcement when target is RESOLVED
+        if (status === "RESOLVED") {
+          const completedActionsCount = await tx.actionTaken.count({
+            where: {
+              ticketId,
+              status: "COMPLETED",
+            },
+          });
+
+          const hasCompletedAction = completedActionsCount > 0;
+          const hasResolutionNote = cleanResolutionNote !== null && cleanResolutionNote.length > 0;
+
+          if (!hasCompletedAction && !hasResolutionNote) {
+            throw new Error("RESOLUTION_GATE_FAILED");
+          }
+        }
+
+        // 5. Atomic conditional update checking updatedAt timestamp (optimistic concurrency)
+        const updateData: any = {
+          currentStatus: status as any,
+        };
+        if (cleanResolutionNote !== null && cleanResolutionNote.length > 0) {
+          updateData.resolutionNote = cleanResolutionNote;
+        }
+
+        const updateResult = await tx.ticket.updateMany({
+          where: {
+            id: ticketId,
+            updatedAt: expectedDate,
+          },
+          data: updateData,
+        });
+
+        if (updateResult.count === 0) {
+          throw new Error("STALE_UPDATE");
+        }
+
+        const updated = await tx.ticket.findUniqueOrThrow({
+          where: { id: ticketId },
+        });
+
+        updatedTicketPayload = {
+          id: updated.id,
+          ticketNumber: updated.ticketNumber,
+          currentStatus: updated.currentStatus,
+          resolutionNote: updated.resolutionNote,
+          updatedAt: updated.updatedAt,
+        };
       });
 
-      if (!ticket) {
+      res.status(200).json({
+        message: "Ticket status updated successfully",
+        ticket: updatedTicketPayload,
+      });
+    } catch (error: any) {
+      if (error.message === "NOT_FOUND") {
         res.status(404).json({
           error: {
             code: "TICKET_NOT_FOUND",
@@ -1246,32 +1471,51 @@ ticketRouter.put(
         return;
       }
 
-      const permittedNext = PERMITTED_STATUS_TRANSITIONS[ticket.currentStatus] || [];
-      if (!permittedNext.includes(status)) {
+      if (error.message === "TICKET_TERMINAL") {
         res.status(400).json({
-          error: "INVALID_TRANSITION",
-          message: `Transition from ${ticket.currentStatus} to ${status} is not allowed by the Status Transition Matrix`,
+          error: {
+            code: "TICKET_TERMINAL",
+            message: "Ticket is in a terminal state (CANCELLED) and cannot be modified.",
+          },
         });
         return;
       }
 
-      const updated = await prisma.ticket.update({
-        where: { id: ticketId },
-        data: { currentStatus: status as any },
-      });
+      if (error.message?.startsWith("INVALID_TRANSITION:")) {
+        const parts = error.message.split(":");
+        res.status(400).json({
+          error: {
+            code: "INVALID_TRANSITION",
+            message: `Transition from ${parts[1]} to ${parts[2]} is not allowed by the Status Transition Matrix`,
+          },
+        });
+        return;
+      }
 
-      res.status(200).json({
-        message: "Ticket status updated successfully",
-        ticket: {
-          id: updated.id,
-          currentStatus: updated.currentStatus,
-        },
-      });
-    } catch (error) {
+      if (error.message === "RESOLUTION_GATE_FAILED") {
+        res.status(400).json({
+          error: {
+            code: "BAD_REQUEST",
+            message: "Cannot resolve ticket without at least one completed Action Taken or formal resolution note.",
+          },
+        });
+        return;
+      }
+
+      if (error.message === "STALE_UPDATE") {
+        res.status(409).json({
+          error: {
+            code: "STALE_UPDATE",
+            message: "Ticket status was updated concurrently by another user. Please refresh and try again.",
+          },
+        });
+        return;
+      }
+
       res.status(500).json({
         error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update ticket status.",
+          code: "INTERNAL_ERROR",
+          message: "An unexpected error occurred. Please try again.",
         },
       });
     }
@@ -1746,7 +1990,7 @@ ticketRouter.get(
 
     const comments = await prisma.publicComment.findMany({
       where: { ticketId },
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       include: {
         author: {
           select: { id: true, name: true, role: true },
@@ -1856,7 +2100,7 @@ ticketRouter.get(
 
     const notes = await prisma.internalNote.findMany({
       where: { ticketId },
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       include: {
         author: {
           select: { id: true, name: true, role: true },
