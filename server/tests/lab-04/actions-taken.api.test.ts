@@ -24,7 +24,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions-taken.api.test.ts)", (
   const createdTicketIds: string[] = [];
   const createdActionIds: string[] = [];
   const createdIdempotencyKeys: string[] = [];
-  const originalRequiresPasswordChange = new Map<string, boolean>();
+  const originalRequiresPasswordChange = new Map<number, boolean>();
 
   const trackKey = (k: string): string => {
     createdIdempotencyKeys.push(k);

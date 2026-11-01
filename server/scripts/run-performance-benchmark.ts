@@ -62,7 +62,7 @@ async function runBenchmark() {
   const staffUser = await prisma.user.findFirstOrThrow({ where: { role: "IT_STAFF", isActive: true } });
   const requesterUser = await prisma.user.findFirstOrThrow({ where: { role: "REQUESTER", isActive: true } });
 
-  const originalUserState = new Map<string, boolean>();
+  const originalUserState = new Map<number, boolean>();
   for (const user of [staffUser, requesterUser]) {
     originalUserState.set(user.id, user.requiresPasswordChange);
   }
