@@ -4,7 +4,7 @@
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Document Status**: Approved Engineering Specification
 - **Repository Branch at Specification Time**: `feature/lab4-spec-dd`
-- **Final Verification Branch**: `main`
+- **Target Final Verification Branch**: `main`
 
 ---
 

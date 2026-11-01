@@ -4,7 +4,7 @@
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Document Status**: Approved Engineering Test Strategy & Traceability Matrix
 - **Repository Branch at Specification Time**: `feature/lab4-release`
-- **Final Verification Branch**: `main`
+- **Target Final Verification Branch**: `main`
 
 ---
 

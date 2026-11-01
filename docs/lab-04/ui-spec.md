@@ -4,7 +4,7 @@
 - **Sprint / Lab**: Lab 4 (Sprint 4)
 - **Document Status**: Final Approved UI Specification (Sprint 4 Release)
 - **Repository Branch at Specification Time**: `feature/lab4-visual-qa`
-- **Final Verification Branch**: `main`
+- **Target Final Verification Branch**: `main`
 
 ---
 
