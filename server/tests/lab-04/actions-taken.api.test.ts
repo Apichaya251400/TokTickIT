@@ -24,6 +24,7 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions-taken.api.test.ts)", (
   const createdTicketIds: string[] = [];
   const createdActionIds: string[] = [];
   const createdIdempotencyKeys: string[] = [];
+  const originalRequiresPasswordChange = new Map<string, boolean>();
 
   const trackKey = (k: string): string => {
     createdIdempotencyKeys.push(k);
@@ -54,9 +55,19 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions-taken.api.test.ts)", (
     otherRequesterUser = requesters[1] || requesters[0];
 
     // Disable password change restriction strictly for test users used in this suite
+    const testUsers = [staffUser, adminUser, requesterUser, otherRequesterUser];
+    for (const user of testUsers) {
+      if (!originalRequiresPasswordChange.has(user.id)) {
+        originalRequiresPasswordChange.set(
+          user.id,
+          user.requiresPasswordChange
+        );
+      }
+    }
+
     await prisma.user.updateMany({
       where: {
-        email: { in: [staffUser.email, adminUser.email, requesterUser.email, otherRequesterUser.email] },
+        id: { in: testUsers.map((user) => user.id) },
       },
       data: { requiresPasswordChange: false },
     });
@@ -103,13 +114,13 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions-taken.api.test.ts)", (
   });
 
   afterEach(async () => {
-    if (staffUser || adminUser || requesterUser || otherRequesterUser) {
-      const userEmails = [staffUser?.email, adminUser?.email, requesterUser?.email, otherRequesterUser?.email].filter(Boolean);
-      await prisma.user.updateMany({
-        where: { email: { in: userEmails } },
-        data: { requiresPasswordChange: true },
+    for (const [userId, requiresPasswordChange] of originalRequiresPasswordChange) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { requiresPasswordChange },
       });
     }
+    originalRequiresPasswordChange.clear();
   });
 
   afterAll(async () => {
@@ -134,10 +145,6 @@ describe("LAB4-04 / Actions Taken REST API Suite (actions-taken.api.test.ts)", (
         where: { idempotencyKey: { in: createdIdempotencyKeys } },
       });
     }
-
-    await prisma.user.updateMany({
-      data: { requiresPasswordChange: true },
-    });
 
     await prisma.$disconnect();
   });

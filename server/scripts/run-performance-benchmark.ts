@@ -62,13 +62,19 @@ async function runBenchmark() {
   const staffUser = await prisma.user.findFirstOrThrow({ where: { role: "IT_STAFF", isActive: true } });
   const requesterUser = await prisma.user.findFirstOrThrow({ where: { role: "REQUESTER", isActive: true } });
 
-  await prisma.user.updateMany({
-    where: { email: { in: [staffUser.email, requesterUser.email] } },
-    data: { requiresPasswordChange: false },
-  });
+  const originalUserState = new Map<string, boolean>();
+  for (const user of [staffUser, requesterUser]) {
+    originalUserState.set(user.id, user.requiresPasswordChange);
+  }
 
-  const staffToken = signToken({ userId: staffUser.id, email: staffUser.email, role: staffUser.role, requiresPasswordChange: false });
-  const requesterToken = signToken({ userId: requesterUser.id, email: requesterUser.email, role: requesterUser.role, requiresPasswordChange: false });
+  try {
+    await prisma.user.updateMany({
+      where: { id: { in: [staffUser.id, requesterUser.id] } },
+      data: { requiresPasswordChange: false },
+    });
+
+    const staffToken = signToken({ userId: staffUser.id, email: staffUser.email, role: staffUser.role, requiresPasswordChange: false });
+    const requesterToken = signToken({ userId: requesterUser.id, email: requesterUser.email, role: requesterUser.role, requiresPasswordChange: false });
 
   const activeTicket = await prisma.ticket.findFirstOrThrow({ where: { currentStatus: "IN_PROGRESS" } });
 
@@ -267,11 +273,6 @@ async function runBenchmark() {
   await prisma.idempotencyRecord.deleteMany({
     where: { idempotencyKey: idemKey },
   });
-  await prisma.user.updateMany({
-    where: { email: { in: [staffUser.email, requesterUser.email] } },
-    data: { requiresPasswordChange: true },
-  });
-
   log("================================================================================");
   log("BENCHMARK EXECUTIVE SUMMARY TABLE");
   log("================================================================================");
@@ -289,8 +290,15 @@ async function runBenchmark() {
   const outputPath = path.resolve(outputDir, "EVD-PERF-01.txt");
   fs.writeFileSync(outputPath, logLines.join("\n"), "utf-8");
   console.log(`\nBenchmark log successfully written to: ${outputPath}`);
-
+} finally {
+  for (const [userId, requiresPasswordChange] of originalUserState) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { requiresPasswordChange },
+    });
+  }
   await prisma.$disconnect();
+}
 }
 
 runBenchmark().catch((err) => {

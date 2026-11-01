@@ -1,7 +1,7 @@
 ================================================================================
 EVD-PERF-01: TokTickIT Sprint 4 Performance-Smoke & Concurrency Benchmark Log
 ================================================================================
-Timestamp (UTC): 2026-10-31T19:26:13.561Z
+Timestamp (UTC): 2026-11-01T06:53:38.452Z
 Environment:
   - OS: Windows_NT 10.0.26200 (x64)
   - CPU: 12th Gen Intel(R) Core(TM) i5-12500H (16 vCPUs)
@@ -15,24 +15,24 @@ Environment:
 Scenario: Retrieve 4 metric aggregations + attention worklist for IT_STAFF
   [Phase 1A] 100 Sequential Requests:
     - Total Requests: 100, Errors: 0
-    - Throughput: 154.96 req/sec
-    - Latency: min=4.8ms, mean=6.45ms, median=5.84ms, p90=7.28ms, p95=7.88ms, p99=9.21ms, max=41.16ms
+    - Throughput: 75.12 req/sec
+    - Latency: min=8.41ms, mean=13.3ms, median=11.67ms, p90=17.36ms, p95=20.21ms, p99=44.08ms, max=60.71ms
   [Phase 1B] Concurrent Load (50 requests, concurrency=10):
     - Total Requests: 50, Errors: 0
-    - Throughput: 273.15 req/sec
-    - Latency: min=18.54ms, mean=27.95ms, median=21.36ms, p90=59.42ms, p95=78.16ms, p99=80.39ms, max=80.39ms
+    - Throughput: 121.14 req/sec
+    - Latency: min=43.53ms, mean=65.8ms, median=58.45ms, p90=109.66ms, p95=135.22ms, p99=140.07ms, max=140.07ms
     - Threshold: < 200 ms | Status: PASS
 
 >>> [PERF-02] Requester Dashboard Aggregate API (GET /api/dashboards/requester)
 Scenario: Retrieve 4 owned metric aggregations + attention tickets for REQUESTER
   [Phase 2A] 100 Sequential Requests:
     - Total Requests: 100, Errors: 0
-    - Throughput: 169.65 req/sec
-    - Latency: min=4.58ms, mean=5.89ms, median=5.69ms, p90=6.88ms, p95=7.71ms, p99=9.86ms, max=10.4ms
+    - Throughput: 78.43 req/sec
+    - Latency: min=8.38ms, mean=12.74ms, median=12.03ms, p90=16.97ms, p95=18.63ms, p99=23.06ms, max=30.9ms
   [Phase 2B] Concurrent Load (50 requests, concurrency=10):
     - Total Requests: 50, Errors: 0
-    - Throughput: 371.47 req/sec
-    - Latency: min=17.55ms, mean=22.74ms, median=20.44ms, p90=33.22ms, p95=33.43ms, p99=33.66ms, max=33.66ms
+    - Throughput: 184.1 req/sec
+    - Latency: min=42.94ms, mean=46.58ms, median=45.86ms, p90=51.44ms, p95=52.65ms, p99=53.73ms, max=53.73ms
     - Threshold: < 200 ms | Status: PASS
 
 >>> [PERF-03] Concurrent Idempotent Action Creation (POST /api/tickets/:id/actions)
@@ -40,10 +40,10 @@ Scenario: 10 parallel HTTP requests sharing identical Idempotency-Key via Promis
   [Execution Results]:
     - 10 Parallel Requests Status: [201, 201, 201, 201, 201, 201, 201, 201, 201, 201]
     - All 10 Returned 201 Created: true
-    - All Returned Identical Action ID (e8ed59c6-7bad-40a0-aca8-dc9e6a62f73d): true
+    - All Returned Identical Action ID (a9b5aad2-dd9f-41df-bc3d-5ef6453a6d1d): true
     - Database ActionTaken Persisted: 1 (Expected: 1)
     - Database IdempotencyRecord Persisted: 1 (Expected: 1)
-    - Latency Stats: min=63.91ms, median=75.69ms, p95=87.41ms, max=87.41ms
+    - Latency Stats: min=102.66ms, median=126.67ms, p95=155.77ms, max=155.77ms
     - Verification Status: PASS
 
 ================================================================================
@@ -51,9 +51,9 @@ BENCHMARK EXECUTIVE SUMMARY TABLE
 ================================================================================
 | Benchmark ID | Target Scenario | Workload Pattern | p50 | p90 | p95 | Max | Throughput | Result |
 |---|---|---|---|---|---|---|---|---|
-| PERF-01-SEQ | Staff Dashboard | 100 sequential reqs | 5.84 ms | 7.28 ms | 7.88 ms | 41.16 ms | 154.96 req/s | PASS |
-| PERF-01-CONC | Staff Dashboard | 50 concurrent (c=10) | 21.36 ms | 59.42 ms | 78.16 ms | 80.39 ms | 273.15 req/s | PASS |
-| PERF-02-SEQ | Requester Dashboard | 100 sequential reqs | 5.69 ms | 6.88 ms | 7.71 ms | 10.4 ms | 169.65 req/s | PASS |
-| PERF-02-CONC | Requester Dashboard | 50 concurrent (c=10) | 20.44 ms | 33.22 ms | 33.43 ms | 33.66 ms | 371.47 req/s | PASS |
-| PERF-03 | Idempotency Race | 10 parallel Promise.all | 75.69 ms | 86.27 ms | 87.41 ms | 87.41 ms | 110.16 req/s | PASS |
+| PERF-01-SEQ | Staff Dashboard | 100 sequential reqs | 11.67 ms | 17.36 ms | 20.21 ms | 60.71 ms | 75.12 req/s | PASS |
+| PERF-01-CONC | Staff Dashboard | 50 concurrent (c=10) | 58.45 ms | 109.66 ms | 135.22 ms | 140.07 ms | 121.14 req/s | PASS |
+| PERF-02-SEQ | Requester Dashboard | 100 sequential reqs | 12.03 ms | 16.97 ms | 18.63 ms | 30.9 ms | 78.43 req/s | PASS |
+| PERF-02-CONC | Requester Dashboard | 50 concurrent (c=10) | 45.86 ms | 51.44 ms | 52.65 ms | 53.73 ms | 184.1 req/s | PASS |
+| PERF-03 | Idempotency Race | 10 parallel Promise.all | 126.67 ms | 148.41 ms | 155.77 ms | 155.77 ms | 61.49 req/s | PASS |
 ================================================================================
