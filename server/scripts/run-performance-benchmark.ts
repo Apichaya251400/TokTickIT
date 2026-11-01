@@ -67,8 +67,8 @@ async function runBenchmark() {
     originalUserState.set(user.id, user.requiresPasswordChange);
   }
 
+  const createdActionIds = new Set<string>();
   let benchmarkIdempotencyKey: string | null = null;
-  let benchmarkActionId: string | null = null;
 
   try {
     await prisma.user.updateMany({
@@ -125,11 +125,13 @@ async function runBenchmark() {
   }
   const staffSeqTotal = performance.now() - staffSeqStart;
   const staffSeqStats = calculateStats(staffSeqLatencies, staffSeqTotal, staffSeqErrors);
+  const staffSeqPass = staffSeqStats.errorCount === 0 && staffSeqStats.p95 < 200;
 
   log(`  [Phase 1A] 100 Sequential Requests:`);
   log(`    - Total Requests: ${staffSeqStats.count}, Errors: ${staffSeqStats.errorCount}`);
   log(`    - Throughput: ${staffSeqStats.throughputReqPerSec} req/sec`);
   log(`    - Latency: min=${staffSeqStats.min}ms, mean=${staffSeqStats.mean}ms, median=${staffSeqStats.median}ms, p90=${staffSeqStats.p90}ms, p95=${staffSeqStats.p95}ms, p99=${staffSeqStats.p99}ms, max=${staffSeqStats.max}ms`);
+  log(`    - Threshold: < 200 ms | Status: ${staffSeqPass ? "PASS" : "FAIL"}\n`);
 
   // 1B: Concurrent Load: 50 requests in 5 batches of 10 concurrent requests
   const staffConcLatencies: number[] = [];
@@ -152,12 +154,13 @@ async function runBenchmark() {
   }
   const staffConcTotal = performance.now() - staffConcStart;
   const staffConcStats = calculateStats(staffConcLatencies, staffConcTotal, staffConcErrors);
+  const staffConcPass = staffConcStats.errorCount === 0 && staffConcStats.p95 < 200;
 
   log(`  [Phase 1B] Concurrent Load (50 requests, concurrency=10):`);
   log(`    - Total Requests: ${staffConcStats.count}, Errors: ${staffConcStats.errorCount}`);
   log(`    - Throughput: ${staffConcStats.throughputReqPerSec} req/sec`);
   log(`    - Latency: min=${staffConcStats.min}ms, mean=${staffConcStats.mean}ms, median=${staffConcStats.median}ms, p90=${staffConcStats.p90}ms, p95=${staffConcStats.p95}ms, p99=${staffConcStats.p99}ms, max=${staffConcStats.max}ms`);
-  log(`    - Threshold: < 200 ms | Status: ${staffConcStats.p95 < 200 ? "PASS" : "FAIL"}\n`);
+  log(`    - Threshold: < 200 ms | Status: ${staffConcPass ? "PASS" : "FAIL"}\n`);
 
   // ---------------------------------------------------------------------------
   // PERF-02: Requester Dashboard
@@ -183,11 +186,13 @@ async function runBenchmark() {
   }
   const reqSeqTotal = performance.now() - reqSeqStart;
   const reqSeqStats = calculateStats(reqSeqLatencies, reqSeqTotal, reqSeqErrors);
+  const reqSeqPass = reqSeqStats.errorCount === 0 && reqSeqStats.p95 < 200;
 
   log(`  [Phase 2A] 100 Sequential Requests:`);
   log(`    - Total Requests: ${reqSeqStats.count}, Errors: ${reqSeqStats.errorCount}`);
   log(`    - Throughput: ${reqSeqStats.throughputReqPerSec} req/sec`);
   log(`    - Latency: min=${reqSeqStats.min}ms, mean=${reqSeqStats.mean}ms, median=${reqSeqStats.median}ms, p90=${reqSeqStats.p90}ms, p95=${reqSeqStats.p95}ms, p99=${reqSeqStats.p99}ms, max=${reqSeqStats.max}ms`);
+  log(`    - Threshold: < 200 ms | Status: ${reqSeqPass ? "PASS" : "FAIL"}\n`);
 
   // 2B: Concurrent Load: 50 requests in 5 batches of 10 concurrent requests
   const reqConcLatencies: number[] = [];
@@ -210,12 +215,13 @@ async function runBenchmark() {
   }
   const reqConcTotal = performance.now() - reqConcStart;
   const reqConcStats = calculateStats(reqConcLatencies, reqConcTotal, reqConcErrors);
+  const reqConcPass = reqConcStats.errorCount === 0 && reqConcStats.p95 < 200;
 
   log(`  [Phase 2B] Concurrent Load (50 requests, concurrency=10):`);
   log(`    - Total Requests: ${reqConcStats.count}, Errors: ${reqConcStats.errorCount}`);
   log(`    - Throughput: ${reqConcStats.throughputReqPerSec} req/sec`);
   log(`    - Latency: min=${reqConcStats.min}ms, mean=${reqConcStats.mean}ms, median=${reqConcStats.median}ms, p90=${reqConcStats.p90}ms, p95=${reqConcStats.p95}ms, p99=${reqConcStats.p99}ms, max=${reqConcStats.max}ms`);
-  log(`    - Threshold: < 200 ms | Status: ${reqConcStats.p95 < 200 ? "PASS" : "FAIL"}\n`);
+  log(`    - Threshold: < 200 ms | Status: ${reqConcPass ? "PASS" : "FAIL"}\n`);
 
   // ---------------------------------------------------------------------------
   // PERF-03: Concurrent Idempotency Key Collisions (10 parallel requests)
@@ -253,26 +259,27 @@ async function runBenchmark() {
   const firstActionId = idemResults[0]?.body?.id;
   const allMatchId = idemResults.every(r => r.body?.id === firstActionId);
 
-  const createdActionIds = new Set<string>();
   for (const result of idemResults) {
     if (typeof result.body?.id === "string") {
       createdActionIds.add(result.body.id);
     }
   }
 
-  benchmarkActionId = createdActionIds.size > 0
-    ? Array.from(createdActionIds)[0]
-    : null;
-
-  // Assert database state
-  const dbActionCount = benchmarkActionId
+  // Assert database state: exactly 1 action persisted matching createdActionIds
+  const dbActionCount = createdActionIds.size > 0
     ? await prisma.actionTaken.count({
-        where: { id: benchmarkActionId },
+        where: { id: { in: Array.from(createdActionIds) } },
       })
     : 0;
   const dbIdemCount = await prisma.idempotencyRecord.count({
     where: { idempotencyKey: idemKey },
   });
+
+  const perf03Pass =
+    all201 &&
+    allMatchId &&
+    dbActionCount === 1 &&
+    dbIdemCount === 1;
 
   log(`  [Execution Results]:`);
   log(`    - 10 Parallel Requests Status: [${statuses.join(", ")}]`);
@@ -281,18 +288,18 @@ async function runBenchmark() {
   log(`    - Database ActionTaken Persisted: ${dbActionCount} (Expected: 1)`);
   log(`    - Database IdempotencyRecord Persisted: ${dbIdemCount} (Expected: 1)`);
   log(`    - Latency Stats: min=${idemStats.min}ms, median=${idemStats.median}ms, p95=${idemStats.p95}ms, max=${idemStats.max}ms`);
-  log(`    - Verification Status: ${all201 && allMatchId && dbActionCount === 1 ? "PASS" : "FAIL"}\n`);
+  log(`    - Verification Status: ${perf03Pass ? "PASS" : "FAIL"}\n`);
 
   log("================================================================================");
   log("BENCHMARK EXECUTIVE SUMMARY TABLE");
   log("================================================================================");
   log("| Benchmark ID | Target Scenario | Workload Pattern | p50 | p90 | p95 | Max | Throughput | Result |");
   log("|---|---|---|---|---|---|---|---|---|");
-  log(`| PERF-01-SEQ | Staff Dashboard | 100 sequential reqs | ${staffSeqStats.median} ms | ${staffSeqStats.p90} ms | ${staffSeqStats.p95} ms | ${staffSeqStats.max} ms | ${staffSeqStats.throughputReqPerSec} req/s | PASS |`);
-  log(`| PERF-01-CONC | Staff Dashboard | 50 concurrent (c=10) | ${staffConcStats.median} ms | ${staffConcStats.p90} ms | ${staffConcStats.p95} ms | ${staffConcStats.max} ms | ${staffConcStats.throughputReqPerSec} req/s | PASS |`);
-  log(`| PERF-02-SEQ | Requester Dashboard | 100 sequential reqs | ${reqSeqStats.median} ms | ${reqSeqStats.p90} ms | ${reqSeqStats.p95} ms | ${reqSeqStats.max} ms | ${reqSeqStats.throughputReqPerSec} req/s | PASS |`);
-  log(`| PERF-02-CONC | Requester Dashboard | 50 concurrent (c=10) | ${reqConcStats.median} ms | ${reqConcStats.p90} ms | ${reqConcStats.p95} ms | ${reqConcStats.max} ms | ${reqConcStats.throughputReqPerSec} req/s | PASS |`);
-  log(`| PERF-03 | Idempotency Race | 10 parallel Promise.all | ${idemStats.median} ms | ${idemStats.p90} ms | ${idemStats.p95} ms | ${idemStats.max} ms | ${idemStats.throughputReqPerSec} req/s | PASS |`);
+  log(`| PERF-01-SEQ | Staff Dashboard | 100 sequential reqs | ${staffSeqStats.median} ms | ${staffSeqStats.p90} ms | ${staffSeqStats.p95} ms | ${staffSeqStats.max} ms | ${staffSeqStats.throughputReqPerSec} req/s | ${staffSeqPass ? "PASS" : "FAIL"} |`);
+  log(`| PERF-01-CONC | Staff Dashboard | 50 concurrent (c=10) | ${staffConcStats.median} ms | ${staffConcStats.p90} ms | ${staffConcStats.p95} ms | ${staffConcStats.max} ms | ${staffConcStats.throughputReqPerSec} req/s | ${staffConcPass ? "PASS" : "FAIL"} |`);
+  log(`| PERF-02-SEQ | Requester Dashboard | 100 sequential reqs | ${reqSeqStats.median} ms | ${reqSeqStats.p90} ms | ${reqSeqStats.p95} ms | ${reqSeqStats.max} ms | ${reqSeqStats.throughputReqPerSec} req/s | ${reqSeqPass ? "PASS" : "FAIL"} |`);
+  log(`| PERF-02-CONC | Requester Dashboard | 50 concurrent (c=10) | ${reqConcStats.median} ms | ${reqConcStats.p90} ms | ${reqConcStats.p95} ms | ${reqConcStats.max} ms | ${reqConcStats.throughputReqPerSec} req/s | ${reqConcPass ? "PASS" : "FAIL"} |`);
+  log(`| PERF-03 | Idempotency Race | 10 parallel Promise.all | ${idemStats.median} ms | ${idemStats.p90} ms | ${idemStats.p95} ms | ${idemStats.max} ms | ${idemStats.throughputReqPerSec} req/s | ${perf03Pass ? "PASS" : "FAIL"} |`);
   log("================================================================================\n");
 
   const outputDir = path.resolve(repoRoot, "artifacts/lab-04/screenshots/release");
@@ -301,24 +308,41 @@ async function runBenchmark() {
   fs.writeFileSync(outputPath, logLines.join("\n"), "utf-8");
   console.log(`\nBenchmark log successfully written to: ${outputPath}`);
 } finally {
-  if (benchmarkActionId) {
-    await prisma.actionTaken.deleteMany({
-      where: { id: benchmarkActionId },
-    });
+  try {
+    if (createdActionIds.size > 0) {
+      await prisma.actionTaken.deleteMany({
+        where: {
+          id: { in: Array.from(createdActionIds) },
+        },
+      });
+    }
+  } catch (cleanupError) {
+    console.error("Benchmark ActionTaken cleanup failed:", cleanupError);
   }
 
-  if (benchmarkIdempotencyKey) {
-    await prisma.idempotencyRecord.deleteMany({
-      where: { idempotencyKey: benchmarkIdempotencyKey },
-    });
+  try {
+    if (benchmarkIdempotencyKey) {
+      await prisma.idempotencyRecord.deleteMany({
+        where: {
+          idempotencyKey: benchmarkIdempotencyKey,
+        },
+      });
+    }
+  } catch (cleanupError) {
+    console.error("Benchmark IdempotencyRecord cleanup failed:", cleanupError);
   }
 
-  for (const [userId, requiresPasswordChange] of originalUserState) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { requiresPasswordChange },
-    });
+  try {
+    for (const [userId, requiresPasswordChange] of originalUserState) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { requiresPasswordChange },
+      });
+    }
+  } catch (cleanupError) {
+    console.error("Benchmark user-state restoration failed:", cleanupError);
   }
+
   await prisma.$disconnect();
 }
 }
